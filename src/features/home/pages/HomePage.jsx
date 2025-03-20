@@ -1,3 +1,4 @@
+import FeaturedPlaylists from '../components/FeaturedPlaylists';
 import NewReleases from '../components/NewReleases';
 import TopAlbums from '../components/TopAlbums';
 import TrendingSongs from '../components/TrendingSongs';
@@ -8,6 +9,7 @@ export default function HomePage() {
       {/* <NewReleases /> */}
       <TopAlbums />
       <TrendingSongs /> 
+      <FeaturedPlaylists />
     </>
   );
 }
