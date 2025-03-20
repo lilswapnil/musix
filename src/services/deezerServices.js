@@ -30,6 +30,27 @@ export const deezerService = {
       throw error;
     }
   },
+
+  fetFeturedPlaylists: async (limit = 20) => {
+    try {
+      // Use a public CORS proxy instead of our own backend
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/chart/0/playlists?limit=${limit}`;
+      
+      console.log(`Fetching from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Deezer API error: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching featured playlists:', error);
+      throw error;
+    }
+  },
   
   /**
    * Get trending albums from Deezer's chart endpoint
