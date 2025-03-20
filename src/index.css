@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 300;
+  --background-color: #011627;
+  --text-color: rgba(255, 255, 255, 0.87);
+  --text-unhighlighted: #515765;
+  color-scheme: light dark;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Add any global utility classes here */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Add to src/index.css if not already using Tailwind's truncate class */
+  .text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .flex-container {
+    display: flex;
+    width: 100%;
+  }
+
+  .flex-text {
+    min-width: 0;
+    overflow: hidden;
+  }
+}
+
