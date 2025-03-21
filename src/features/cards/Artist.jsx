@@ -42,8 +42,28 @@ export default function Artist() {
         
         // Get artist details
         const artistData = await deezerService.getArtist(artistId);
-        setArtist(artistData);
-        
+
+        if (!artistData) {
+          setError("Artist not found");
+          return;
+        }
+
+        // Process artist data correctly
+        const processedArtist = {
+          id: artistData.id,
+          name: artistData.name,
+          picture_xl: artistData.picture_xl,
+          picture_big: artistData.picture_big,
+          picture_medium: artistData.picture_medium,
+          picture: artistData.picture,
+          nb_fan: artistData.nb_fan || 0,
+          nb_album: artistData.nb_album || 0,
+          link: artistData.link
+        };
+
+        // Set artist data ONCE
+        setArtist(processedArtist);
+
         // Get artist top tracks
         const topTracksData = await deezerService.getArtistTopTracks(artistId);
         
@@ -229,7 +249,7 @@ export default function Artist() {
   }
 
   return (
-    <div className="my-6">
+    <div className="my-1">
       {/* Back button */}
       <button 
         onClick={handleGoBack} 
@@ -239,73 +259,106 @@ export default function Artist() {
         Back
       </button>
       
-      {/* Artist header with circular image and background */}
-      <div className="flex flex-col mb-8 bg-primary-light/30 rounded-lg p-6 relative overflow-hidden">
-        {/* Blurry background from artist photo */}
+      {/* Artist header with circular image and background - Smaller version */}
+      <div className="flex flex-col mb-6 bg-primary-light/30 rounded-lg p-4 relative overflow-hidden" style={{ aspectRatio: '2/1' }}>
+        {/* Blurred background image */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
             className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
             style={{ backgroundImage: `url(${artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture})` }}
           ></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-primary-dark/70 to-primary-dark/90"></div>
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
         </div>
         
-        {/* Artist content with circular image */}
-        <div className="flex flex-col justify-between relative z-10 text-center py-8">
-          {/* Circular artist image */}
-          <div className="mx-auto w-28 h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 relative mb-6 border-4 border-white/60 overflow-hidden rounded-full shadow-2xl">
+        {/* Spacer to push content to bottom */}
+        <div className="flex-grow"></div>
+        
+        {/* Card content with circular image - positioned at bottom now */}
+        <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
+          {/* Circular artist image - smaller */}
+          <div className="w-24 h-24 md:w-28 md:h-28 relative mb-4 md:mb-0 md:mr-6 border-2 border-white overflow-hidden rounded-full shadow-xl">
             <img 
               src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
               alt={artist.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error("Image failed to load:", e.target.src);
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/400x400?text=Artist";
+              }}
             />
-            <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center"></div>
           </div>
           
-          {/* <div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">{artist.name}</h1>
+          {/* Artist info */}
+          <div className="text-center md:text-left z-10 flex-1">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow">{artist.name}</h1>
             
-            Artist metadata
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm max-w-2xl mx-auto">
-              {artist.nb_fan && (
-                <div className="flex items-center justify-center text-muted">
+            {/* Artist metadata - new layout with latest album */}
+            <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6 justify-center md:justify-start">
+              {artist.nb_fan > 0 && (
+                <div className="flex items-center justify-center md:justify-start text-white drop-shadow">
                   <FontAwesomeIcon icon={faUsers} className="mr-2" />
                   {formatFanCount(artist.nb_fan)} fans
                 </div>
               )}
-              {artist.nb_album && (
-                <div className="flex items-center justify-center text-muted">
-                  <FontAwesomeIcon icon={faCompactDisc} className="mr-2" />
-                  {artist.nb_album} albums
+              
+              {/* Latest album/release section */}
+              {albums.length > 0 && albums.sort((a, b) => 
+                new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01")
+              )[0] && (
+                <div 
+                  className="flex items-center justify-center md:justify-start text-white drop-shadow cursor-pointer group"
+                  onClick={() => handleAlbumClick(albums[0].id)}
+                >
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 mr-2 overflow-hidden rounded">
+                      <img 
+                        src={albums[0].coverArt} 
+                        alt={albums[0].name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-xs text-accent">Latest Release</span>
+                      <div className="flex items-center">
+                        <span className="group-hover:underline">{albums[0].name}</span>
+                        <span className="text-xs text-muted ml-2">
+                          {albums[0].releaseDate && `(${albums[0].releaseDate.substring(0, 4)})`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-              {topTracks.length > 0 && (
-                <div className="flex items-center justify-center text-muted">
+              
+              {/* Display top track count if we have no albums but we have tracks */}
+              {albums.length === 0 && topTracks.length > 0 && (
+                <div className="flex items-center justify-center md:justify-start text-white drop-shadow">
                   <FontAwesomeIcon icon={faMusic} className="mr-2" />
                   {topTracks.length} top tracks
                 </div>
               )}
             </div>
-          </div> */}
 
-          {/* External links */}
-          <div className="mt-8 flex gap-3 justify-center">
-            <a 
-              href={artist.link || `https://www.deezer.com/artist/${artist.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary hover:bg-primary/80 border-2 border-muted hover:border-accent text-white px-4 py-3 rounded-md inline-block transition-colors"
-            >
-              Listen on Deezer
-            </a>
-            <a 
-              href={`https://open.spotify.com/search/${encodeURIComponent(artist.name)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-spotify hover:bg-[#1DB954]/80 text-white px-4 py-3 rounded-md inline-block transition-colors"
-            >
-              Play on Spotify
-            </a>
+            {/* External links - smaller buttons */}
+            <div className="flex gap-2 justify-center md:justify-start">
+              <a 
+                href={artist.link || `https://www.deezer.com/artist/${artist.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary hover:bg-primary/80 border border-white hover:border-accent text-white px-3 py-2 text-sm rounded-md inline-block transition-colors shadow-md"
+              >
+                Listen on Deezer
+              </a>
+              <a 
+                href={`https://open.spotify.com/search/${encodeURIComponent(artist.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-spotify hover:bg-[#1DB954]/80 text-white px-3 py-2 text-sm rounded-md inline-block transition-colors shadow-md"
+              >
+                Play on Spotify
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -153,7 +153,27 @@ export const deezerService = {
       }
       
       const data = await response.json();
-    
+      
+      // Process image URLs to ensure they work with CORS
+      if (data) {
+        // Fix potential CORS issues with image URLs
+        const corsifyUrl = (url) => {
+          if (!url) return null;
+          // If already using CORS proxy or is a relative URL, return as is
+          if (url.includes('corsproxy.io') || !url.startsWith('http')) return url;
+          // Otherwise add CORS proxy
+          return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+        };
+        
+        // Update image URLs
+        if (data.picture_xl) data.picture_xl = corsifyUrl(data.picture_xl);
+        if (data.picture_big) data.picture_big = corsifyUrl(data.picture_big);
+        if (data.picture_medium) data.picture_medium = corsifyUrl(data.picture_medium);
+        if (data.picture) data.picture = corsifyUrl(data.picture);
+        
+        console.log("Processed artist data:", data);
+      }
+      
       // Cache the result
       if (deezerService._memoryCache) {
         deezerService._memoryCache.set(`artist_${artistId}`, {
