@@ -74,7 +74,7 @@ export default function TopArtists() {
             key={artist.id} 
             className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden  cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
             onClick={() => window.open(artist.link, '_blank')}
-            style={{ aspectRatio: '1.6/1.6' }}
+            style={{ aspectRatio: '1.6/1.7' }}
           >
             {/* Blurred background image */}
             <div className="absolute inset-0 overflow-hidden">
@@ -87,7 +87,7 @@ export default function TopArtists() {
             
             {/* Card content with circular image */}
             <div className="relative h-full flex flex-col items-center justify-center p-4">
-              <div className="w-32 h-32 sm:w-20 sm:h-20 md:w-24 md:h-24 relative mb-3 border-2 border-white overflow-hidden rounded-full">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 relative mb-3 border-2 border-white overflow-hidden rounded-full">
                 <img 
                   src={artist.picture}
                   alt={artist.name}

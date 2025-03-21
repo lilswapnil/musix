@@ -31,7 +31,6 @@ export default function TopAlbums() {
           throw new Error('Invalid response format');
         }
       } catch (err) {
-        console.error('Failed to load trending albums:', err);
         setError('Could not load trending albums');
       } finally {
         setLoading(false);

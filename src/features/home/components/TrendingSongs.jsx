@@ -16,10 +16,8 @@ export default function TrendingSongs() {
     const fetchTrending = async () => {
       try {
         setLoading(true);
-        console.log('Fetching trending songs from Deezer API...');
         
         const data = await deezerService.getTrendingTracks(100);
-        console.log('Deezer API response:', data);
         
         if (data && data.data && Array.isArray(data.data)) {
           // Map Deezer tracks to our format
@@ -34,14 +32,12 @@ export default function TrendingSongs() {
             position: track.position || 0
           }));
           
-          console.log('Successfully mapped Deezer tracks');
           setTrendingSongs(mappedTracks);
           setError('');
         } else {
           throw new Error('Invalid response format from Deezer API');
         }
       } catch (err) {
-        console.error('Error fetching trending songs:', err);
         setError(err.message || 'Failed to load trending songs');
       } finally {
         setLoading(false);
@@ -108,9 +104,9 @@ export default function TrendingSongs() {
   const groupedSongs = trendingSongs.reduce((groups, song, index) => {
     let groupName;
     
-    if (index < 10) {
-      groupName = 'Top 10 Songs';
-    } else if (index < 40) {
+    if (index < 20) {
+      groupName = 'Top 20 Songs';
+    } else if (index < 50) {
       groupName = 'Rising Hits';
     } else {
       groupName = 'On The Radar';

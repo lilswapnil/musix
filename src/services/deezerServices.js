@@ -16,8 +16,6 @@ export const deezerService = {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/tracks?limit=${limit}`;
       
-      console.log(`Fetching from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      
       const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
       if (!response.ok) {
@@ -36,8 +34,6 @@ export const deezerService = {
       // Use a public CORS proxy instead of our own backend
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/playlists?limit=${limit}`;
-      
-      console.log(`Fetching from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
       const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
@@ -62,8 +58,6 @@ export const deezerService = {
       // Use a public CORS proxy instead of our own backend
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/albums?limit=${limit}`;
-      
-      console.log(`Fetching trending albums from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
       const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
@@ -182,5 +176,93 @@ export const deezerService = {
       console.error('Error searching tracks:', error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Get album details by ID
+   * @param {number} albumId - Deezer album ID
+   * @returns {Promise} - Promise containing album data
+   */
+  getAlbum: async (albumId) => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/album/${albumId}`;
+      
+      const response = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching album details:', error);
+      throw error;
+    }
+  },
+  /**
+   * Get playlist details by ID
+   * @param {number} playlistId - Deezer playlist ID
+   * @returns {Promise} - Promise containing playlist data
+   */
+
+  getPlaylist: async (playlistId) => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/playlist/${playlistId}`;
+      
+      const response = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching playlist details:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all music genres from Deezer
+   * @returns {Promise} - Promise containing genres data
+   */
+  getGenres: async () => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      // The URL was malformed in previous attempts - fix it
+      const deezerUrl = 'https://api.deezer.com/genre';
+      
+      console.log(`Fetching genres from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      // Use regular fetch like your other working methods
+      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Deezer API error: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching genres:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get music categories from Deezer's editorial selections
+   * @returns {Promise} - Promise containing editorial data (similar to genres)
+   */
+  getMusicCategories: async () => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = 'https://api.deezer.com/editorial';
+      
+      console.log(`Fetching music categories from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Deezer API error: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching music categories:', error);
+      throw error;
+    }
+  },
 };

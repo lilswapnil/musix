@@ -10,7 +10,7 @@ export default function LoginPage() {
     };
 
     return(
-        <div className="min-h-screen bg-gradient-to-b from-primary to-primary-dark flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-b from-primary to-primary-dark flex flex-col items-center justify-center p-12">
         {/* Logo at the top */}
         <div className="mb-8 text-center">
           <img src={logo} alt="Musix" className="h-15 w-auto" />
@@ -19,7 +19,7 @@ export default function LoginPage() {
         
         <div className="w-full max-w-md rounded-lg bg-primary-light p-8 shadow-lg">
           <div className="mb-8 text-center">
-            <h1 className="mb-2 text-3xl font-bold text-white">Welcome Back</h1>
+            <h1 className="mb-2 text-2xl font-bold text-white">Unwind Yourself</h1>
             <p className="text-muted">Connect with your music.</p>
           </div>
           
@@ -36,7 +36,11 @@ export default function LoginPage() {
             
             <button 
               className="rounded-lg border border-muted bg-transparent p-3 text-white hover:bg-muted/20 transition-colors"
-              onClick={() => navigate('/home')}
+              onClick={() => {
+                // Set a guest flag in localStorage if needed
+                localStorage.setItem('guestUser', 'true');
+                navigate('/home');
+              }}
             >
               Continue as Guest
             </button>
