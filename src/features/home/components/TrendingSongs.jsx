@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
+import { deezerService } from "../../../services/deezerServices";
 
 export default function TrendingSongs() {
   const [likedSongs, setLikedSongs] = useState({});
@@ -17,19 +18,7 @@ export default function TrendingSongs() {
         setLoading(true);
         console.log('Fetching trending songs from Deezer API...');
         
-        // Use corsproxy to avoid CORS issues with Deezer API
-        const corsProxy = 'https://corsproxy.io/?';
-        const deezerUrl = 'https://api.deezer.com/chart/0/tracks?limit=100';
-        
-        console.log(`Fetching from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
-        
-        const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await deezerService.getTrendingTracks(100);
         console.log('Deezer API response:', data);
         
         if (data && data.data && Array.isArray(data.data)) {
@@ -137,7 +126,7 @@ export default function TrendingSongs() {
 
   if (loading) {
     return (
-      <div>  {/* Removed mb-10 */}
+      <div>
         <h2 className="text-3xl font-bold mb-4 text-start">Trending Now</h2>
         <div className="flex justify-center items-center h-64">
           <div className="animate-pulse flex flex-col items-center">
@@ -151,7 +140,7 @@ export default function TrendingSongs() {
 
   if (error) {
     return (
-      <div>  {/* Removed mb-10 */}
+      <div>
         <h2 className="text-3xl font-bold mb-4 text-start">Trending Now</h2>
         <div className="bg-primary-light p-6 text-center">
           <p className="text-error mb-4">{error}</p>
@@ -168,7 +157,7 @@ export default function TrendingSongs() {
 
   if (trendingSongs.length === 0) {
     return (
-      <div>  {/* Removed mb-10 */}
+      <div>
         <h2 className="text-3xl font-bold mb-6 text-start">Trending Now</h2>
         <div className="text-center p-8 bg-primary-light/30 rounded-lg">
           <p className="text-lg text-muted">No trending tracks available right now.</p>
@@ -179,7 +168,7 @@ export default function TrendingSongs() {
   }
 
   return (
-    <div>  {/* Removed mb-10 */}
+    <div>
       <h2 className="text-3xl font-bold mb-6 text-start">Trending Now</h2>
       
       {Object.entries(groupedSongs).map(([groupName, songs]) => (

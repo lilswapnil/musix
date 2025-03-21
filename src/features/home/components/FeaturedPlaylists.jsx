@@ -13,14 +13,16 @@ export default function FeaturedPlaylists() {
         const fetchFeaturedPlaylists = async () => {
             try {
                 setLoading(true);
-                const response = await deezerService.fetFeturedPlaylists(20); // Fetch 20 playlists
+                const response = await deezerService.getFeaturedPlaylists(20); // Fetch 20 playlists
                 
                 if (response && response.data) {
                     const formattedPlaylists = response.data.map(playlist => ({
                         id: playlist.id,
                         title: playlist.title,
-                        coverArt: playlist.picture_medium || playlist.picture_small,
-                        link: playlist.link
+                        coverArt: playlist.picture_medium || playlist.picture_small || 'path/to/default/image.jpg',
+                        link: playlist.link,
+                        description: playlist.description,
+                        tracksCount: playlist.nb_tracks || 0
                     }));
                     
                     setFeaturedPlaylist(formattedPlaylists);
@@ -30,7 +32,7 @@ export default function FeaturedPlaylists() {
             }
             catch (err) {
                 console.error('Failed to load featured playlists:', err);
-                setError('Could not load featured playlists');
+                setError(`Could not load featured playlists: ${err.message}`);
             }
                 
             finally {
@@ -94,6 +96,11 @@ export default function FeaturedPlaylists() {
                         <div className="p-2 sm:p-3 md:p-4">
                             <div className="text-center">
                                 <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{playlist.title}</h3>
+                                {playlist.tracksCount > 0 && (
+                                    <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
+                                        {playlist.tracksCount} tracks
+                                    </p>
+                                )}
                                 {playlist.description && (
                                     <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1 truncate">
                                         {playlist.description}

@@ -31,7 +31,7 @@ export const deezerService = {
     }
   },
 
-  fetFeturedPlaylists: async (limit = 20) => {
+  getFeaturedPlaylists: async (limit = 20) => {
     try {
       // Use a public CORS proxy instead of our own backend
       const corsProxy = 'https://corsproxy.io/?';

@@ -41,19 +41,26 @@ export default function SearchPage() {
     setError("");
     try {
       // Search for tracks
-      const trackResults = await deezerService.search(searchInput, 'track', 20);
-      setSongs(trackResults.data.map(track => ({
+      const trackResults = await deezerService.search(searchInput, 'track', 100);
+      
+      // Map and sort by popularity
+      const mappedTracks = trackResults.data.map(track => ({
         id: track.id,
         name: track.title,
         artist: track.artist.name,
         album: track.album.title,
         albumArt: track.album.cover_medium || track.album.cover_small,
         previewUrl: track.preview,
-        externalUrl: track.link
-      })));
+        externalUrl: track.link,
+        popularity: track.rank || 0, // Deezer uses "rank" for popularity
+      }));
+      
+      // Sort tracks by popularity (highest first)
+      const sortedTracks = mappedTracks.sort((a, b) => b.popularity - a.popularity);
+      setSongs(sortedTracks);
       
       // Search for albums
-      const albumResults = await deezerService.search(searchInput, 'album', 10);
+      const albumResults = await deezerService.search(searchInput, 'album', 20);
       setAlbums(albumResults.data.map(album => ({
         id: album.id,
         name: album.title,
@@ -122,18 +129,18 @@ export default function SearchPage() {
     });
   };
 
-  // Group songs into categories like TrendingSongs
-  const groupedSongs = songs.reduce((groups, song, index) => {
+  // Group songs into categories based on popularity
+  const groupedSongs = songs.reduce((groups, song) => {
     let groupName;
     
-    // Group songs based on index instead of arbitrary categories
-    if (index < 50) {
+    // Group songs based on popularity ranking
+    if (song.popularity > 500000) {
       groupName = 'Top Results';
-    } else  {
-      groupName = 'More Results';
+    } else {
+      groupName = 'Songs';
     } 
-    // Create group if it doesn't exist
     
+    // Create group if it doesn't exist
     if (!groups[groupName]) {
       groups[groupName] = [];
     }
@@ -162,7 +169,7 @@ export default function SearchPage() {
         <LoadingSpinner message="Searching..." />
       ) : (
         <>
-          {/* Songs Section - Now with horizontal scrolling like TrendingSongs */}
+          {/* Songs Section - Now with horizontal scrolling and popularity-based grouping */}
           {songs.length > 0 && Object.entries(groupedSongs).map(([groupName, groupSongs]) => (
             <div key={groupName} className="mb-8">
               <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">{groupName}</h3>}>
@@ -202,7 +209,10 @@ export default function SearchPage() {
                             
                             <div className="ml-3 flex-grow min-w-0 text-start">
                               <div className="font-semibold text-white truncate">{song.name}</div>
-                              <div className="text-xs text-muted truncate">{song.artist}</div>
+                              <div className="flex justify-between">
+                                <div className="text-xs text-muted truncate">{song.artist}</div>
+                                
+                              </div>
                             </div>
                             
                             <button 
@@ -267,4 +277,14 @@ export default function SearchPage() {
       )}
     </div>
   );
+}
+
+// Helper function to format popularity for display
+function formatPopularity(value) {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(1)}M`;
+  } else if (value >= 1000) {
+    return `${(value / 1000).toFixed(0)}K`;
+  }
+  return value.toString();
 }
