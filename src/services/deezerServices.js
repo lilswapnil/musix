@@ -1,28 +1,38 @@
-import { cachedFetch } from '../utils/requestUtils';
+import { cachedFetch, enhancedApiRequest, throttle } from '../utils/requestUtils';
 
 /**
  * Deezer API Services
  * Provides methods to interact with the Deezer API through our CORS proxy
  */
 export const deezerService = {
+  // Throttle configurations
+  _throttle: {
+    search: throttle(2000)('deezer-search'),
+    chart: throttle(5000)('deezer-chart')
+  },
+  
   /**
-   * Get trending tracks from Deezer's chart endpoint
+   * Get trending tracks from Deezer's chart endpoint with throttling
    * @param {number} limit - Maximum number of tracks to return
    * @returns {Promise} - Promise containing chart data
    */
   getTrendingTracks: async (limit = 20) => {
     try {
-      // Use a public CORS proxy instead of our own backend
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/tracks?limit=${limit}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      // Apply chart-specific throttling
+      const throttledRequest = deezerService._throttle.chart(() => 
+        enhancedApiRequest(fullUrl, {}, {
+          domain: 'api.deezer.com',
+          rateLimit: 50,
+          timeWindow: 60000,
+          cacheTime: 300000 // 5 minutes cache
+        })
+      );
       
-      if (!response.ok) {
-        throw new Error(`Deezer API error: ${response.status}`);
-      }
-      
-      return await response.json();
+      return await throttledRequest();
     } catch (error) {
       console.error('Error fetching trending tracks:', error);
       throw error;
@@ -134,7 +144,7 @@ export const deezerService = {
   },
   
   /**
-   * Search Deezer for tracks, albums, artists
+   * Search Deezer with debouncing and throttling
    * @param {string} query - Search query
    * @param {string} type - Type of search: track, album, artist
    * @param {number} limit - Maximum results to return
@@ -144,14 +154,19 @@ export const deezerService = {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/search/${type}?q=${encodeURIComponent(query)}&limit=${limit}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      // Apply search-specific throttling
+      const throttledRequest = deezerService._throttle.search(() => 
+        enhancedApiRequest(fullUrl, {}, {
+          domain: 'api.deezer.com',
+          rateLimit: 10,
+          timeWindow: 10000,
+          cacheTime: 60000 // 1 minute cache for searches
+        })
+      );
       
-      if (!response.ok) {
-        throw new Error(`Deezer API error: ${response.status}`);
-      }
-      
-      return await response.json();
+      return await throttledRequest();
     } catch (error) {
       console.error(`Error searching ${type}:`, error);
       throw error;
@@ -265,4 +280,112 @@ export const deezerService = {
       throw error;
     }
   },
+
+  // Update the searchAll method:
+  searchAll: async (query, signal = null) => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      
+      // Use in-memory cache instead of sessionStorage for large responses
+      // This helps avoid storage quota errors
+      if (!deezerService._memoryCache) {
+        deezerService._memoryCache = new Map();
+      }
+      
+      const cacheKey = `search_${query}`;
+      const now = Date.now();
+      const cachedItem = deezerService._memoryCache.get(cacheKey);
+      
+      // Check memory cache first (valid for 5 minutes)
+      if (cachedItem && now - cachedItem.timestamp < 300000) {
+        return cachedItem.data;
+      }
+      
+      // Make the API request
+      const deezerUrl = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=100`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
+      
+      const options = signal ? { signal } : {};
+      const response = await fetch(fullUrl, options);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Extract unique albums and artists from tracks
+      const tracks = data;
+      const albumsMap = new Map();
+      const artistsMap = new Map();
+      
+      if (tracks.data) {
+        tracks.data.forEach(track => {
+          if (track.album && !albumsMap.has(track.album.id)) {
+            albumsMap.set(track.album.id, track.album);
+          }
+          
+          if (track.artist && !artistsMap.has(track.artist.id)) {
+            artistsMap.set(track.artist.id, track.artist);
+          }
+        });
+      }
+      
+      const albums = { data: Array.from(albumsMap.values()) };
+      const artists = { data: Array.from(artistsMap.values()) };
+      
+      // Build complete response
+      const result = {
+        tracks,
+        albums,
+        artists
+      };
+      
+      // Cache the results in memory instead of sessionStorage
+      try {
+        deezerService._memoryCache.set(cacheKey, {
+          data: result,
+          timestamp: now
+        });
+        
+        // Limit cache size to prevent memory issues (keep last 20 searches)
+        if (deezerService._memoryCache.size > 20) {
+          const oldestKey = [...deezerService._memoryCache.keys()][0];
+          deezerService._memoryCache.delete(oldestKey);
+        }
+      } catch (cacheErr) {
+        console.warn('Could not cache search results:', cacheErr);
+        // Continue even if caching fails - it's just a performance optimization
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error searching all types:`, error);
+      throw error;
+    }
+  }
 };
+
+/**
+ * Create a debounced Deezer search function
+ */
+export function createDebouncedDeezerSearch(wait = 500) {
+  let timeout;
+  
+  return function(query, type = 'track', limit = 20) {
+    return new Promise((resolve, reject) => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      
+      timeout = setTimeout(async () => {
+        try {
+          const result = await deezerService.search(query, type, limit);
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      }, wait);
+    });
+  };
+}

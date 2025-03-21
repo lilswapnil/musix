@@ -1,8 +1,7 @@
-import { cachedFetch } from '../utils/requestUtils';
+import { enhancedApiRequest, throttle } from '../utils/requestUtils';
 
 /**
- * Spotify API Services
- * Provides methods to interact with the Spotify API
+ * Spotify API Services with debouncing and throttling
  */
 export const spotifyService = {
   // API configuration
@@ -20,6 +19,20 @@ export const spotifyService = {
   _apiBase: 'https://api.spotify.com/v1',
   _authBase: 'https://accounts.spotify.com/api',
   _tokenKey: 'spotify_auth_data',
+
+  // API rate limits
+  _rateLimit: {
+    search: { max: 10, window: 30000 }, // 10 requests per 30 seconds
+    browse: { max: 20, window: 60000 },  // 20 requests per minute
+    default: { max: 50, window: 60000 }  // Default 50 requests per minute
+  },
+  
+  // Throttle configurations
+  _throttle: {
+    search: throttle(2000)('spotify-search'),  // 1 search request per 2 seconds
+    browse: throttle(1000)('spotify-browse'),  // 1 browse request per second
+    track: throttle(500)('spotify-track')      // 2 track requests per second
+  },
 
   /**
    * Generate random string for state parameter
@@ -253,10 +266,7 @@ export const spotifyService = {
   },
   
   /**
-   * Make an authenticated API request to Spotify
-   * @param {string} endpoint - API endpoint path
-   * @param {Object} options - Additional fetch options
-   * @returns {Promise<Object>} - JSON response
+   * Make an authenticated API request to Spotify with enhanced controls
    */
   async apiRequest(endpoint, options = {}) {
     try {
@@ -285,27 +295,48 @@ export const spotifyService = {
         requestOptions.body = JSON.stringify(options.body);
       }
       
-      const response = await fetch(urlWithParams, requestOptions);
+      // Determine rate limits based on endpoint type
+      let rateLimitConfig = this._rateLimit.default;
+      let throttleFn = null;
       
-      if (response.status === 401) {
-        // Token expired during request, refresh and retry once
-        const newToken = await this.refreshAccessToken();
-        requestOptions.headers.Authorization = `Bearer ${newToken}`;
-        const retryResponse = await fetch(urlWithParams, requestOptions);
-        
-        if (!retryResponse.ok) {
-          throw new Error(`Spotify API error: ${retryResponse.status}`);
-        }
-        
-        return await retryResponse.json();
+      if (endpoint.includes('/search')) {
+        rateLimitConfig = this._rateLimit.search;
+        throttleFn = this._throttle.search;
+      } else if (endpoint.includes('/browse')) {
+        rateLimitConfig = this._rateLimit.browse;
+        throttleFn = this._throttle.browse;
+      } else if (endpoint.includes('/tracks')) {
+        throttleFn = this._throttle.track;
       }
       
-      if (!response.ok) {
-        throw new Error(`Spotify API error: ${response.status}`);
-      }
+      // Apply throttling if configured for this endpoint type
+      const requestFn = throttleFn
+        ? throttleFn(() => enhancedApiRequest(urlWithParams, requestOptions, {
+            domain: 'api.spotify.com',
+            rateLimit: rateLimitConfig.max,
+            timeWindow: rateLimitConfig.window,
+            cacheTime: endpoint.includes('/search') ? 60000 : 300000 // Shorter cache for searches
+          }))
+        : () => enhancedApiRequest(urlWithParams, requestOptions, {
+            domain: 'api.spotify.com',
+            rateLimit: rateLimitConfig.max,
+            timeWindow: rateLimitConfig.window
+          });
       
-      return await response.json();
+      // Execute the request
+      return await requestFn();
     } catch (error) {
+      // Handle 401 unauthorized errors
+      if (error.message && error.message.includes('401')) {
+        try {
+          const newToken = await this.refreshAccessToken();
+          return this.apiRequest(endpoint, options); // Retry with new token
+        } catch (refreshError) {
+          console.error('Error refreshing token:', refreshError);
+          throw error; // If refresh fails, throw the original error
+        }
+      }
+      
       console.error(`Error in Spotify API request to ${endpoint}:`, error);
       throw error;
     }
@@ -420,9 +451,10 @@ export const spotifyService = {
    * @param {number} limit - Maximum results to return
    * @returns {Promise<Object>} - Search results
    */
-  search: async (query, type = 'track', limit = 20) => {
+  search: async function(query, type = 'track', limit = 20) {
     try {
-      return await spotifyService.apiRequest('/search', {
+      // For search, we use the existing API request with the throttling applied
+      return await this.apiRequest('/search', {
         params: {
           q: query,
           type,
@@ -603,3 +635,29 @@ export const spotifyService = {
     }
   }
 };
+
+/**
+ * Create a debounced search function for component use
+ * @param {number} wait - Debounce delay in ms
+ * @returns {Function} - Debounced search function
+ */
+export function createDebouncedSpotifySearch(wait = 500) {
+  let timeout;
+  
+  return function(query, type = 'track', limit = 20) {
+    return new Promise((resolve, reject) => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      
+      timeout = setTimeout(async () => {
+        try {
+          const result = await spotifyService.search(query, type, limit);
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      }, wait);
+    });
+  };
+}
