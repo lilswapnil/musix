@@ -9,7 +9,9 @@ import LoginPage from './features/auth/pages/LoginPage';
 import HomePage from './features/home/pages/HomePage';
 import LibraryPage from './features/library/pages/LibraryPage'
 import Account from './features/account/pages/AccountPage';
-import SearchPage from './features/search/pages/SearchPage'; // Import SearchPage
+import SearchPage from './features/search/pages/SearchPage';
+import Albums from './features/cards/Albums';
+import Artist from './features/cards/Artist';
 
 
 
@@ -48,6 +50,14 @@ const routes = [
         path: "search",
         element: <SearchPage />
       },
+      {
+        path: "album/:albumId",
+        element: <Albums />
+      },
+      {
+        path: "artist/:artistId",
+        element: <Artist />
+      }
     ]
   }
 ]

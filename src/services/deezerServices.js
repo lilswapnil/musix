@@ -129,16 +129,122 @@ export const deezerService = {
    * @param {number} artistId - Deezer artist ID
    * @returns {Promise} - Promise containing artist data
    */
-  getArtist: async (artistId) => {
+  getArtist: async (artistId, signal = null) => {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/artist/${artistId}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      const response = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-      return await response.json();
+      // Check cache first
+      if (deezerService._memoryCache) {
+        const cacheKey = `artist_${artistId}`;
+        const cachedItem = deezerService._memoryCache.get(cacheKey);
+        
+        if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
+          return cachedItem.data;
+        }
+      }
+      
+      const options = signal ? { signal } : {};
+      const response = await fetch(fullUrl, options);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+    
+      // Cache the result
+      if (deezerService._memoryCache) {
+        deezerService._memoryCache.set(`artist_${artistId}`, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+      
+      return data;
     } catch (error) {
-      console.error('Error fetching artist details:', error);
+      console.error(`Error fetching artist ${artistId}:`, error);
+      throw error;
+    }
+  },
+
+  getArtistTopTracks: async (artistId, limit = 10, signal = null) => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/artist/${artistId}/top?limit=${limit}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
+      
+      // Check cache first
+      if (deezerService._memoryCache) {
+        const cacheKey = `artist_top_${artistId}_${limit}`;
+        const cachedItem = deezerService._memoryCache.get(cacheKey);
+        
+        if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
+          return cachedItem.data;
+        }
+      }
+      
+      const options = signal ? { signal } : {};
+      const response = await fetch(fullUrl, options);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Cache the result
+      if (deezerService._memoryCache) {
+        deezerService._memoryCache.set(`artist_top_${artistId}_${limit}`, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Error fetching top tracks for artist ${artistId}:`, error);
+      throw error;
+    }
+  },
+
+  getArtistAlbums: async (artistId, limit = 50, signal = null) => {
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
+      
+      // Check cache first
+      if (deezerService._memoryCache) {
+        const cacheKey = `artist_albums_${artistId}_${limit}`;
+        const cachedItem = deezerService._memoryCache.get(cacheKey);
+        
+        if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
+          return cachedItem.data;
+        }
+      }
+      
+      const options = signal ? { signal } : {};
+      const response = await fetch(fullUrl, options);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Cache the result
+      if (deezerService._memoryCache) {
+        deezerService._memoryCache.set(`artist_albums_${artistId}_${limit}`, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Error fetching albums for artist ${artistId}:`, error);
       throw error;
     }
   },
@@ -198,19 +304,46 @@ export const deezerService = {
    * @param {number} albumId - Deezer album ID
    * @returns {Promise} - Promise containing album data
    */
-  getAlbum: async (albumId) => {
+  getAlbum: async (albumId, signal = null) => {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/album/${albumId}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      const response = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-      return await response.json();
+      // Check cache first
+      if (deezerService._memoryCache) {
+        const cacheKey = `album_${albumId}`;
+        const cachedItem = deezerService._memoryCache.get(cacheKey);
+        
+        if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
+          return cachedItem.data;
+        }
+      }
+      
+      const options = signal ? { signal } : {};
+      const response = await fetch(fullUrl, options);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Cache the result
+      if (deezerService._memoryCache) {
+        deezerService._memoryCache.set(`album_${albumId}`, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+      
+      return data;
     } catch (error) {
-      console.error('Error fetching album details:', error);
+      console.error(`Error fetching album ${albumId}:`, error);
       throw error;
     }
   },
+
   /**
    * Get playlist details by ID
    * @param {number} playlistId - Deezer playlist ID

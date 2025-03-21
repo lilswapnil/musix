@@ -264,7 +264,7 @@ export default function SearchPage() {
                           <div 
                             key={song.id} 
                             className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-primary-light transition-colors cursor-pointer"
-                            onClick={() => window.open(song.externalUrl, '_blank')}
+                            onClick={() => window.open(song.externalUrl, '_blank') || navigate(`/album/${song.id}`)}
                           >
                             <div className="w-12 h-12 flex-shrink-0 relative group">
                               <img 
@@ -321,7 +321,7 @@ export default function SearchPage() {
                   <div 
                     key={album.id} 
                     className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
-                    onClick={() => window.open(album.link, '_blank')}
+                    onClick={() => navigate(`/album/${album.id}`)}
                   >
                     <div className="relative">
                       <img 
@@ -363,7 +363,7 @@ export default function SearchPage() {
                   <div 
                     key={artist.id} 
                     className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
-                    onClick={() => window.open(artist.link || `https://www.deezer.com/artist/${artist.id}`, '_blank')}
+                    onClick={() => navigate(`/artist/${artist.id}`)}
                     style={{ aspectRatio: '1.6/1.7' }}
                   >
                     {/* Blurred background image */}
