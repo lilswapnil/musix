@@ -259,37 +259,78 @@ export default function Artist() {
         Back
       </button>
       
-      {/* Artist header with circular image and background - Smaller version */}
+      {/* Artist header with circular image and background */}
       <div className="flex flex-col mb-6 bg-primary-light/30 rounded-lg p-4 relative overflow-hidden" style={{ aspectRatio: '2/1' }}>
-        {/* Blurred background image */}
+        {/* Blurred background image - now uses newest album art */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
-            style={{ backgroundImage: `url(${artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture})` }}
+            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-80"
+            style={{ 
+              backgroundImage: `url(${
+                // First try newest album art if available
+                (albums.length > 0 && 
+                 albums.sort((a, b) => new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01"))[0]?.coverArt)
+                // Fall back to artist image if no albums
+                || artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture
+              })`
+            }}
           ></div>
-          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
         </div>
         
-        {/* Spacer to push content to bottom */}
+        {/* Rest of the header remains the same... */}
         <div className="flex-grow"></div>
         
         {/* Card content with circular image - positioned at bottom now */}
         <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
-          {/* Circular artist image - smaller */}
+          {/* Circular artist image with better fallbacks */}
           <div className="w-24 h-24 md:w-28 md:h-28 relative mb-4 md:mb-0 md:mr-6 border-2 border-white overflow-hidden rounded-full shadow-xl">
-            <img 
-              src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
-              alt={artist.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error("Image failed to load:", e.target.src);
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/400x400?text=Artist";
-              }}
-            />
+            {/* First attempt: artist profile picture */}
+            {artist && (artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture) ? (
+              <img 
+                src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
+                alt={artist.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.log("Primary artist image failed, trying fallback");
+                  // If artist image fails, try newest album art as fallback
+                  if (albums.length > 0) {
+                    const newestAlbum = albums.sort((a, b) => 
+                      new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01")
+                    )[0];
+                    e.target.src = newestAlbum.coverArt;
+                  } else {
+                    // Last resort placeholder
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/400x400?text=Artist";
+                  }
+                }}
+              />
+            ) : albums.length > 0 ? (
+              // Second attempt: newest album art
+              <img 
+                src={albums.sort((a, b) => 
+                  new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01")
+                )[0].coverArt}
+                alt={artist.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://via.placeholder.com/400x400?text=Artist";
+                }}
+              />
+            ) : (
+              // Fallback: placeholder
+              <div className="w-full h-full flex items-center justify-center bg-primary-light text-white">
+                <FontAwesomeIcon icon={faUser} className="text-3xl opacity-70" />
+              </div>
+            )}
+            
+            {/* Overlay effect on hover */}
+            <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
           
-          {/* Artist info */}
+          {/* Rest of the artist info continues... */}
           <div className="text-center md:text-left z-10 flex-1">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow">{artist.name}</h1>
             
@@ -315,7 +356,7 @@ export default function Artist() {
                       <img 
                         src={albums[0].coverArt} 
                         alt={albums[0].name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full "
                       />
                     </div>
                     <div>
@@ -417,7 +458,7 @@ export default function Artist() {
                           </div>
                         </div>
                         
-                        <div className="flex flex-col items-end ml-2">
+                        <div className="flex items-center ml-2">
                           <button 
                             className="p-1.5 rounded-full hover:bg-muted/20 transition-colors"
                             onClick={(e) => handleLike(track.id, e)}
@@ -425,10 +466,9 @@ export default function Artist() {
                           >
                             <FontAwesomeIcon 
                               icon={faHeart} 
-                              className={`${likedSongs[track.id] ? "text-red-500" : "text-muted"}`}
+                              className={`${likedSongs[track.id] ? "text-red-500" : "text-muted"} text-sm`}
                             />
                           </button>
-                          <span className="text-xs text-muted">{formatTime(track.duration)}</span>
                         </div>
                       </div>
                     ))}
