@@ -10,8 +10,8 @@ import HomePage from './features/home/pages/HomePage';
 import LibraryPage from './features/library/pages/LibraryPage'
 import Account from './features/account/pages/AccountPage';
 import SearchPage from './features/search/pages/SearchPage';
-import Albums from './features/cards/Albums';
-import Artist from './features/cards/Artist';
+import Albums from './features/search/components/Albums';
+import Artist from './features/search/components/Artist';
 
 
 

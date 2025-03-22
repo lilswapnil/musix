@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { deezerService } from "../../services/deezerServices";
+import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faHeart, 
@@ -13,7 +13,7 @@ import {
   faMusic,
   faGuitar
 } from "@fortawesome/free-solid-svg-icons";
-import LoadingSpinner from "../../components/common/ui/LoadingSpinner";
+import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 
 export default function Albums() {
   const { albumId } = useParams();
