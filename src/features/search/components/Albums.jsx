@@ -11,7 +11,8 @@ import {
   faCompactDisc,
   faCalendar,
   faMusic,
-  faGuitar
+  faGuitar,
+  faUser
 } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 
@@ -19,14 +20,16 @@ export default function Albums() {
   const { albumId } = useParams();
   const [album, setAlbum] = useState(null);
   const [tracks, setTracks] = useState([]);
+  const [artistImage, setArtistImage] = useState(null); // Add state for artist image
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [likedSongs, setLikedSongs] = useState({});
+  const [artistData, setArtistData] = useState(null); // Add state for artist data
   const audioRef = useRef(null);
   const navigate = useNavigate();
   
-  // Load album data and liked songs on mount
+  // Load album data and artist image on mount
   useEffect(() => {
     async function fetchAlbum() {
       if (!albumId) {
@@ -41,6 +44,27 @@ export default function Albums() {
         // Get album details
         const albumData = await deezerService.getAlbum(albumId);
         setAlbum(albumData);
+
+        console.log("Album artist name:", albumData.artist?.name);
+
+        // Fetch artist image if artist info is available
+        if (albumData.artist && albumData.artist.id) {
+          try {
+            const artistData = await deezerService.getArtist(albumData.artist.id);
+            if (artistData) {
+              setArtistData(artistData); // Store the complete artist data
+              setArtistImage(
+                artistData.picture_xl || 
+                artistData.picture_big || 
+                artistData.picture_medium || 
+                artistData.picture
+              );
+            }
+          } catch (artistErr) {
+            console.warn("Could not load artist image:", artistErr);
+            // No need to set error - we'll fall back to album image
+          }
+        }
         
         if (albumData.tracks && albumData.tracks.data) {
           // Map tracks to consistent format
@@ -65,6 +89,8 @@ export default function Albums() {
         setLoading(false);
       }
     }
+    
+  
     
     // Load liked songs from localStorage
     try {
@@ -103,7 +129,8 @@ export default function Albums() {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    
+  
+
     // Play the new song
     if (previewUrl) {
       // Create a new audio element
@@ -148,6 +175,10 @@ export default function Albums() {
   const handleGoBack = () => {
     navigate(-1);
   };
+
+  const handleSongClick = (trackId) => {
+    navigate(`/song/${trackId}`);
+  }
   
   // If still loading, show spinner
   if (loading) {
@@ -199,18 +230,25 @@ export default function Albums() {
         Back
       </button>
       
-      {/* Album header with cover art and info */}
+      {/* Album header with artist background and album cover art */}
       <div className="flex flex-col md:flex-row mb-8 bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
-        {/* Blurry background from album art */}
+        {/* Blurry background from artist image with fallback to album art */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-md scale-70 opacity-90"
-            style={{ backgroundImage: `url(${album.cover_xl || album.cover_big || album.cover_medium || album.cover})` }}
+            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
+            style={{ 
+              backgroundImage: `url(${
+                // Try artist image first
+                artistImage || 
+                // Fall back to album cover if no artist image
+                album.cover_xl || album.cover_big || album.cover_medium || album.cover
+              })` 
+            }}
           ></div>
-          <div className="absolute inset-0 bg-primary-dark/80"></div>
+          <div className="absolute inset-0 bg-primary-dark/70"></div>
         </div>
         
-        {/* Album cover art - now with relative positioning */}
+        {/* Album cover art remains the same */}
         <div className="w-full md:w-48 lg:w-64 xl:w-80 flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative z-10">
           <div className="aspect-square w-full rounded-lg overflow-hidden shadow-xl">
             <img 
@@ -221,16 +259,31 @@ export default function Albums() {
           </div>
         </div>
         
-        {/* Album info - now with relative positioning */}
+        {/* Album info - now with artist image if available */}
         <div className="flex flex-col justify-between relative z-10 text-start">
-          {/* Rest of the album info content stays the same */}
           <div>
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">{album.title}</h1>
-            <h2 className="text-lg md:text-xl text-accent mb-4 text-start">
-              {album.artist ? album.artist.name : "Unknown Artist"}
-            </h2>
             
-            {/* Album metadata */}
+            {/* Artist with image if available */}
+            <div className="flex items-center mb-4">
+              {artistImage && (
+                <div className="w-8 h-8 mr-2 overflow-hidden rounded-full border border-white/30">
+                  <img 
+                    src={artistImage} 
+                    alt={album.artist?.name || "Artist"} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <h2 
+                className="text-lg md:text-xl text-accent hover:underline cursor-pointer"
+                onClick={() => album.artist?.id && navigate(`/artist/${album.artist.id}`)}
+              >
+                {album.artist?.name || "Unknown Artist"}
+              </h2>
+            </div>
+            
+            {/* Rest of album metadata remains the same */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm m-2">
               {album.nb_tracks && (
                 <div className="flex items-center text-muted">
@@ -283,7 +336,7 @@ export default function Albums() {
               rel="noopener noreferrer"
               className="bg-spotify hover:bg-[#1DB954]/80 text-white px-4 py-3 rounded-md inline-block transition-colors"
             >
-              Find on Spotify
+              Play on Spotify
             </a>
           </div>
         </div>
@@ -315,7 +368,7 @@ export default function Albums() {
                 className={`grid grid-cols-12 items-center py-2 px-2 rounded-md hover:bg-primary-light/50 transition-colors ${
                   currentlyPlaying === track.id ? 'bg-primary-light/30' : ''
                 }`}
-                onClick={() => window.open(track.externalUrl, '_blank')}
+                onClick={() => handleSongClick(track.id)}
               >
                 {/* Track number / Play button */}
                 <div className="col-span-1 text-center relative group">
@@ -376,7 +429,116 @@ export default function Albums() {
         )}
       </div>
       
-      {/* Related Albums/More by Artist - This could be added in the future */}
+      {/* Artist Section */}
+      {artistData && (
+        <div className="mb-8">
+          <h3 className="text-3xl font-semibold mb-4 text-start">About the Artist</h3>
+          <div className="bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
+            {/* Artist card content */}
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              {/* Artist image */}
+              <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-white shadow-lg flex-shrink-0">
+                <img 
+                  src={artistImage || album.artist.picture_medium} 
+                  alt={album.artist.name} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Artist info */}
+              <div className="flex-1 text-center md:text-left">
+                <h4 className="text-2xl font-bold text-white mb-2 hover:underline cursor-pointer"
+                    onClick={() => album.artist?.id && navigate(`/artist/${album.artist.id}`)}
+                  
+                >{album.artist?.name}</h4>
+                
+                {/* Artist stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  {album.artist.nb_fan > 0 && (
+                    <div className="flex flex-col items-center md:items-start">
+                      <span className="text-muted text-sm">Fans</span>
+                      <span className="text-white text-xl font-semibold">
+                        {album.artist.nb_fan >= 1000000
+                          ? `${(album.artist.nb_fan / 1000000).toFixed(1)}M`
+                          : album.artist.nb_fan >= 1000
+                          ? `${(album.artist.nb_fan / 1000).toFixed(0)}K`
+                          : album.artist.nb_fan}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {album.artist.nb_album > 0 && (
+                    <div className="flex flex-col items-center md:items-start">
+                      <span className="text-muted text-sm">Albums</span>
+                      <span className="text-white text-xl font-semibold">{album.artist.nb_album}</span>
+                    </div>
+                  )}
+                  
+                  {album.artist.nb_fan > 0 && (
+                    <div className="flex flex-col items-center md:items-start">
+                      <span className="text-muted text-sm">Popularity</span>
+                      <div className="w-full max-w-[120px] bg-muted/30 rounded-full h-2 mt-2">
+                        <div 
+                          className="bg-accent h-2 rounded-full" 
+                          style={{ width: `${Math.min(100, (album.artist.nb_fan / 10000000) * 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Artist links */}
+                {/* View Artist Profile button on its own line */}
+                <div className="mt-4 md:mt-3">
+                  <button 
+                    onClick={() => navigate(`/artist/${album.artist.id}`)}
+                    className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-md inline-flex items-center transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                    View Artist Profile
+                  </button>
+                  
+                  {album.artist.link && (
+                    <a 
+                      href={album.artist.link}
+                      target="_blank"
+                      rel="noopener noreferrer" 
+                      className="bg-primary/50 hover:bg-primary/70 border border-muted text-white px-4 py-2 rounded-md inline-flex items-center transition-colors ml-3"
+                    >
+                      Listen on Deezer
+                    </a>
+                  )}
+                  
+                  <a 
+                    href={`https://open.spotify.com/search/${encodeURIComponent(album.artist.name)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-spotify hover:bg-[#1DB954]/80 text-white px-4 py-2 rounded-md inline-flex items-center transition-colors ml-3"
+                  >
+                    Find on Spotify
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            {/* Top albums by this artist - Optional */}
+            {album.artist.nb_album > 0 && (
+              <div className="mt-8">
+                <h5 className="text-xl font-medium text-white mb-4">Check out more albums by {album.artist.name}</h5>
+                <div className="flex justify-center md:justify-start">
+                  <button 
+                    onClick={() => navigate(`/artist/${album.artist.id}`)}
+                    className="bg-primary-light/50 hover:bg-primary-light/80 text-white px-4 py-2 rounded-md transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faCompactDisc} className="mr-2" />
+                    View All Albums
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

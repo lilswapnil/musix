@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { deezerService } from "../../../services/deezerServices";
@@ -265,7 +264,7 @@ export default function SearchPage() {
                           <div 
                             key={song.id} 
                             className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-primary-light transition-colors cursor-pointer"
-                            onClick={() => window.open(song.externalUrl, '_blank') || navigate(`/album/${song.id}`)}
+                            onClick={() => navigate(`/song/${song.id}`)} // Changed from /album/ to /song/
                           >
                             <div className="w-12 h-12 flex-shrink-0 relative group">
                               <img 
@@ -364,6 +363,7 @@ export default function SearchPage() {
                   <div 
                     key={artist.id} 
                     className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
+                    //Testing
                     onClick={() => navigate(`/artist/${artist.id}`)}
                     style={{ aspectRatio: '1.6/1.7' }}
                   >

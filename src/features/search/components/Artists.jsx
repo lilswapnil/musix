@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { deezerService } from "../../services/deezerServices";
+import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faHeart, 
@@ -13,8 +13,8 @@ import {
   faMusic,
   faUsers
 } from "@fortawesome/free-solid-svg-icons";
-import LoadingSpinner from "../../components/common/ui/LoadingSpinner";
-import ScrollableSection from "../../components/common/ui/ScrollableSection";
+import ScrollableSection from "../../../components/common/ui/ScrollableSection";
+import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 
 export default function Artist() {
   const { artistId } = useParams();
@@ -28,6 +28,11 @@ export default function Artist() {
   const audioRef = useRef(null);
   const navigate = useNavigate();
   
+  const [allSongs, setAllSongs] = useState([]);
+  const [loadingMoreSongs, setLoadingMoreSongs] = useState(false);
+  const [hasMoreSongs, setHasMoreSongs] = useState(false);
+  const [page, setPage] = useState(1);
+
   // Load artist data and liked songs on mount
   useEffect(() => {
     async function fetchArtist() {
@@ -40,15 +45,17 @@ export default function Artist() {
       try {
         setLoading(true);
         
-        // Get artist details
+        // Get artist details with better error handling
         const artistData = await deezerService.getArtist(artistId);
+        
+        console.log("Artist name:", artistData.albums?.name);
 
         if (!artistData) {
           setError("Artist not found");
           return;
         }
 
-        // Process artist data correctly
+        // Process artist data with explicit image handling
         const processedArtist = {
           id: artistData.id,
           name: artistData.name,
@@ -61,7 +68,8 @@ export default function Artist() {
           link: artistData.link
         };
 
-        // Set artist data ONCE
+        console.log(artist)
+        // Set artist data with all image URLs
         setArtist(processedArtist);
 
         // Get artist top tracks
@@ -100,6 +108,35 @@ export default function Artist() {
           }));
           
           setAlbums(processedAlbums);
+        }
+
+        const corsProxy = 'https://corsproxy.io/?';
+        const deezerUrl = `https://api.deezer.com/artist/${artistId}/radio?limit=50&index=0`;
+        
+        const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const tracksData = await response.json();
+        
+        if (tracksData && tracksData.data) {
+          const processedTracks = tracksData.data.map(track => ({
+            id: track.id,
+            name: track.title,
+            artist: track.artist ? track.artist.name : artistData.name,
+            albumName: track.album ? track.album.title : "Unknown Album",
+            albumId: track.album ? track.album.id : null,
+            duration: track.duration,
+            previewUrl: track.preview,
+            externalUrl: track.link || `https://www.deezer.com/track/${track.id}`,
+            albumArt: track.album?.cover_medium || "https://via.placeholder.com/300x300?text=No+Cover",
+            releaseDate: track.release_date
+          }));
+          
+          setAllSongs(processedTracks);
+          setPage(2);
+          setHasMoreSongs(tracksData.next || false);
         }
         
       } catch (err) {
@@ -208,7 +245,49 @@ export default function Artist() {
   const handleAlbumClick = (albumId) => {
     navigate(`/album/${albumId}`);
   };
-  
+
+  const loadMoreSongs = async () => {
+    if (loadingMoreSongs) return;
+    
+    try {
+      setLoadingMoreSongs(true);
+      
+      // Use the corsProxy directly since we see it's defined that way in other functions
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/artist/${artistId}/radio?limit=50&index=${(page-1)*50}`;
+      
+      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const tracksData = await response.json();
+      
+      if (tracksData && tracksData.data) {
+        const newTracks = tracksData.data.map(track => ({
+          id: track.id,
+          name: track.title,
+          artist: track.artist ? track.artist.name : artist.name,
+          albumName: track.album ? track.album.title : "Unknown Album",
+          albumId: track.album ? track.album.id : null,
+          duration: track.duration,
+          previewUrl: track.preview,
+          externalUrl: track.link || `https://www.deezer.com/track/${track.id}`,
+          albumArt: track.album?.cover_medium || "https://via.placeholder.com/300x300?text=No+Cover",
+          releaseDate: track.release_date
+        }));
+        
+        setAllSongs(prev => [...prev, ...newTracks]);
+        setPage(page + 1);
+        setHasMoreSongs(tracksData.next || false);
+      }
+    } catch (err) {
+      console.error("Error loading more songs:", err);
+    } finally {
+      setLoadingMoreSongs(false);
+    }
+  };
+
   // If still loading, show spinner
   if (loading) {
     return <LoadingSpinner message="Loading artist..." />;
@@ -259,37 +338,62 @@ export default function Artist() {
         Back
       </button>
       
-      {/* Artist header with circular image and background - Smaller version */}
+      {/* Artist header with circular image and background */}
       <div className="flex flex-col mb-6 bg-primary-light/30 rounded-lg p-4 relative overflow-hidden" style={{ aspectRatio: '2/1' }}>
-        {/* Blurred background image */}
+        {/* Blurred background image - now uses newest album art */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
-            style={{ backgroundImage: `url(${artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture})` }}
+            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-80"
+            style={{ 
+              backgroundImage: `url(${
+                // First try newest album art if available
+                (albums.length > 0 && 
+                 albums.sort((a, b) => new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01"))[0]?.coverArt)
+                // Fall back to artist image if no albums
+                || artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture
+              })`
+            }}
           ></div>
-          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+          <div className="absolute inset-0 bg-black bg-opacity-70"></div>
         </div>
         
-        {/* Spacer to push content to bottom */}
+        {/* Rest of the header remains the same... */}
         <div className="flex-grow"></div>
         
         {/* Card content with circular image - positioned at bottom now */}
         <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
-          {/* Circular artist image - smaller */}
+          {/* Circular artist image with better fallback and error handling */}
           <div className="w-24 h-24 md:w-28 md:h-28 relative mb-4 md:mb-0 md:mr-6 border-2 border-white overflow-hidden rounded-full shadow-xl">
-            <img 
-              src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
-              alt={artist.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error("Image failed to load:", e.target.src);
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/400x400?text=Artist";
-              }}
-            />
+            {artist && (
+              <img 
+                src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
+                alt={artist.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.log("Artist image failed, trying fallback");
+                  
+                  // If main artist image fails, try album art fallback
+                  if (albums.length > 0) {
+                    const newestAlbum = albums.sort((a, b) => 
+                      new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01")
+                    )[0];
+                    e.target.src = newestAlbum.coverArt;
+                    e.target.onerror = () => {
+                      // If album art also fails, use placeholder
+                      e.target.src = "https://via.placeholder.com/400x400?text=Artist";
+                      e.target.onerror = null;
+                    };
+                  } else {
+                    // No albums available, use placeholder
+                    e.target.src = "https://via.placeholder.com/400x400?text=Artist";
+                    e.target.onerror = null;
+                  }
+                }}
+              />
+            )}
           </div>
           
-          {/* Artist info */}
+          {/* Rest of the artist info continues... */}
           <div className="text-center md:text-left z-10 flex-1">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow">{artist.name}</h1>
             
@@ -315,7 +419,7 @@ export default function Artist() {
                       <img 
                         src={albums[0].coverArt} 
                         alt={albums[0].name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full "
                       />
                     </div>
                     <div>
@@ -417,7 +521,7 @@ export default function Artist() {
                           </div>
                         </div>
                         
-                        <div className="flex flex-col items-end ml-2">
+                        <div className="flex items-center ml-2">
                           <button 
                             className="p-1.5 rounded-full hover:bg-muted/20 transition-colors"
                             onClick={(e) => handleLike(track.id, e)}
@@ -425,10 +529,9 @@ export default function Artist() {
                           >
                             <FontAwesomeIcon 
                               icon={faHeart} 
-                              className={`${likedSongs[track.id] ? "text-red-500" : "text-muted"}`}
+                              className={`${likedSongs[track.id] ? "text-red-500" : "text-muted"} text-sm`}
                             />
                           </button>
-                          <span className="text-xs text-muted">{formatTime(track.duration)}</span>
                         </div>
                       </div>
                     ))}
@@ -480,6 +583,93 @@ export default function Artist() {
           </div>
         </ScrollableSection>
       )}
+      
+      {/* All Songs Section - Similar to TrendingSongs */}
+      {allSongs.length > 0 && (
+        <div className="mb-8">
+          <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">All Songs</h3>}>
+            <div className="flex space-x-2">
+              {/* Split tracks into groups of 4 for horizontal scrolling */}
+              {Array.from({ length: Math.ceil(allSongs.length / 4) }).map((_, groupIndex) => {
+                const groupTracks = allSongs.slice(groupIndex * 4, groupIndex * 4 + 4);
+                return (
+                  <div 
+                    key={groupIndex} 
+                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[400px] lg:w-[390px]"
+                  >
+                    {groupTracks.map((track) => (
+                      <div 
+                        key={track.id} 
+                        className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-primary-light transition-colors cursor-pointer"
+                        onClick={() => navigate(`/song/${track.id}`)}
+                      >
+                        <div className="w-12 h-12 flex-shrink-0 relative group">
+                          <img 
+                            src={track.albumArt} 
+                            alt={track.name}
+                            className="w-full h-full object-cover rounded"
+                          />
+                          {track.previewUrl && (
+                            <button
+                              onClick={(e) => handlePlayPause(track.id, track.previewUrl, e)}
+                              className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                            >
+                              <FontAwesomeIcon 
+                                icon={currentlyPlaying === track.id ? faPause : faPlay} 
+                                className="text-white"
+                              />
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="ml-3 flex-grow min-w-0 text-start">
+                          <div className="font-semibold text-white truncate">{track.name}</div>
+                          <div className="flex justify-between">
+                            <div className="text-xs text-accent truncate">
+                              {track.albumId ? (
+                                <span 
+                                  className="cursor-pointer hover:underline" 
+                                  onClick={(e) => { e.stopPropagation(); handleAlbumClick(track.albumId); }}
+                                >
+                                  {track.albumName}
+                                </span>
+                              ) : track.albumName}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <button 
+                          className="ml-2 p-1.5 rounded-full hover:bg-muted/20 transition-colors"
+                          onClick={(e) => handleLike(track.id, e)}
+                          aria-label={likedSongs[track.id] ? "Unlike" : "Like"}
+                        >
+                          <FontAwesomeIcon 
+                            icon={faHeart} 
+                            className={`${likedSongs[track.id] ? "text-red-500" : "text-muted"} text-sm`}
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollableSection>
+          
+          {hasMoreSongs && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={loadMoreSongs}
+                disabled={loadingMoreSongs}
+                className="bg-primary-light/50 hover:bg-primary/80 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50"
+              >
+                {loadingMoreSongs ? 'Loading...' : 'Load More Songs'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      
     </div>
   );
 }

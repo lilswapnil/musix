@@ -11,9 +11,8 @@ import LibraryPage from './features/library/pages/LibraryPage'
 import Account from './features/account/pages/AccountPage';
 import SearchPage from './features/search/pages/SearchPage';
 import Albums from './features/search/components/Albums';
-import Artist from './features/search/components/Artist';
-
-
+import Artist from './features/search/components/Artists';
+import Songs from './features/search/components/Songs';
 
 const routes = [
   // Auth pages without navbar/layout
@@ -57,6 +56,10 @@ const routes = [
       {
         path: "artist/:artistId",
         element: <Artist />
+      },
+      {
+        path: "song/:songId",
+        element: <Songs />
       }
     ]
   }

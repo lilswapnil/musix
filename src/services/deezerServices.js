@@ -516,7 +516,27 @@ export const deezerService = {
       console.error(`Error searching all types:`, error);
       throw error;
     }
-  }
+  },
+
+  getArtistTracks: async (artistId, page = 1, limit = 50, signal = null) => {
+    try {
+      deezerService._throttle.search.check();
+      
+      const apiUrl = `https://api.deezer.com/artist/${artistId}/radio?limit=${limit}&index=${(page-1)*limit}`;
+      const proxiedUrl = corsProxyService.getProxiedUrl(apiUrl);
+      
+      const response = await fetch(proxiedUrl, { signal });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching artist tracks:`, error);
+      throw error;
+    }
+  },
 };
 
 /**
