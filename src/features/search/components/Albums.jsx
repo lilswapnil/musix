@@ -31,6 +31,7 @@ export default function Albums() {
   
   // Load album data and artist image on mount
   useEffect(() => {
+    window.scrollTo(0, 0);
     async function fetchAlbum() {
       if (!albumId) {
         setError("No album ID provided");

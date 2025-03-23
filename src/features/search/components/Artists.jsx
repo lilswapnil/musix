@@ -36,6 +36,9 @@ export default function Artist() {
   // Load artist data and liked songs on mount
   useEffect(() => {
     async function fetchArtist() {
+      // Scroll to top of page when component mounts
+      window.scrollTo(0, 0);
+
       if (!artistId) {
         setError("No artist ID provided");
         setLoading(false);
