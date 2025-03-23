@@ -47,8 +47,11 @@ export default function Artist() {
         
         // Get artist details with better error handling
         const artistData = await deezerService.getArtist(artistId);
-        
-        console.log("Artist name:", artistData.albums?.name);
+        setArtist(artistData);
+
+        if (artistData.artists && artistData.artists.data) {
+          setArtists(artistData.artists.data);
+        }
 
         if (!artistData) {
           setError("Artist not found");
@@ -364,33 +367,11 @@ export default function Artist() {
         <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
           {/* Circular artist image with better fallback and error handling */}
           <div className="w-24 h-24 md:w-28 md:h-28 relative mb-4 md:mb-0 md:mr-6 border-2 border-white overflow-hidden rounded-full shadow-xl">
-            {artist && (
-              <img 
-                src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
-                alt={artist.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.log("Artist image failed, trying fallback");
-                  
-                  // If main artist image fails, try album art fallback
-                  if (albums.length > 0) {
-                    const newestAlbum = albums.sort((a, b) => 
-                      new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01")
-                    )[0];
-                    e.target.src = newestAlbum.coverArt;
-                    e.target.onerror = () => {
-                      // If album art also fails, use placeholder
-                      e.target.src = "https://via.placeholder.com/400x400?text=Artist";
-                      e.target.onerror = null;
-                    };
-                  } else {
-                    // No albums available, use placeholder
-                    e.target.src = "https://via.placeholder.com/400x400?text=Artist";
-                    e.target.onerror = null;
-                  }
-                }}
-              />
-            )}
+          <img 
+              src={artist.cover_xl || artist.cover_big || artist.cover_medium || artist.cover} 
+              alt={artist.title} 
+              className="w-full h-full object-cover"
+            />
           </div>
           
           {/* Rest of the artist info continues... */}
@@ -545,7 +526,7 @@ export default function Artist() {
       
       {/* Albums Section */}
       {albums.length > 0 && (
-        <ScrollableSection title="Albums">
+        <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">Albums</h3>}>
           <div className="flex space-x-2 pb-1">
             {albums.map((album) => (
               <div 
@@ -587,7 +568,7 @@ export default function Artist() {
       {/* All Songs Section - Similar to TrendingSongs */}
       {allSongs.length > 0 && (
         <div className="mb-8">
-          <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">All Songs</h3>}>
+          <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">Songs</h3>}>
             <div className="flex space-x-2">
               {/* Split tracks into groups of 4 for horizontal scrolling */}
               {Array.from({ length: Math.ceil(allSongs.length / 4) }).map((_, groupIndex) => {
