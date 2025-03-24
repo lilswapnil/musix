@@ -6,7 +6,6 @@ const AuthContext = createContext(null);
 
 // Spotify API configuration
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-
 const REDIRECT_URI =  import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
 const SCOPES = [
         'user-read-private',
@@ -20,10 +19,39 @@ const SCOPES = [
 
 // Function to redirect to Spotify auth page
 export const redirectToSpotify = async () => {
-  const codeChallenge = await generatePKCEChallenge();
-  const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code&code_challenge_method=S256&code_challenge=${codeChallenge}`;
-  
-  window.location.href = authUrl;
+  try {
+    // Generate PKCE challenge
+    const pkceData = await generatePKCEChallenge();
+    
+    if (!pkceData || (!pkceData.codeChallenge && typeof pkceData !== 'string')) {
+      throw new Error("Failed to generate code challenge");
+    }
+    
+    const codeChallenge = pkceData.codeChallenge || pkceData;
+    console.log("Generated code challenge:", codeChallenge);
+    
+    // Fix: remove quotes from redirect URI in .env file
+    const redirectUri = REDIRECT_URI.replace(/['"]/g, '');
+    const encodedRedirectUri = encodeURIComponent(redirectUri);
+    
+    console.log("Using redirect URI:", redirectUri);
+    
+    // Use proper request format - must use response_type=code for PKCE
+    const authUrl = `https://accounts.spotify.com/authorize?` +
+      `client_id=${CLIENT_ID}` +
+      `&response_type=code` +
+      `&redirect_uri=${encodedRedirectUri}` +
+      `&scope=${SCOPES}` +
+      `&code_challenge_method=S256` +
+      `&code_challenge=${codeChallenge}`;
+    
+    console.log("Redirecting to Spotify with URL:", authUrl);
+    
+    window.location.href = authUrl;
+  } catch (error) {
+    console.error("Error initiating Spotify auth:", error);
+    alert("Authentication failed. Please try again.");
+  }
 };
 
 // Auth provider component
