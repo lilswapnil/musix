@@ -39,8 +39,9 @@ export const redirectToSpotify = async () => {
     // Use proper request format - must use response_type=code for PKCE
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `client_id=${CLIENT_ID}` +
-      `&response_type=code` +
+      
       `&redirect_uri=${encodedRedirectUri}` +
+      `&response_type=code` +
       `&scope=${SCOPES}` +
       `&code_challenge_method=S256` +
       `&code_challenge=${codeChallenge}`;
