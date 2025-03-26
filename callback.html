@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Authenticating...</title>
+  <script>
+    window.onload = function() {
+      // Get the code from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        // Store the code in localStorage
+        localStorage.setItem('spotify_auth_code', code);
+        // Redirect to the Auth component in React app
+        window.location.href = '/musix/#/callback';
+        return;
+      }
+      
+      // If no code found, redirect to login
+      window.location.href = '/musix/#/login';
+    };
+  </script>
+</head>
+<body>
+  <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
+    <div style="text-align: center;">
+      <h1 style="margin-bottom: 16px;">Authenticating...</h1>
+      <p>Please wait while we connect to Spotify</p>
+    </div>
+  </div>
+</body>
+</html>
