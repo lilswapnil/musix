@@ -370,9 +370,16 @@ export const spotifyService = {
    */
   getCurrentUser: async () => {
     try {
-      return await spotifyService.apiRequest('/me');
+      const userData = await spotifyService.apiRequest('/me');
+      
+      // Cache the user profile
+      if (userData) {
+        setUserProfile(userData);
+      }
+      
+      return userData;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error fetching current user:', error);
       throw error;
     }
   },

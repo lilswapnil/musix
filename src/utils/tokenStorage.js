@@ -27,12 +27,25 @@ export function removeRefreshToken() {
 }
 
 export function getUserProfile() {
-  const profile = localStorage.getItem(USER_PROFILE_KEY);
-  return profile ? JSON.parse(profile) : null;
+  try {
+    const profileJson = localStorage.getItem(USER_PROFILE_KEY);
+    if (!profileJson) return null;
+    
+    return JSON.parse(profileJson);
+  } catch (error) {
+    console.error('Error parsing stored user profile:', error);
+    return null;
+  }
 }
 
 export function setUserProfile(profile) {
-  localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  if (!profile) return;
+  
+  try {
+    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.error('Error storing user profile:', error);
+  }
 }
 
 export function removeUserProfile() {
