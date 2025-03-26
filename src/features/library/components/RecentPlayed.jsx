@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from 'react';
 import { getAccessToken, removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faClock } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
 export default function RecentPlayed() {
@@ -26,7 +26,8 @@ export default function RecentPlayed() {
   useEffect(() => {
     const fetchRecentTracks = async () => {
       try {
-        const accessToken = getAccessToken();
+        // Retrieve the access token from the cache
+        const accessToken = getAccessToken(); // Changed from getToken
         
         if (!accessToken) {
           setError('You need to log in to see your recent plays');
@@ -63,7 +64,7 @@ export default function RecentPlayed() {
       
       if (!response.ok) {
         if (response.status === 401) {
-          removeAccessToken();
+          removeAccessToken(); // Changed from removeToken
           throw new Error('Session expired. Please log in again.');
         }
         throw new Error(`Error ${response.status}: Failed to fetch recently played tracks`);

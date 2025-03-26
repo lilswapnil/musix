@@ -32,10 +32,26 @@ export default function CurrentlyPlaying() {
           }
           throw new Error('Failed to fetch currently playing track');
         }
+        
+        // Fix for 204 No Content response - check response status
+        if (response.status === 204) {
+          // No content means nothing is playing
+          setCurrentTrack(null);
+          setLoading(false);
+          return;
+        }
 
-        const data = await response.json();
-        setCurrentTrack(data.item);
+        // Only parse JSON if we have content
+        const contentLength = response.headers.get('content-length');
+        if (contentLength && parseInt(contentLength) > 0) {
+          const data = await response.json();
+          setCurrentTrack(data.item);
+        } else {
+          // Empty response but not 204
+          setCurrentTrack(null);
+        }
       } catch (err) {
+        console.error("Error fetching current track:", err);
         setError(err.message || 'Something went wrong.');
       } finally {
         setLoading(false);
@@ -83,7 +99,7 @@ export default function CurrentlyPlaying() {
 
   if (!currentTrack) {
     return (
-      <div className="mb-12 mt-4">
+      <div className="mb-12">
         <h2 className="text-3xl font-bold mb-4 text-start">Now Playing</h2>
         <div className="text-center p-8 bg-primary-light/30 rounded-lg">
           <p className="text-lg text-muted">No track is currently playing.</p>
@@ -94,6 +110,8 @@ export default function CurrentlyPlaying() {
   }
 
   return (
+    <div className="mb-12">
+      <h2 className="text-3xl font-bold mb-4 text-start">Now Playing</h2>
     <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg group">
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/50">
@@ -156,6 +174,7 @@ export default function CurrentlyPlaying() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
