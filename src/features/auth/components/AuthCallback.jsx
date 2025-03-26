@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { exchangeCodeForToken } from '../../../services/spotifyAuthService';
 import { getAccessToken } from '../../../utils/tokenStorage';
+import genreService from '../../../services/genreService'; // Import genre service
 
 // Function to get the access code from localStorage
 const getAccessCode = () => {
@@ -39,8 +40,13 @@ export default function AuthCallback() {
         // Exchange the code for tokens and fetch user profile
         await exchangeCodeForToken(code);
         
+        // Trigger genre generation in background
+        genreService.generateUserGenresInBackground();
+        
         // Redirect to homepage after successful authentication
-        navigate('/home');
+        const redirectTo = localStorage.getItem('app_redirect_location') || '/';
+        localStorage.removeItem('app_redirect_location');
+        navigate(redirectTo);
       } catch (error) {
         console.error('Authentication failed:', error);
         setError('Authentication failed');

@@ -210,6 +210,7 @@ export default function UserDetails() {
         </div>
       </div>
 
+      <h2 className="text-3xl font-bold text-start">Account Details</h2>
       {/* Account information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-primary-light/30 rounded-lg p-6">

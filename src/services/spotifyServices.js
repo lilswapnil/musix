@@ -640,7 +640,23 @@ export const spotifyService = {
       console.error('Error redirecting to Spotify:', error);
       throw error;
     }
-  }
+  },
+
+  refreshToken: async () => {
+    try {
+      // Your existing refresh token code...
+      
+      // After successful token refresh, trigger genre generation
+      // to keep genres fresh even if user doesn't log out/in often
+      const genreService = await import('./genreService').then(m => m.default);
+      genreService.generateUserGenresInBackground();
+      
+      return newAccessToken;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      throw error;
+    }
+  },
 };
 
 /**
