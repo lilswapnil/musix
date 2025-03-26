@@ -13,8 +13,8 @@ export default function HomePage() {
       <TrendingSongs /> 
       <TopAlbums />
       <TopArtists />
-      <FeaturedPlaylists />
       <FeaturedGenres />
+      <FeaturedPlaylists />
     </div>
   );
 }

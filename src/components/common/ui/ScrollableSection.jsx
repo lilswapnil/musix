@@ -104,26 +104,26 @@ export default function ScrollableSection({ title, children, className = "" }) {
   const handleScrollRight = () => scroll('right');
 
   return (
-    <div className={`mb-8 sm:mb-10 ${className}`}>
+    <div className={`mb-6 sm:mb-8 ${className}`}>
       {/* Title and scroll controls */}
-      <div className="mb-3 sm:mb-4 flex justify-between items-center">
+      <div className="mb-2 sm:mb-3 flex justify-between items-center">
         {title && (
           typeof title === 'string' 
-            ? <h2 className="text-2xl sm:text-3xl font-bold text-start">{title}</h2>
+            ? <h2 className="text-xl sm:text-2xl font-bold text-start">{title}</h2>
             : title
         )}
         
-        <div className="hidden sm:flex space-x-2">
+        <div className="hidden sm:flex space-x-1">
           <button 
             onClick={handleScrollLeft}
-            className="p-2 rounded-full hover:bg-muted/20 text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-muted/20 text-white transition-colors"
             aria-label="Scroll left"
           >
             <FontAwesomeIcon icon={faChevronLeft} />
           </button>
           <button 
             onClick={handleScrollRight}
-            className="p-2 rounded-full hover:bg-muted/20 text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-muted/20 text-white transition-colors"
             aria-label="Scroll right"
           >
             <FontAwesomeIcon icon={faChevronRight} />
@@ -135,10 +135,10 @@ export default function ScrollableSection({ title, children, className = "" }) {
       <div className="relative">
         <div 
           ref={scrollContainerRef}
-          className="overflow-x-auto pb-6 scroll-smooth"
+          className="overflow-x-auto pb-4 scroll-smooth"
           style={{ 
-            scrollbarWidth: 'none',  /* Firefox */
-            msOverflowStyle: 'none',  /* IE and Edge */
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch'
           }}
         >
@@ -154,23 +154,23 @@ export default function ScrollableSection({ title, children, className = "" }) {
         {/* Mobile scroll buttons overlaid on content */}
         <button 
           onClick={handleScrollLeft}
-          className="sm:hidden absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary-dark/60 text-white"
+          className="sm:hidden absolute left-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-primary-dark/60 text-white text-sm"
           aria-label="Scroll left"
         >
           <FontAwesomeIcon icon={faChevronLeft} />
         </button>
         <button 
           onClick={handleScrollRight}
-          className="sm:hidden absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary-dark/60 text-white"
+          className="sm:hidden absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-primary-dark/60 text-white text-sm"
           aria-label="Scroll right"
         >
           <FontAwesomeIcon icon={faChevronRight} />
         </button>
         
-        {/* Pagination dots - moved to be more visible */}
+        {/* Pagination dots */}
         {totalPages > 1 && (
           <div 
-            className={`absolute -bottom-4 left-0 right-0 flex justify-center space-x-2 pb-1 transition-opacity duration-300 ${
+            className={`absolute -bottom-3 left-0 right-0 flex justify-center space-x-1 transition-opacity duration-300 ${
               showDots ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -178,9 +178,9 @@ export default function ScrollableSection({ title, children, className = "" }) {
               <button
                 key={index}
                 onClick={() => scrollToPage(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === currentPage 
-                    ? 'bg-white scale-125' 
+                    ? 'bg-white scale-110' 
                     : 'bg-white/40 hover:bg-white/60'
                 }`}
                 aria-label={`Go to page ${index + 1}`}

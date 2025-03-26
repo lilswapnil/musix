@@ -61,17 +61,17 @@ export default function FeaturedGenres() {
 
   return (
     <div className="mb-10">
-      <ScrollableSection title="Your Favorite Genres">
-        <div className="flex space-x-3 pb-1">
+      <ScrollableSection title="Featured Genres">
+        <div className="flex space-x-2 pb-1">
           {genres.map((genre) => (
             <div 
               key={genre.id} 
-              className="flex-shrink-0 w-36 sm:w-44 md:w-52 aspect-square overflow-hidden rounded-lg cursor-pointer group"
+              className="flex-shrink-0 w-[160px] sm:w-36 md:w-48 lg:w-46 overflow-hidden rounded-lg cursor-pointer group"
               onClick={() => handleGenreClick(genre)}
             >
-              <div className="relative w-full h-full">
+              <div className="relative h-42 sm:h-32 md:h-36 lg:h-48 lg:w-full">
                 <img 
-                  src={genre.imageUrl || "https://via.placeholder.com/300x300?text=Genre"}
+                  src={genre.imageUrl || "https://via.placeholder.com/280x280?text=Genre"}
                   alt={genre.displayName}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   onError={(e) => {
@@ -80,7 +80,7 @@ export default function FeaturedGenres() {
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 flex items-end">
-                  <h3 className="text-white font-bold p-3 text-sm sm:text-base">{genre.displayName}</h3>
+                  <h3 className="text-white font-bold p-3 text-sm">{genre.displayName}</h3>
                 </div>
               </div>
             </div>

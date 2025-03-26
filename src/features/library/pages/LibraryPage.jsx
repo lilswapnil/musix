@@ -42,7 +42,7 @@ export default function LibraryPage() {
   return (
     <>
       <CurrentlyPlaying token={token} />
-      <SavedAlbums token={token} />
+      {/* <SavedAlbums token={token} /> */}
       <RecentPlayed token={token} />
     </>
   );
