@@ -1,5 +1,7 @@
+import { getRefreshToken } from './tokenStorage';
+
 const refreshAccessToken = async () => {
-  const refreshToken = sessionStorage.getItem('spotify_refresh_token');
+  const refreshToken = getRefreshToken(); // Use getRefreshToken instead of direct sessionStorage
   
   if (!refreshToken) {
     console.error("No refresh token available");

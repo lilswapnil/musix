@@ -44,3 +44,12 @@ export function clearAuthData() {
   removeRefreshToken();
   removeUserProfile();
 }
+
+// Add these aliases for backward compatibility
+export function getToken() {
+  return getAccessToken();
+}
+
+export function removeToken() {
+  return removeAccessToken();
+}
