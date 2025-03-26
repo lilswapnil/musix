@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay } from "@fortawesome/free-solid-svg-icons";
-import ScrollableSection from './ui/ScrollableSection';
+import ScrollableSection from '../src/components/common/ui/ScrollableSection';
 
 export default function Songs({ songs }) {
   const [likedSongs, setLikedSongs] = useState({});

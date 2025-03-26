@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getAccessToken, removeAccessToken } from '../../../utils/tokenStorage';
+import { removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 
-export default function CurrentlyPlaying() {
+// Update the function signature to accept token prop
+export default function CurrentlyPlaying({ token }) {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,16 +13,12 @@ export default function CurrentlyPlaying() {
   useEffect(() => {
     const fetchCurrentTrack = async () => {
       try {
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-          setError('You need to log in to see the currently playing track');
-          setLoading(false);
-          return;
-        }
+        // No need to check token here, it's already checked in LibraryPage
+        if (!token) return;
 
         const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -59,7 +56,7 @@ export default function CurrentlyPlaying() {
     };
 
     fetchCurrentTrack();
-  }, []);
+  }, [token]);
 
   const handleLike = () => {
     setLiked(!liked);

@@ -1,5 +1,5 @@
 import React from 'react';
-import ScrollableSection from './ui/ScrollableSection';
+import ScrollableSection from '../src/components/common/ui/ScrollableSection';
 
 export default function Albums({ albums }) {
   if (!albums || albums.length === 0) return null;

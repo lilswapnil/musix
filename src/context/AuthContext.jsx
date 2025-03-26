@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { getAccessToken, getUserProfile, clearAuthData } from '../utils/tokenStorage';
 
 // Create auth context
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 // Auth provider component
 export const AuthProvider = ({ children }) => {
@@ -12,13 +12,24 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Load token and profile when component mounts
-    const storedToken = getAccessToken();
-    const storedProfile = getUserProfile();
+    const loadAuthData = () => {
+      const storedToken = getAccessToken();
+      const storedProfile = getUserProfile();
+      
+      if (storedToken) setToken(storedToken);
+      if (storedProfile) setUserProfile(storedProfile);
+      
+      setLoading(false);
+    };
     
-    if (storedToken) setToken(storedToken);
-    if (storedProfile) setUserProfile(storedProfile);
+    loadAuthData();
     
-    setLoading(false);
+    // Add event listener to reload auth data when storage changes
+    window.addEventListener('storage', loadAuthData);
+    
+    return () => {
+      window.removeEventListener('storage', loadAuthData);
+    };
   }, []);
 
   const logout = () => {

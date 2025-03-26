@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './App.css'
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -13,6 +13,7 @@ import SearchPage from './features/search/pages/SearchPage';
 import Albums from './features/search/components/Albums';
 import Artist from './features/search/components/Artists';
 import Songs from './features/search/components/Songs';
+import { getAccessToken } from './utils/tokenStorage';
 
 const routes = [
   // Auth pages without navbar/layout
@@ -70,6 +71,20 @@ const routes = [
 const router = createHashRouter(routes);
 
 function App() {
+  useEffect(() => {
+    // Check for token on app start to prevent unnecessary auth checks
+    const token = getAccessToken();
+    
+    // If redirecting from login and token exists, proceed to saved location
+    if (token) {
+      const savedLocation = localStorage.getItem('app_redirect_location');
+      if (savedLocation && window.location.pathname === '/login') {
+        localStorage.removeItem('app_redirect_location');
+        window.location.hash = savedLocation;
+      }
+    }
+  }, []);
+  
   return (
     <AuthProvider>
       <RouterProvider router={router} />
