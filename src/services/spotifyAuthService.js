@@ -1,6 +1,5 @@
 import { generatePKCEChallenge, storeCodeVerifier, getCodeVerifier, clearCodeVerifier } from '../utils/pkceUtils';
-import { setAccessToken, setRefreshToken, removeAccessToken, removeRefreshToken } from '../utils/tokenStorage';
-
+import { setAccessToken, setRefreshToken, setUserProfile } from '../utils/tokenStorage';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const REDIRECT_URI = import.meta.env.MODE === 'development'
@@ -39,10 +38,7 @@ export const redirectToSpotify = async () => {
   }
 };
 
-export const exchangeCodeForToken = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  console.log('URL Params:', urlParams.toString());
-  const code = urlParams.get('code');
+export const exchangeCodeForToken = async (code) => {
   if (!code) throw new Error('Authorization code is missing.');
 
   const codeVerifier = getCodeVerifier();
@@ -66,6 +62,10 @@ export const exchangeCodeForToken = async () => {
       setAccessToken(data.access_token);
       setRefreshToken(data.refresh_token);
       clearCodeVerifier();
+      
+      // Fetch and store user profile
+      await fetchAndStoreUserProfile(data.access_token);
+      
       return data.access_token;
     } else {
       throw new Error(data.error || 'Token exchange failed.');
@@ -73,6 +73,29 @@ export const exchangeCodeForToken = async () => {
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     throw error;
+  }
+};
+
+// Add new function to fetch user profile
+export const fetchAndStoreUserProfile = async (accessToken) => {
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    
+    if (response.ok) {
+      const userProfile = await response.json();
+      setUserProfile(userProfile);
+      return userProfile;
+    } else {
+      console.error('Failed to fetch user profile');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
   }
 };
 
