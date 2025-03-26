@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { redirectToSpotify } from '../../../context/AuthContext';
+import { redirectToSpotify } from '../../../services/spotifyAuthService';
 import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {

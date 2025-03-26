@@ -24,8 +24,19 @@ const routes = [
     path: '/login',
     element: <LoginPage />
   },
+  // Standard callback route
   {
     path: '/callback',
+    element: <AuthCallback />
+  },
+  // Additional route to catch callback with trailing slash
+  {
+    path: '/callback?code=',
+    element: <AuthCallback />
+  },
+  // Catch-all route for musix/callback pattern
+  {
+    path: '/musix/callback',
     element: <AuthCallback />
   },
   

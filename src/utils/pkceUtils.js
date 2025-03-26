@@ -35,21 +35,10 @@ async function sha256(plain) {
 // Generate PKCE challenge
 export const generatePKCEChallenge = async () => {
   try {
-    console.log("Generating PKCE challenge...");
-    
-    // Generate code verifier (random string between 43-128 chars)
     const codeVerifier = generateRandomString(64);
-    console.log("Generated verifier:", codeVerifier);
-    
-    // Store code verifier in localStorage for later use
-    localStorage.setItem('pkce_code_verifier', codeVerifier);
-    
-    // Generate code challenge from verifier
     const digestBuffer = await sha256(codeVerifier);
     const codeChallenge = base64UrlEncode(digestBuffer);
-    console.log("Generated challenge:", codeChallenge);
-    
-    // Return both values as an object
+
     return { codeVerifier, codeChallenge };
   } catch (error) {
     console.error('Error generating PKCE challenge:', error);
@@ -57,6 +46,10 @@ export const generatePKCEChallenge = async () => {
   }
 };
 
-// Export other utility functions
+export const storeCodeVerifier = (codeVerifier) => {
+  localStorage.setItem('pkce_code_verifier', codeVerifier);
+};
+
 export const getCodeVerifier = () => localStorage.getItem('pkce_code_verifier');
+
 export const clearCodeVerifier = () => localStorage.removeItem('pkce_code_verifier');

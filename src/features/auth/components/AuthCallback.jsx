@@ -1,58 +1,71 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/AuthContext";
-import { setToken } from "../../../utils/tokenStorage";
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { exchangeCodeForToken } from '../../../services/spotifyAuthService';
+import { setAccessToken, setRefreshToken } from '../../../utils/tokenStorage';
+import axios from 'axios';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   useEffect(() => {
-    const processAuthCallback = async () => {
+    const handleAuthCallback = async () => {
+      // First check for code in query params (PKCE flow)
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get('code');
-      const verifier = localStorage.getItem('pkce_code_verifier'); // Retrieve the code_verifier
-
-      if (code && verifier) {
+      console.log('Authorization URL:', window.location.href);
+      console.log('Authorization code:', code);
+      
+      // Check for tokens in hash fragment (server-side flow)
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        console.log('Found tokens in hash fragment');
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        
+        if (accessToken) {
+          setAccessToken(accessToken);
+          if (refreshToken) setRefreshToken(refreshToken);
+          
+          // Retrieve the stored location or default to '/home'
+          const redirectLocation = localStorage.getItem('app_redirect_location') || '/home';
+          localStorage.removeItem('app_redirect_location'); // Clean up
+          
+          // Clean the URL
+          window.history.replaceState(null, null, ' ');
+          
+          navigate(redirectLocation);
+          return;
+        }
+      }
+      
+      // Handle code-based auth flow
+      if (code) {
         try {
-          const response = await fetch('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code,
-              redirect_uri: import.meta.env.MODE === 'development'
-                ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI.replace(/#/g, '%23')
-                : import.meta.env.VITE_SPOTIFY_REDIRECT_URI.replace(/#/g, '%23'),
-              client_id: import.meta.env.VITE_SPOTIFY_CLIENT_ID,
-              code_verifier: verifier, // Use the retrieved code_verifier
-            }).toString(),
-          });
+          await exchangeCodeForToken(code);
 
-          const data = await response.json();
-          if (response.ok) {
-            setToken(data.access_token);
-            login(null, data.access_token);
-            localStorage.removeItem('pkce_code_verifier'); // Clear the code_verifier
-            navigate('/home');
-          } else {
-            console.error("Error during token exchange:", data);
-            navigate('/login');
-          }
+          // Retrieve the stored location or default to '/home'
+          const redirectLocation = localStorage.getItem('app_redirect_location') || '/home';
+          localStorage.removeItem('app_redirect_location'); // Clean up
+          navigate(redirectLocation);
         } catch (error) {
-          console.error("Error during token exchange:", error);
+          console.error('Authentication failed:', error);
           navigate('/login');
         }
       } else {
-        console.error("Authorization code or verifier is missing.");
+        console.error('No authorization code or tokens found.');
         navigate('/login');
       }
     };
 
-    processAuthCallback();
-  }, [login, navigate]);
+    handleAuthCallback();
+  }, [navigate]);
 
-  return <h1>Authentication</h1>;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-xl font-semibold mb-2">Authenticating...</h1>
+        <p>Please wait while we log you in</p>
+      </div>
+    </div>
+  );
 }
