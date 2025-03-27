@@ -33,8 +33,6 @@ Musix is a full-stack music streaming web application designed to deliver a seam
 
    Install dependencies
 
-bash
-Copy
 # Client
 cd client && npm install
 
@@ -52,8 +50,6 @@ PORT=5000
 CLIENT_URL=http://localhost:3000
 Start the application
 
-bash
-Copy
 # From root directory
 npm run dev  # Starts both client and server concurrently
 Access client at http://localhost:3000
@@ -82,7 +78,7 @@ License 📄
 This project is licensed under the MIT License - see LICENSE for details.
 
 Acknowledgments 🙏
-Built with ❤️ by Swapnil.
+Built with ❤️ by Scott.
 
 UI inspiration from Spotify.
 
