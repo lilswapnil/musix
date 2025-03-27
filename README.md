@@ -31,24 +31,21 @@ Musix is a full-stack music streaming web application designed to deliver a seam
    git clone https://github.com/lilswapnil/musix.git
    cd musix
 
-   Install dependencies
+2. **Install dependencies**
+   # Client
+   ```cd client && npm install
+   
+   # Server
+   ```cd ../server && npm install
+   Configure Environment Variables
 
-# Client
-cd client && npm install
-
-# Server
-cd ../server && npm install
-Configure Environment Variables
-
-Create .env in /server:
-
-env
-Copy
-JWT_SECRET=your_jwt_secret_key
-MONGO_URI=your_mongodb_connection_string
-PORT=5000
-CLIENT_URL=http://localhost:3000
-Start the application
+3. **Create .env in /server:**
+   
+   JWT_SECRET=your_jwt_secret_key
+   MONGO_URI=your_mongodb_connection_string
+   PORT=5000
+   CLIENT_URL=http://localhost:3000
+   Start the application
 
 # From root directory
 npm run dev  # Starts both client and server concurrently
