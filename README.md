@@ -30,3 +30,75 @@ Musix is a full-stack music streaming web application designed to deliver a seam
    ```bash
    git clone https://github.com/lilswapnil/musix.git
    cd musix
+
+   Install dependencies
+
+bash
+Copy
+# Client
+cd client && npm install
+
+# Server
+cd ../server && npm install
+Configure Environment Variables
+
+Create .env in /server:
+
+env
+Copy
+JWT_SECRET=your_jwt_secret_key
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
+CLIENT_URL=http://localhost:3000
+Start the application
+
+bash
+Copy
+# From root directory
+npm run dev  # Starts both client and server concurrently
+Access client at http://localhost:3000
+
+Server runs on http://localhost:5000
+
+Tech Stack 💻
+Component	Technology
+Frontend	React, Redux Toolkit, Tailwind CSS
+Backend	Node.js, Express
+Database	MongoDB, Mongoose ODM
+Authentication	JSON Web Tokens (JWT)
+Deployment	(Specify if deployed, e.g., Vercel + Render)
+Contributing 🤝
+Fork the repository.
+
+Create a feature branch: git checkout -b feature/your-idea.
+
+Commit changes: git commit -m 'Add awesome feature'.
+
+Push to the branch: git push origin feature/your-idea.
+
+Open a Pull Request.
+
+License 📄
+This project is licensed under the MIT License - see LICENSE for details.
+
+Acknowledgments 🙏
+Built with ❤️ by Swapnil.
+
+UI inspiration from Spotify.
+
+React Icons for iconography.
+
+Happy Listening! 🎧
+Report an Issue | View API Docs if available
+
+Copy
+
+---
+
+### Notes:
+1. Replace `your_jwt_secret_key` and `your_mongodb_connection_string` with actual values.
+2. Add real screenshots by uploading images to the repo and updating the `![Musix Screenshot]` URL.
+3. Customize the "Deployment" section if the app is hosted live.
+4. Include API documentation link if available.
+New chat
+
