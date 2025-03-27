@@ -7,8 +7,6 @@
 
 Musix is a full-stack music streaming web application designed to deliver a seamless music experience. Discover new tracks, create playlists, and enjoy personalized recommendations based on your listening habits.
 
-![Musix Screenshot](client/public/screenshot.png) *Add your own screenshots here*
-
 ## Features ✨
 
 - **User Authentication**: Secure signup/login with JWT.
