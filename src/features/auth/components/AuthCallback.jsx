@@ -44,7 +44,7 @@ export default function AuthCallback() {
         genreService.generateUserGenresInBackground();
         
         // Redirect to homepage after successful authentication
-        const redirectTo = localStorage.getItem('app_redirect_location') || '/';
+        const redirectTo = '/home';
         localStorage.removeItem('app_redirect_location');
         navigate(redirectTo);
       } catch (error) {

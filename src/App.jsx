@@ -37,7 +37,7 @@ const routes = [
     element: <Layout />,
     children: [
       {
-        path: '/home',
+        path: 'home',
         element: <HomePage />
       },
       {
