@@ -6,23 +6,29 @@ import LoadingSpinner from '../common/ui/LoadingSpinner';
 
 export default function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
-  const [directAccess, setDirectAccess] = useState(false);
+  const [tokenChecked, setTokenChecked] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
   const location = useLocation();
   
   useEffect(() => {
-    // Check for token directly to avoid unnecessary redirects
+    // Check for token directly as the primary authentication method
     const token = getAccessToken();
-    if (token) {
-      setDirectAccess(true);
-    }
+    setHasToken(!!token);
+    setTokenChecked(true);
   }, []);
   
-  if (loading && !directAccess) {
-    return <LoadingSpinner message="Checking authentication..." />;
+  // If we've checked for a token and found one, render the children
+  if (tokenChecked && hasToken) {
+    return children;
   }
   
-  if (!isAuthenticated && !directAccess) {
-    // Store the attempted path for redirect after login
+  // If we're still checking token or auth context is loading, show loading
+  if (!tokenChecked || loading) {
+    return <LoadingSpinner message="Verifying your session..." />;
+  }
+  
+  // If no token and context confirms not authenticated, redirect to login
+  if (!hasToken && !isAuthenticated) {
     localStorage.setItem('app_redirect_location', location.pathname);
     return <Navigate to="/login" replace />;
   }
