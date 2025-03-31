@@ -1,7 +1,7 @@
-import { getRefreshToken } from './tokenStorage';
+import { getRefreshToken, setAccessToken } from './tokenStorage';
 
 const refreshAccessToken = async () => {
-  const refreshToken = getRefreshToken(); // Use getRefreshToken instead of direct sessionStorage
+  const refreshToken = getRefreshToken();
   
   if (!refreshToken) {
     console.error("No refresh token available");
@@ -20,27 +20,22 @@ const refreshAccessToken = async () => {
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
         client_id: CLIENT_ID,
-      }).toString(),
+      })
     });
     
-    const data = await response.json();
-    
     if (!response.ok) {
+      const data = await response.json();
       console.error("Token refresh failed:", data);
       return null;
     }
     
-    // Update stored tokens
-    const { access_token, refresh_token } = data;
-    sessionStorage.setItem('spotify_access_token', access_token);
+    const data = await response.json();
     
-    // Update refresh token if provided
-    if (refresh_token) {
-      sessionStorage.setItem('spotify_refresh_token', refresh_token);
-    }
+    // Update tokens
+    setAccessToken(data.access_token);
     
     console.log("Token refreshed successfully");
-    return access_token;
+    return data.access_token;
   } catch (error) {
     console.error("Error refreshing token:", error);
     return null;

@@ -7,13 +7,8 @@ import pkceChallenge from 'pkce-challenge';
 // Generate a random string for code verifier
 function generateRandomString(length) {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-  let text = '';
-  
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  
-  return text;
+  return Array.from({ length }, () => 
+    possible.charAt(Math.floor(Math.random() * possible.length))).join('');
 }
 
 // Base64 URL encode a string
@@ -28,8 +23,7 @@ function base64UrlEncode(buffer) {
 async function sha256(plain) {
   const encoder = new TextEncoder();
   const data = encoder.encode(plain);
-  const digest = await window.crypto.subtle.digest('SHA-256', data);
-  return digest;
+  return window.crypto.subtle.digest('SHA-256', data);
 }
 
 // Generate PKCE challenge
@@ -38,7 +32,6 @@ export const generatePKCEChallenge = async () => {
     const codeVerifier = generateRandomString(64);
     const digestBuffer = await sha256(codeVerifier);
     const codeChallenge = base64UrlEncode(digestBuffer);
-
     return { codeVerifier, codeChallenge };
   } catch (error) {
     console.error('Error generating PKCE challenge:', error);
@@ -46,10 +39,8 @@ export const generatePKCEChallenge = async () => {
   }
 };
 
-export const storeCodeVerifier = (codeVerifier) => {
-  localStorage.setItem('pkce_code_verifier', codeVerifier);
-};
-
-export const getCodeVerifier = () => localStorage.getItem('pkce_code_verifier');
-
-export const clearCodeVerifier = () => localStorage.removeItem('pkce_code_verifier');
+// Storage functions for the code verifier
+const CODE_VERIFIER_KEY = 'pkce_code_verifier';
+export const storeCodeVerifier = (codeVerifier) => localStorage.setItem(CODE_VERIFIER_KEY, codeVerifier);
+export const getCodeVerifier = () => localStorage.getItem(CODE_VERIFIER_KEY);
+export const clearCodeVerifier = () => localStorage.removeItem(CODE_VERIFIER_KEY);

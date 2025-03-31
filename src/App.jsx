@@ -14,6 +14,7 @@ import Albums from './features/search/components/Albums';
 import Artist from './features/search/components/Artists';
 import Songs from './features/search/components/Songs';
 import { getAccessToken } from './utils/tokenStorage';
+import Genres from './features/search/components/Genres';
 
 const routes = [
   // Auth pages without navbar/layout
@@ -63,6 +64,10 @@ const routes = [
       {
         path: "song/:songId",
         element: <Songs />
+      },
+      {
+        path: "genre/:genreName",
+        element: <Genres />
       }
     ]
   }

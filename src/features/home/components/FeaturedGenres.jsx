@@ -30,7 +30,20 @@ export default function FeaturedGenres() {
   }, []);
 
   const handleGenreClick = (genre) => {
-    navigate(`/search?q=${encodeURIComponent(genre.name)}&type=playlist`);
+    // Use displayName as the primary source of genre name
+    const genreName = genre.displayName || genre.name;
+    
+    if (genreName) {
+      // Pass both the URL parameter and full genre object in state
+      navigate(`/genre/${encodeURIComponent(genreName)}`, { 
+        state: { 
+          genreName: genreName,
+          genre: genre  // Pass the entire genre object for more data
+        } 
+      });
+    } else {
+      console.warn('Genre name is missing');
+    }
   };
 
   if (loading) {

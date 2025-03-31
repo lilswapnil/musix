@@ -6,7 +6,6 @@ import { enhancedApiRequest, throttle } from '../utils/requestUtils';
 export const spotifyService = {
   // API configuration
   _clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID || '',
-  _clientSecret: import.meta.env.VITE_SPOTIFY_CLIENT_SECRET || '',
   _redirectUri: import.meta.env.VITE_SPOTIFY_REDIRECT_URI || 'http://localhost:5173/callback',
   _scopes: [
     'user-read-private',
@@ -14,7 +13,11 @@ export const spotifyService = {
     'user-top-read',
     'user-library-read',
     'playlist-read-private',
-    'playlist-read-collaborative'
+    'playlist-read-collaborative',
+    'streaming',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'user-read-currently-playing'
   ],
   _apiBase: 'https://api.spotify.com/v1',
   _authBase: 'https://accounts.spotify.com/api',
@@ -22,36 +25,35 @@ export const spotifyService = {
 
   // API rate limits
   _rateLimit: {
-    search: { max: 10, window: 30000 }, // 10 requests per 30 seconds
-    browse: { max: 20, window: 60000 },  // 20 requests per minute
-    default: { max: 50, window: 60000 }  // Default 50 requests per minute
+    search: { max: 10, window: 30000 },
+    browse: { max: 20, window: 60000 },
+    default: { max: 50, window: 60000 }
   },
   
   // Throttle configurations
   _throttle: {
-    search: throttle(2000)('spotify-search'),  // 1 search request per 2 seconds
-    browse: throttle(1000)('spotify-browse'),  // 1 browse request per second
-    track: throttle(500)('spotify-track')      // 2 track requests per second
+    search: throttle(2000)('spotify-search'),
+    browse: throttle(1000)('spotify-browse'),
+    track: throttle(500)('spotify-track')
   },
+
+  // Player configurations
+  _player: null,
+  _deviceId: null,
+  _isPlayerReady: false,
+  _onPlayerStateChanged: null,
 
   /**
    * Generate random string for state parameter
-   * @param {number} length - Length of string
-   * @returns {string} - Random string
    */
   _generateRandomString: (length = 32) => {
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let text = '';
-    for (let i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+    return Array.from({ length }, () => 
+      possible.charAt(Math.floor(Math.random() * possible.length))).join('');
   },
 
   /**
    * Generate a code challenge for PKCE flow
-   * @param {string} codeVerifier - Code verifier
-   * @returns {Promise<string>} - Code challenge
    */
   _generateCodeChallenge: async (codeVerifier) => {
     const encoder = new TextEncoder();
@@ -66,7 +68,6 @@ export const spotifyService = {
 
   /**
    * Generate authorization URL for Spotify OAuth
-   * @returns {Promise<Object>} - Auth URL and verifier
    */
   createAuthUrl: async () => {
     try {
@@ -74,7 +75,6 @@ export const spotifyService = {
       const codeVerifier = spotifyService._generateRandomString(64);
       const codeChallenge = await spotifyService._generateCodeChallenge(codeVerifier);
       
-      // Store state and code verifier for later verification
       localStorage.setItem('spotify_auth_state', state);
       localStorage.setItem('spotify_code_verifier', codeVerifier);
       
@@ -82,7 +82,7 @@ export const spotifyService = {
         client_id: spotifyService._clientId,
         response_type: 'code',
         redirect_uri: spotifyService._redirectUri,
-        state: state,
+        state,
         scope: spotifyService._scopes.join(' '),
         code_challenge_method: 'S256',
         code_challenge: codeChallenge,
@@ -90,7 +90,7 @@ export const spotifyService = {
       });
       
       return {
-        url: `https://accounts.spotify.com/authorize?${params.toString()}`,
+        url: `https://accounts.spotify.com/authorize?${params}`,
         verifier: codeVerifier
       };
     } catch (error) {
@@ -101,9 +101,6 @@ export const spotifyService = {
   
   /**
    * Exchange authorization code for access token
-   * @param {string} code - Authorization code from callback
-   * @param {string} verifier - Code verifier from initial request
-   * @returns {Promise<Object>} - Token response
    */
   getTokenFromCode: async (code, verifier) => {
     try {
@@ -115,10 +112,10 @@ export const spotifyService = {
         body: new URLSearchParams({
           client_id: spotifyService._clientId,
           grant_type: 'authorization_code',
-          code: code,
+          code,
           redirect_uri: spotifyService._redirectUri,
           code_verifier: verifier
-        }).toString()
+        })
       });
       
       if (!response.ok) {
@@ -128,12 +125,11 @@ export const spotifyService = {
       const data = await response.json();
       
       // Save token with expiration
-      const tokenData = {
+      localStorage.setItem(spotifyService._tokenKey, JSON.stringify({
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expires: Date.now() + (data.expires_in * 1000)
-      };
-      localStorage.setItem(spotifyService._tokenKey, JSON.stringify(tokenData));
+      }));
       
       return data;
     } catch (error) {
@@ -144,7 +140,6 @@ export const spotifyService = {
   
   /**
    * Refresh access token using refresh token
-   * @returns {Promise<string>} - New access token
    */
   refreshAccessToken: async () => {
     try {
@@ -164,7 +159,7 @@ export const spotifyService = {
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
           client_id: spotifyService._clientId
-        }).toString()
+        })
       });
       
       if (!response.ok) {
@@ -174,31 +169,31 @@ export const spotifyService = {
       const data = await response.json();
       
       // Update stored token
-      tokenData.access_token = data.access_token;
-      tokenData.expires = Date.now() + (data.expires_in * 1000);
+      const newTokenData = {
+        access_token: data.access_token,
+        expires: Date.now() + (data.expires_in * 1000),
+        refresh_token: data.refresh_token || refreshToken
+      };
       
-      // If a new refresh token was provided, update that too
-      if (data.refresh_token) {
-        tokenData.refresh_token = data.refresh_token;
-      }
+      localStorage.setItem(spotifyService._tokenKey, JSON.stringify(newTokenData));
       
-      localStorage.setItem(spotifyService._tokenKey, JSON.stringify(tokenData));
+      // Refresh genres after token refresh
+      import('./genreService').then(m => m.default.generateUserGenresInBackground());
       
       return data.access_token;
     } catch (error) {
       console.error('Error refreshing token:', error);
-      localStorage.removeItem(spotifyService._tokenKey); // Clear invalid token
+      localStorage.removeItem(spotifyService._tokenKey);
       throw error;
     }
   },
   
   /**
    * Get client credentials token (app-only, no user context)
-   * @returns {Promise<string>} - Access token
    */
   getClientCredentialsToken: async () => {
     try {
-      const clientCreds = btoa(`${spotifyService._clientId}:${spotifyService._clientSecret}`);
+      const clientCreds = btoa(`${spotifyService._clientId}:${spotifyService._clientSecret || ''}`);
       
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
@@ -215,7 +210,6 @@ export const spotifyService = {
       
       const data = await response.json();
       
-      // Store client token separately
       localStorage.setItem('spotify_client_token', JSON.stringify({
         access_token: data.access_token,
         expires: Date.now() + (data.expires_in * 1000)
@@ -230,34 +224,28 @@ export const spotifyService = {
   
   /**
    * Get an access token (user token if available, client token as fallback)
-   * @returns {Promise<string>} - Access token
    */
   getAccessToken: async () => {
     try {
-      // Check for user token first
       const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
       
-      // If we have a valid user token
       if (tokenData.access_token && tokenData.expires) {
-        // If token is expired but we have refresh token, refresh it
         if (tokenData.expires <= Date.now() + 60000) {
           if (tokenData.refresh_token) {
             return await spotifyService.refreshAccessToken();
           }
         } else {
-          // Token is still valid
           return tokenData.access_token;
         }
       }
       
-      // Fall back to client credentials if no valid user token
+      // Fall back to client credentials
       const clientTokenData = JSON.parse(localStorage.getItem('spotify_client_token') || '{}');
       
       if (clientTokenData.access_token && clientTokenData.expires > Date.now() + 60000) {
         return clientTokenData.access_token;
       }
       
-      // Get a new client credentials token
       return await spotifyService.getClientCredentialsToken();
     } catch (error) {
       console.error('Error getting access token:', error);
@@ -266,16 +254,54 @@ export const spotifyService = {
   },
   
   /**
+   * Get a user token (not client credentials)
+   */
+  getUserToken: async function() {
+    try {
+      const tokenData = JSON.parse(localStorage.getItem(this._tokenKey) || '{}');
+      
+      if (tokenData.access_token && tokenData.expires) {
+        if (tokenData.expires <= Date.now() + 60000) {
+          if (tokenData.refresh_token) {
+            return await this.refreshAccessToken();
+          }
+          throw new Error('Token expired and no refresh token available');
+        } else {
+          return tokenData.access_token;
+        }
+      }
+      
+      throw new Error('No user token available');
+    } catch (error) {
+      console.error('Error getting user token:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Make an authenticated API request to Spotify with enhanced controls
    */
-  async apiRequest(endpoint, options = {}) {
+  async apiRequest(endpoint, options = {}, useClientTokenFallback = true) {
     try {
-      const token = await this.getAccessToken();
+      // For user-specific endpoints, don't fallback to client credentials
+      const isUserEndpoint = endpoint.startsWith('/me') || 
+                            endpoint.includes('/me/') ||
+                            endpoint.includes('oauth-required');
+      
+      // If it's a user endpoint and we're not logged in, throw an error
+      if (isUserEndpoint && !this.isLoggedIn()) {
+        throw new Error('Authentication required for this request');
+      }
+      
+      // Try to get a token - for user endpoints, don't use client token fallback
+      const token = isUserEndpoint ? 
+        await this.getUserToken() : 
+        await this.getAccessToken();
+      
       const url = `${this._apiBase}${endpoint}`;
       
-      // Add query params if provided
       const urlWithParams = options.params
-        ? `${url}?${new URLSearchParams(options.params).toString()}`
+        ? `${url}?${new URLSearchParams(options.params)}`
         : url;
       
       const requestOptions = {
@@ -285,17 +311,13 @@ export const spotifyService = {
           'Content-Type': 'application/json',
           ...options.headers,
         },
-        ...options,
       };
-      
-      // Don't include params in the request options since they're now in URL
-      delete requestOptions.params;
       
       if (options.body) {
         requestOptions.body = JSON.stringify(options.body);
       }
       
-      // Determine rate limits based on endpoint type
+      // Rest of the method remains the same...
       let rateLimitConfig = this._rateLimit.default;
       let throttleFn = null;
       
@@ -309,31 +331,32 @@ export const spotifyService = {
         throttleFn = this._throttle.track;
       }
       
-      // Apply throttling if configured for this endpoint type
+      const cacheTime = endpoint.includes('/search') ? 60000 : 300000;
+      
       const requestFn = throttleFn
         ? throttleFn(() => enhancedApiRequest(urlWithParams, requestOptions, {
             domain: 'api.spotify.com',
             rateLimit: rateLimitConfig.max,
             timeWindow: rateLimitConfig.window,
-            cacheTime: endpoint.includes('/search') ? 60000 : 300000 // Shorter cache for searches
+            cacheTime
           }))
         : () => enhancedApiRequest(urlWithParams, requestOptions, {
             domain: 'api.spotify.com',
             rateLimit: rateLimitConfig.max,
-            timeWindow: rateLimitConfig.window
+            timeWindow: rateLimitConfig.window,
+            cacheTime
           });
       
-      // Execute the request
       return await requestFn();
     } catch (error) {
       // Handle 401 unauthorized errors
-      if (error.message && error.message.includes('401')) {
+      if (error.message?.includes('401')) {
         try {
-          const newToken = await this.refreshAccessToken();
+          await this.refreshAccessToken();
           return this.apiRequest(endpoint, options); // Retry with new token
         } catch (refreshError) {
           console.error('Error refreshing token:', refreshError);
-          throw error; // If refresh fails, throw the original error
+          throw new Error(`Authentication failed: ${refreshError.message || 'Token refresh failed'}`);
         }
       }
       
@@ -344,13 +367,12 @@ export const spotifyService = {
 
   /**
    * Check if user is logged in
-   * @returns {boolean} - Login status
    */
   isLoggedIn: () => {
     try {
       const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
       return !!(tokenData.access_token && tokenData.refresh_token);
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -366,18 +388,10 @@ export const spotifyService = {
 
   /**
    * Get current user profile
-   * @returns {Promise<Object>} - User data
    */
   getCurrentUser: async () => {
     try {
-      const userData = await spotifyService.apiRequest('/me');
-      
-      // Cache the user profile
-      if (userData) {
-        setUserProfile(userData);
-      }
-      
-      return userData;
+      return await spotifyService.apiRequest('/me');
     } catch (error) {
       console.error('Error fetching current user:', error);
       throw error;
@@ -386,9 +400,6 @@ export const spotifyService = {
 
   /**
    * Get user's top tracks
-   * @param {number} limit - Maximum number of tracks to return
-   * @param {string} timeRange - short_term, medium_term, or long_term
-   * @returns {Promise<Object>} - Top tracks data
    */
   getUserTopTracks: async (limit = 20, timeRange = 'short_term') => {
     try {
@@ -402,16 +413,41 @@ export const spotifyService = {
   },
 
   /**
+   * Get user's saved albums
+   */
+  getSavedAlbums: async function(limit = 20, offset = 0) {
+    try {
+      if (!this.isLoggedIn()) {
+        throw new Error('Authentication required to view saved albums');
+      }
+      
+      const userProfile = await this.getCurrentUser().catch(() => null);
+      const market = userProfile?.country || 'US';
+      
+      return await this.apiRequest('/me/albums', {
+        params: { 
+          limit, 
+          offset,
+          market
+        }
+      }, false); // Don't use client credentials fallback
+    } catch (error) {
+      console.error('Error fetching saved albums:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get trending tracks from Spotify
-   * @param {number} limit - Maximum number of tracks to return
-   * @returns {Promise<Object>} - Chart data
    */
   getTrendingTracks: async (limit = 20) => {
     try {
-      // Get global top 50 playlist
       const globalTop50Id = '37i9dQZEVXbMDoHDwVN2tF';
       return await spotifyService.apiRequest(`/playlists/${globalTop50Id}/tracks`, {
-        params: { limit, fields: 'items(track(id,name,album,artists,preview_url,external_urls))' }
+        params: { 
+          limit, 
+          fields: 'items(track(id,name,album,artists,preview_url,external_urls))' 
+        }
       });
     } catch (error) {
       console.error('Error fetching trending tracks:', error);
@@ -421,8 +457,6 @@ export const spotifyService = {
   
   /**
    * Get featured playlists from Spotify
-   * @param {number} limit - Maximum number of playlists to return
-   * @returns {Promise<Object>} - Playlist data
    */
   getFeaturedPlaylists: async (limit = 20) => {
     try {
@@ -437,8 +471,6 @@ export const spotifyService = {
   
   /**
    * Get new releases (albums) from Spotify
-   * @param {number} limit - Maximum number of albums to return
-   * @returns {Promise<Object>} - Album data
    */
   getNewReleases: async (limit = 20) => {
     try {
@@ -453,21 +485,11 @@ export const spotifyService = {
   
   /**
    * Search Spotify
-   * @param {string} query - Search query
-   * @param {string} type - Type of search: track, album, artist, playlist
-   * @param {number} limit - Maximum results to return
-   * @returns {Promise<Object>} - Search results
    */
   search: async function(query, type = 'track', limit = 20) {
     try {
-      // For search, we use the existing API request with the throttling applied
       return await this.apiRequest('/search', {
-        params: {
-          q: query,
-          type,
-          limit,
-          market: 'US'
-        }
+        params: { q: query, type, limit, market: 'US' }
       });
     } catch (error) {
       console.error(`Error searching ${type}:`, error);
@@ -477,8 +499,6 @@ export const spotifyService = {
   
   /**
    * Get track details by ID
-   * @param {string} trackId - Spotify track ID
-   * @returns {Promise<Object>} - Track data
    */
   getTrack: async (trackId) => {
     try {
@@ -491,8 +511,6 @@ export const spotifyService = {
   
   /**
    * Get artist details by ID
-   * @param {string} artistId - Spotify artist ID
-   * @returns {Promise<Object>} - Artist data
    */
   getArtist: async (artistId) => {
     try {
@@ -505,8 +523,6 @@ export const spotifyService = {
   
   /**
    * Get top tracks for an artist
-   * @param {string} artistId - Spotify artist ID
-   * @returns {Promise<Object>} - Artist's top tracks
    */
   getArtistTopTracks: async (artistId) => {
     try {
@@ -521,8 +537,6 @@ export const spotifyService = {
   
   /**
    * Get album details by ID
-   * @param {string} albumId - Spotify album ID
-   * @returns {Promise<Object>} - Album data
    */
   getAlbum: async (albumId) => {
     try {
@@ -535,8 +549,6 @@ export const spotifyService = {
   
   /**
    * Get playlist details by ID
-   * @param {string} playlistId - Spotify playlist ID
-   * @returns {Promise<Object>} - Playlist data
    */
   getPlaylist: async (playlistId) => {
     try {
@@ -549,8 +561,6 @@ export const spotifyService = {
   
   /**
    * Get music categories from Spotify
-   * @param {number} limit - Maximum number of categories
-   * @returns {Promise<Object>} - Category data
    */
   getCategories: async (limit = 50) => {
     try {
@@ -565,8 +575,6 @@ export const spotifyService = {
   
   /**
    * Get user's saved tracks
-   * @param {number} limit - Maximum number of tracks
-   * @returns {Promise<Object>} - Saved tracks data
    */
   getSavedTracks: async (limit = 50) => {
     try {
@@ -581,8 +589,6 @@ export const spotifyService = {
   
   /**
    * Save a track for the user
-   * @param {string} trackId - Spotify track ID to save
-   * @returns {Promise<Object>} - Response
    */
   saveTrack: async (trackId) => {
     try {
@@ -598,8 +604,6 @@ export const spotifyService = {
   
   /**
    * Remove a saved track
-   * @param {string} trackId - Spotify track ID to remove
-   * @returns {Promise<Object>} - Response
    */
   removeSavedTrack: async (trackId) => {
     try {
@@ -615,8 +619,6 @@ export const spotifyService = {
   
   /**
    * Check if tracks are saved in user's library
-   * @param {Array<string>} trackIds - Array of track IDs to check
-   * @returns {Promise<Array<boolean>>} - Array of booleans
    */
   checkSavedTracks: async (trackIds) => {
     try {
@@ -642,41 +644,234 @@ export const spotifyService = {
     }
   },
 
-  refreshToken: async () => {
+  /**
+   * Initialize Spotify Web Playback SDK
+   */
+  initializePlayer: async function(onPlayerStateChanged = null) {
+    if (!window.Spotify) {
+      await this._loadSpotifyScript();
+    }
+    
+    this._onPlayerStateChanged = onPlayerStateChanged;
+    
     try {
-      // Your existing refresh token code...
+      const token = await this.getAccessToken();
       
-      // After successful token refresh, trigger genre generation
-      // to keep genres fresh even if user doesn't log out/in often
-      const genreService = await import('./genreService').then(m => m.default);
-      genreService.generateUserGenresInBackground();
+      this._player = new window.Spotify.Player({
+        name: 'Musix Web Player',
+        getOAuthToken: cb => { cb(token); },
+        volume: 0.5
+      });
       
-      return newAccessToken;
+      // Setup player event listeners
+      this._player.addListener('initialization_error', ({ message }) => {
+        console.error('Failed to initialize player:', message);
+      });
+      
+      this._player.addListener('authentication_error', async ({ message }) => {
+        console.error('Failed to authenticate player:', message);
+        try {
+          await this.refreshAccessToken();
+          this._player.disconnect();
+          await this.initializePlayer(onPlayerStateChanged);
+        } catch (err) {
+          console.error('Could not recover from authentication error:', err);
+        }
+      });
+      
+      this._player.addListener('account_error', ({ message }) => {
+        console.error('Account error:', message);
+        alert('Spotify Premium is required for playback functionality');
+      });
+      
+      this._player.addListener('playback_error', ({ message }) => {
+        console.error('Playback error:', message);
+      });
+      
+      this._player.addListener('player_state_changed', state => {
+        if (!state) return;
+        if (this._onPlayerStateChanged) {
+          this._onPlayerStateChanged(state);
+        }
+      });
+      
+      this._player.addListener('ready', ({ device_id }) => {
+        console.log('Spotify player ready with device ID:', device_id);
+        this._deviceId = device_id;
+        this._isPlayerReady = true;
+      });
+      
+      this._player.addListener('not_ready', ({ device_id }) => {
+        console.log('Spotify player disconnected');
+        this._isPlayerReady = false;
+      });
+      
+      await this._player.connect();
+      return true;
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      console.error('Error initializing Spotify player:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Load Spotify Web Playback SDK script
+   */
+  _loadSpotifyScript: function() {
+    return new Promise((resolve, reject) => {
+      if (window.Spotify) {
+        resolve();
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = 'https://sdk.scdn.co/spotify-player.js';
+      script.async = true;
+      
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Failed to load Spotify Web Playback SDK'));
+      
+      document.body.appendChild(script);
+    });
+  },
+
+  // Playback control methods
+  play: async function(uri, options = {}) {
+    if (!this._isPlayerReady || !this._deviceId) {
+      throw new Error('Spotify player not ready');
+    }
+    
+    try {
+      const playData = {};
+      
+      if (uri) {
+        playData[uri.includes('track') ? 'uris' : 'context_uri'] = 
+          uri.includes('track') ? [uri] : uri;
+      }
+      
+      if (options.position_ms) {
+        playData.position_ms = options.position_ms;
+      }
+      
+      await this.apiRequest(`/me/player/play?device_id=${this._deviceId}`, {
+        method: 'PUT',
+        body: playData
+      });
+    } catch (error) {
+      console.error('Error playing track:', error);
       throw error;
     }
   },
+
+  pause: async function() {
+    if (!this._isPlayerReady) throw new Error('Spotify player not ready');
+    
+    try {
+      await this.apiRequest('/me/player/pause', { method: 'PUT' });
+    } catch (error) {
+      console.error('Error pausing playback:', error);
+      throw error;
+    }
+  },
+
+  resume: async function() {
+    if (!this._isPlayerReady) throw new Error('Spotify player not ready');
+    
+    try {
+      await this.apiRequest('/me/player/play', { method: 'PUT' });
+    } catch (error) {
+      console.error('Error resuming playback:', error);
+      throw error;
+    }
+  },
+
+  togglePlayPause: async function() {
+    if (!this._player) throw new Error('Spotify player not initialized');
+    
+    try {
+      await this._player.togglePlay();
+    } catch (error) {
+      console.error('Error toggling play/pause:', error);
+      throw error;
+    }
+  },
+
+  seekToPosition: async function(positionMs) {
+    if (!this._isPlayerReady) throw new Error('Spotify player not ready');
+    
+    try {
+      await this.apiRequest('/me/player/seek', {
+        method: 'PUT',
+        params: {
+          position_ms: positionMs,
+          device_id: this._deviceId
+        }
+      });
+    } catch (error) {
+      console.error('Error seeking to position:', error);
+      throw error;
+    }
+  },
+
+  getPlaybackState: async function() {
+    try {
+      return await this.apiRequest('/me/player');
+    } catch (error) {
+      console.error('Error getting playback state:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Check if a Spotify Premium account is connected
+   * @returns {Promise<boolean>} - Premium status
+   */
+  isPremiumAccount: async function() {
+    // Check for debug override
+    if (window.localStorage.getItem('spotify_force_premium') === 'true') {
+      console.log('Using forced premium mode from localStorage');
+      return true;
+    }
+    
+    try {
+      const userData = await this.getCurrentUser();
+      console.log('Spotify user data for premium check:', userData);
+      
+      // More robust check
+      if (!userData) return false;
+      
+      // Check for premium in a case-insensitive way
+      const product = userData.product || '';
+      return product.toLowerCase() === 'premium';
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+      return false;
+    }
+  },
+
+  disconnectPlayer: function() {
+    if (this._player) {
+      this._player.disconnect();
+      this._player = null;
+      this._deviceId = null;
+      this._isPlayerReady = false;
+    }
+  }
 };
 
 /**
  * Create a debounced search function for component use
- * @param {number} wait - Debounce delay in ms
- * @returns {Function} - Debounced search function
  */
 export function createDebouncedSpotifySearch(wait = 500) {
   let timeout;
   
   return function(query, type = 'track', limit = 20) {
     return new Promise((resolve, reject) => {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
+      clearTimeout(timeout);
       
       timeout = setTimeout(async () => {
         try {
-          const result = await spotifyService.search(query, type, limit);
-          resolve(result);
+          resolve(await spotifyService.search(query, type, limit));
         } catch (error) {
           reject(error);
         }

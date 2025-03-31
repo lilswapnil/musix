@@ -4,6 +4,7 @@ import CurrentlyPlaying from '../components/CurrentlyPlaying'
 import SavedAlbums from '../components/SavedAlbums'
 import { getAccessToken } from '../../../utils/tokenStorage';
 import { useNavigate } from 'react-router-dom';
+import SpotifyPlayer from '../../../components/player/SpotifyPlayer';
 
 export default function LibraryPage() {
   const [token, setToken] = useState(null);
@@ -41,9 +42,10 @@ export default function LibraryPage() {
   
   return (
     <>
+    <SpotifyPlayer />
       <CurrentlyPlaying token={token} />
-      {/* <SavedAlbums token={token} /> */}
       <RecentPlayed token={token} />
+      <SavedAlbums token={token} />
     </>
   );
 }
