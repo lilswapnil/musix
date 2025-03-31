@@ -137,11 +137,8 @@ export default function SavedAlbums() {
     const date = new Date(album.addedAt);
     let groupName;
 
-    if (date.toDateString() === today.toDateString()) {
-      groupName = 'Today';
-    } else if (today - date < 7 * 86400000) {
-      groupName = 'This Week';
-    } else if (today - date < 30 * 86400000) {
+    // Only use two categories: This Month and Earlier
+    if (today - date < 30 * 86400000) {
       groupName = 'This Month';
     } else {
       groupName = 'Earlier';
@@ -154,19 +151,28 @@ export default function SavedAlbums() {
     return groups;
   }, {});
 
-  // Display albums in groups
+  // Define the order of groups
+  const groupOrder = ['This Month', 'Earlier'];
+
+  // Sort the groups according to our defined order
+  const sortedGroups = Object.entries(groupedAlbums)
+    .sort((a, b) => {
+      return groupOrder.indexOf(a[0]) - groupOrder.indexOf(b[0]);
+    });
+
+  // Display albums in groups with the proper order
   return (
-    <div className="mb-8">
+    <div className="mb-10">
       <h2 className="text-3xl font-bold mb-4 text-start">Saved Albums</h2>
       
-      {Object.entries(groupedAlbums).map(([groupName, albums]) => (
+      {sortedGroups.map(([groupName, albums]) => (
         <ScrollableSection key={groupName} title={groupName}>
           <div className="flex space-x-2 pb-1">
             {albums.map((album) => (
               <div 
                 key={album.id} 
-                className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
-                onClick={() => handleAlbumClick(album.spotifyId)}
+                className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
+                onClick={() => handleAlbumClick(album.id)}
               >
                 <div className="relative">
                   <img 
