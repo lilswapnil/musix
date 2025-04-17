@@ -161,7 +161,6 @@ export default function SearchPage() {
               releaseDate: album.release_date,
               trackCount: album.nb_tracks,
               link: album.link || `https://www.deezer.com/album/${album.id}`,
-              popularity: album.fans || 0,
               source: 'deezer'
             }));
           }
@@ -170,125 +169,31 @@ export default function SearchPage() {
           let deezerArtists = [];
           if (deezerResults.artists && deezerResults.artists.data) {
             deezerArtists = deezerResults.artists.data.map(artist => ({
-              ...artist,
-              popularity: artist.nb_fan || 0,
+              id: artist.id,
+              name: artist.name,
+              picture: artist.picture_medium || artist.picture_big || artist.picture,
+              nb_fan: artist.nb_fan || 0,
               source: 'deezer'
             }));
           }
 
-          // Now try Spotify as fallback/comparison source
-          try {
-            const token = await ensureValidToken();
-
-            if (token) {
-              console.log('Also checking Spotify API for better results');
-
-              const response = await axios.get('https://api.spotify.com/v1/search', {
-                params: {
-                  q: searchQuery,
-                  type: 'album,artist,track',
-                  limit: 50,
-                  market: 'US'
-                },
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-
-              if (response.data) {
-                console.log('Received search results from Spotify');
-                spotifyResults = response.data;
-
-                // Process Spotify tracks
-                let spotifyTracks = [];
-                if (spotifyResults.tracks && spotifyResults.tracks.items) {
-                  spotifyTracks = spotifyResults.tracks.items.map(track => ({
-                    id: track.id,
-                    name: track.name,
-                    artist: track.artists[0]?.name || "Unknown Artist",
-                    album: track.album?.name || "Unknown Album",
-                    albumArt: track.album?.images[1]?.url || track.album?.images[0]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
-                    previewUrl: track.preview_url,
-                    externalUrl: track.external_urls?.spotify,
-                    popularity: track.popularity * 10000 || 0, // Normalize Spotify popularity (0-100) to compare with Deezer
-                    source: 'spotify'
-                  }));
-                }
-
-                // Process Spotify albums
-                let spotifyAlbums = [];
-                if (spotifyResults.albums && spotifyResults.albums.items) {
-                  spotifyAlbums = spotifyResults.albums.items.map(album => ({
-                    id: album.id,
-                    name: album.name,
-                    artist: album.artists[0]?.name || "Unknown Artist",
-                    coverArt: album.images[0]?.url || album.images[1]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
-                    releaseDate: album.release_date,
-                    trackCount: album.total_tracks || 0,
-                    link: album.external_urls?.spotify,
-                    popularity: album.popularity * 1000 || 0, // Normalize popularity
-                    source: 'spotify'
-                  }));
-                }
-
-                // Process Spotify artists
-                let spotifyArtists = [];
-                if (spotifyResults.artists && spotifyResults.artists.items) {
-                  spotifyArtists = spotifyResults.artists.items.map(artist => ({
-                    id: artist.id,
-                    name: artist.name,
-                    picture: artist.images[1]?.url || artist.images[0]?.url,
-                    picture_medium: artist.images[1]?.url,
-                    picture_big: artist.images[0]?.url,
-                    nb_fan: artist.followers?.total || 0,
-                    popularity: artist.followers?.total || 0,
-                    source: 'spotify'
-                  }));
-                }
-
-                // Compare overall popularity between Spotify and Deezer results
-                const spotifyAvgPopularity = calculateAveragePopularity(spotifyTracks);
-                const deezerAvgPopularity = calculateAveragePopularity(deezerTracks);
-
-                // If Spotify content is significantly more popular (20% threshold), prefer it
-                if (spotifyAvgPopularity > deezerAvgPopularity * 1.2 && spotifyTracks.length > 0) {
-                  console.log('Spotify content appears more popular, preferring Spotify results');
-                  preferSpotify = true;
-                  setSource('spotify');
-
-                  // Use Spotify results but supplement with Deezer where missing
-                  const combinedTracks = mergeAndSortResults(spotifyTracks, deezerTracks);
-                  const combinedAlbums = mergeAndSortResults(spotifyAlbums, deezerAlbums);
-                  const combinedArtists = mergeAndSortResults(spotifyArtists, deezerArtists);
-
-                  setSongs(combinedTracks);
-                  setAlbums(combinedAlbums);
-                  setArtists(combinedArtists);
-                  return; // Exit early as we've set all the state
-                }
-              }
-            }
-          } catch (spotifyErr) {
-            console.warn('Spotify search failed or returned no results, using Deezer only:', spotifyErr);
-          }
-
-          // If we reach here, either Spotify failed or Deezer results were preferred
           setSongs(deezerTracks.sort((a, b) => b.popularity - a.popularity));
           setAlbums(deezerAlbums);
           setArtists(deezerArtists);
         }
       } catch (deezerErr) {
-        console.error('Deezer search failed, falling back to Spotify:', deezerErr);
+        console.warn('Failed to search with Deezer API:', deezerErr);
+        preferSpotify = true;
+      }
 
-        // Fall back to Spotify if Deezer fails
+      // Fallback to Spotify if Deezer fails or no results
+      if (preferSpotify || (!deezerResults || (!deezerResults.tracks && !deezerResults.albums && !deezerResults.artists))) {
         try {
           const token = await ensureValidToken();
 
           if (token) {
-            console.log('Falling back to Spotify API');
-            setSource('spotify');
-
-            const response = await axios.get('https://api.spotify.com/v1/search', {
+            console.log('Valid Spotify token available, searching with Spotify API');
+            spotifyResults = await axios.get('https://api.spotify.com/v1/search', {
               params: {
                 q: searchQuery,
                 type: 'album,artist,track',
@@ -300,11 +205,14 @@ export default function SearchPage() {
               }
             });
 
-            if (response.data) {
-              console.log('Received search results from Spotify (fallback)');
+            if (spotifyResults.data) {
+              setSource('spotify');
+              console.log('Received search results from Spotify');
 
-              if (response.data.tracks && response.data.tracks.items) {
-                const mappedTracks = response.data.tracks.items.map(track => ({
+              // Process Spotify tracks
+              let spotifyTracks = [];
+              if (spotifyResults.data.tracks && spotifyResults.data.tracks.items) {
+                spotifyTracks = spotifyResults.data.tracks.items.map(track => ({
                   id: track.id,
                   name: track.name,
                   artist: track.artists[0]?.name || "Unknown Artist",
@@ -313,44 +221,44 @@ export default function SearchPage() {
                   previewUrl: track.preview_url,
                   externalUrl: track.external_urls?.spotify,
                   popularity: track.popularity || 0,
+                  source: 'spotify'
                 }));
-
-                setSongs(mappedTracks.sort((a, b) => b.popularity - a.popularity));
               }
 
-              if (response.data.albums && response.data.albums.items) {
-                const processedAlbums = response.data.albums.items.map(album => ({
+              // Process Spotify albums
+              let spotifyAlbums = [];
+              if (spotifyResults.data.albums && spotifyResults.data.albums.items) {
+                spotifyAlbums = spotifyResults.data.albums.items.map(album => ({
                   id: album.id,
                   name: album.name,
                   artist: album.artists[0]?.name || "Unknown Artist",
                   coverArt: album.images[0]?.url || album.images[1]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
                   releaseDate: album.release_date,
                   trackCount: album.total_tracks || 0,
-                  link: album.external_urls?.spotify
+                  link: album.external_urls?.spotify,
+                  source: 'spotify'
                 }));
-
-                setAlbums(processedAlbums);
               }
 
-              if (response.data.artists && response.data.artists.items) {
-                const processedArtists = response.data.artists.items.map(artist => ({
+              // Process Spotify artists
+              let spotifyArtists = [];
+              if (spotifyResults.data.artists && spotifyResults.data.artists.items) {
+                spotifyArtists = spotifyResults.data.artists.items.map(artist => ({
                   id: artist.id,
                   name: artist.name,
                   picture: artist.images[1]?.url || artist.images[0]?.url,
-                  picture_medium: artist.images[1]?.url,
-                  picture_big: artist.images[0]?.url,
-                  nb_fan: artist.followers?.total || 0
+                  nb_fan: artist.followers?.total || 0,
+                  source: 'spotify'
                 }));
-
-                setArtists(processedArtists);
               }
+
+              setSongs(spotifyTracks.sort((a, b) => b.popularity - a.popularity));
+              setAlbums(spotifyAlbums);
+              setArtists(spotifyArtists);
             }
-          } else {
-            throw new Error('No Spotify authentication available');
           }
-        } catch (spotifyFallbackErr) {
-          console.error('Both Deezer and Spotify search failed:', spotifyFallbackErr);
-          setError('Search failed. Please try again later.');
+        } catch (spotifyErr) {
+          console.warn('Failed to search with Spotify API:', spotifyErr);
         }
       }
     } catch (err) {
@@ -645,30 +553,4 @@ function formatFanCount(value) {
     return `${(value / 1000).toFixed(0)}K`;
   }
   return value.toString();
-}
-
-// Helper function to calculate average popularity of content
-function calculateAveragePopularity(items) {
-  if (!items || items.length === 0) return 0;
-  const sum = items.reduce((acc, item) => acc + (item.popularity || 0), 0);
-  return sum / items.length;
-}
-
-// Helper function to merge results from both APIs, preferring one source but keeping unique items
-function mergeAndSortResults(preferred, secondary) {
-  // Start with all preferred items
-  const result = [...preferred];
-  
-  // Add secondary items that don't have a name match in the preferred list
-  const preferredNames = new Set(preferred.map(item => item.name?.toLowerCase()));
-  
-  secondary.forEach(item => {
-    // If this item name doesn't exist in preferred results, add it
-    if (item.name && !preferredNames.has(item.name.toLowerCase())) {
-      result.push(item);
-    }
-  });
-  
-  // Sort by popularity
-  return result.sort((a, b) => b.popularity - a.popularity);
 }
