@@ -29,6 +29,7 @@ export default function Artist() {
   const navigate = useNavigate();
   
   const [allSongs, setAllSongs] = useState([]);
+  const [artists, setArtists] = useState([]);
   const [loadingMoreSongs, setLoadingMoreSongs] = useState(false);
   const [hasMoreSongs, setHasMoreSongs] = useState(false);
   const [page, setPage] = useState(1);
@@ -50,15 +51,17 @@ export default function Artist() {
         
         // Get artist details with better error handling
         const artistData = await deezerService.getArtist(artistId);
+        if (!artistData) {
+          setError("Artist not found");
+          return;
+        }
+
+        console.log("Fetched artist data:", artistData);
+
         setArtist(artistData);
 
         if (artistData.artists && artistData.artists.data) {
           setArtists(artistData.artists.data);
-        }
-
-        if (!artistData) {
-          setError("Artist not found");
-          return;
         }
 
         // Process artist data with explicit image handling
@@ -73,11 +76,9 @@ export default function Artist() {
           nb_album: artistData.nb_album || 0,
           link: artistData.link
         };
-
-        console.log(artist)
         // Set artist data with all image URLs
         setArtist(processedArtist);
-
+        
         // Get artist top tracks
         const topTracksData = await deezerService.getArtistTopTracks(artistId);
         
@@ -117,7 +118,7 @@ export default function Artist() {
         }
 
         const corsProxy = 'https://corsproxy.io/?';
-        const deezerUrl = `https://api.deezer.com/artist/${artistId}/radio?limit=50&index=0`;
+        const deezerUrl = `https://api.deezer.com/artist/${artistId}/top?limit=50&index=0`;
         
         const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
         if (!response.ok) {
@@ -139,7 +140,7 @@ export default function Artist() {
             albumArt: track.album?.cover_medium || "https://via.placeholder.com/300x300?text=No+Cover",
             releaseDate: track.release_date
           }));
-          
+          console.log("Fetched all songs:", processedTracks);
           setAllSongs(processedTracks);
           setPage(2);
           setHasMoreSongs(tracksData.next || false);
@@ -258,16 +259,8 @@ export default function Artist() {
     try {
       setLoadingMoreSongs(true);
       
-      // Use the corsProxy directly since we see it's defined that way in other functions
-      const corsProxy = 'https://corsproxy.io/?';
-      const deezerUrl = `https://api.deezer.com/artist/${artistId}/radio?limit=50&index=${(page-1)*50}`;
-      
-      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const tracksData = await response.json();
+      // Use the getArtistTracks method instead of direct API call
+      const tracksData = await deezerService.getArtistTracks(artistId, page, 50);
       
       if (tracksData && tracksData.data) {
         const newTracks = tracksData.data.map(track => ({
@@ -370,10 +363,14 @@ export default function Artist() {
         <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
           {/* Circular artist image with better fallback and error handling */}
           <div className="w-24 h-24 md:w-28 md:h-28 relative mb-4 md:mb-0 md:mr-6 border-2 border-white overflow-hidden rounded-full shadow-xl">
-          <img 
-              src={artist.cover_xl || artist.cover_big || artist.cover_medium || artist.cover} 
-              alt={artist.title} 
+            <img 
+              src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
+              alt={artist.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/300x300?text=No+Artist+Image";
+              }}
             />
           </div>
           

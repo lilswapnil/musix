@@ -1,8 +1,10 @@
 /**
  * Debounce function to delay API calls until user input stops
+ * Prevents excessive function calls by waiting for pause in events
+ * 
  * @param {Function} func - The function to debounce
- * @param {number} wait - The delay in milliseconds
- * @returns {Function} - The debounced function
+ * @param {number} wait - The delay in milliseconds before executing
+ * @returns {Function} - Wrapper function that handles the debouncing
  */
 export function debounce(func, wait = 300) {
   let timeout;

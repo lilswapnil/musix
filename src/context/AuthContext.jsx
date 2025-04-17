@@ -1,55 +1,70 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getAccessToken, getUserProfile, clearAuthData } from '../utils/tokenStorage';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getAccessToken, getUserProfile, getRefreshToken, clearAuthData } from '../utils/tokenStorage';
+import { ensureValidToken } from '../utils/refreshToken';
 
-// Create auth context
-export const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
-// Auth provider component
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Helper function to check if we have valid session data
+  const hasValidSession = () => {
+    const token = getAccessToken();
+    const refreshToken = getRefreshToken();
+    const profile = getUserProfile();
+    
+    return !!token && !!refreshToken && !!profile;
+  };
 
   useEffect(() => {
-    // Load token and profile when component mounts
-    const loadAuthData = () => {
-      const storedToken = getAccessToken();
-      const storedProfile = getUserProfile();
+    const checkAuth = async () => {
+      setIsLoading(true);
       
-      if (storedToken) setToken(storedToken);
-      if (storedProfile) setUserProfile(storedProfile);
-      
-      setLoading(false);
+      try {
+        // Quick check for valid session data
+        if (hasValidSession()) {
+          console.log("Session data found, validating token");
+          // Try to get a valid token and refresh if needed
+          const token = await ensureValidToken();
+          const profile = getUserProfile();
+          
+          if (token && profile) {
+            setIsAuthenticated(true);
+            setUserProfile(profile);
+          } else {
+            setIsAuthenticated(false);
+            setUserProfile(null);
+          }
+        } else {
+          console.log('No valid session data found');
+          setIsAuthenticated(false);
+          setUserProfile(null);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+        setUserProfile(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
-    loadAuthData();
-    
-    // Add event listener to reload auth data when storage changes
-    window.addEventListener('storage', loadAuthData);
-    
-    return () => {
-      window.removeEventListener('storage', loadAuthData);
-    };
+    checkAuth();
   }, []);
-
-  const logout = () => {
-    setToken(null);
-    setUserProfile(null);
-    clearAuthData();
-  };
 
   return (
     <AuthContext.Provider value={{ 
-      token, 
+      isAuthenticated, 
+      isLoading,
       userProfile, 
-      loading, 
-      logout,
-      isAuthenticated: !!token
+      setUserProfile,
+      setIsAuthenticated 
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => useContext(AuthContext);

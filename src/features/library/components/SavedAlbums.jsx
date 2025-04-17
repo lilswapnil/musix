@@ -194,9 +194,11 @@ export default function SavedAlbums() {
                   </div>
                 </div>
                 <div className="p-2 sm:p-3 md:p-4">
+                  {/* Album metadata display */}
                   <div className="text-center">
                     <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{album.title}</h3>
                     <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist}</p>
+                    {/* Only show year from full release date */}
                     {album.releaseDate && (
                       <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
                         {album.releaseDate.substring(0, 4)}

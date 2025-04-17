@@ -41,12 +41,10 @@ export default function Albums() {
       
       try {
         setLoading(true);
-        
         // Get album details
         const albumData = await deezerService.getAlbum(albumId);
         setAlbum(albumData);
-
-
+        console.log("Album data:", albumData);
         // Fetch artist image if artist info is available
         if (albumData.artist && albumData.artist.id) {
           try {

@@ -1,11 +1,12 @@
 import React from "react";
 import { useState, useEffect } from 'react';
-import { getAccessToken, removeAccessToken } from '../../../utils/tokenStorage';
+import { removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faClock } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
-export default function RecentPlayed() {
+// Update the function signature to accept token prop
+export default function RecentPlayed({ token }) {
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [likedSongs, setLikedSongs] = useState({});
   const [loading, setLoading] = useState(true);
@@ -26,16 +27,14 @@ export default function RecentPlayed() {
   useEffect(() => {
     const fetchRecentTracks = async () => {
       try {
-        // Retrieve the access token from the cache
-        const accessToken = getAccessToken(); // Changed from getToken
-        
-        if (!accessToken) {
+        // Use the token prop instead of getting it again
+        if (!token) {
           setError('You need to log in to see your recent plays');
           setLoading(false);
           return;
         }
         
-        await fetchRecentlyPlayed(accessToken);
+        await fetchRecentlyPlayed(token);
       } catch (err) {
         console.error('Error fetching recent tracks:', err);
         setError('Failed to load your recent plays');
@@ -45,7 +44,7 @@ export default function RecentPlayed() {
     };
     
     fetchRecentTracks();
-  }, []);
+  }, [token]);
 
   async function fetchRecentlyPlayed(accessToken) {
     try {

@@ -189,41 +189,7 @@ export const spotifyService = {
   },
   
   /**
-   * Get client credentials token (app-only, no user context)
-   */
-  getClientCredentialsToken: async () => {
-    try {
-      const clientCreds = btoa(`${spotifyService._clientId}:${spotifyService._clientSecret || ''}`);
-      
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${clientCreds}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: 'grant_type=client_credentials'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Client credentials error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      localStorage.setItem('spotify_client_token', JSON.stringify({
-        access_token: data.access_token,
-        expires: Date.now() + (data.expires_in * 1000)
-      }));
-      
-      return data.access_token;
-    } catch (error) {
-      console.error('Error getting client credentials token:', error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Get an access token (user token if available, client token as fallback)
+   * Get an access token (user token only, no client credentials fallback)
    */
   getAccessToken: async () => {
     try {
@@ -239,14 +205,7 @@ export const spotifyService = {
         }
       }
       
-      // Fall back to client credentials
-      const clientTokenData = JSON.parse(localStorage.getItem('spotify_client_token') || '{}');
-      
-      if (clientTokenData.access_token && clientTokenData.expires > Date.now() + 60000) {
-        return clientTokenData.access_token;
-      }
-      
-      return await spotifyService.getClientCredentialsToken();
+      throw new Error('No access token available and user not authenticated');
     } catch (error) {
       console.error('Error getting access token:', error);
       throw error;
@@ -279,24 +238,46 @@ export const spotifyService = {
   },
 
   /**
+   * Check if user is logged in
+   */
+  isLoggedIn: () => {
+    try {
+      const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
+      return !!(tokenData.access_token && tokenData.refresh_token);
+    } catch {
+      return false;
+    }
+  },
+  
+  /**
+   * Log user out by clearing token
+   */
+  logout: () => {
+    localStorage.removeItem(spotifyService._tokenKey);
+    localStorage.removeItem('spotify_auth_state');
+    localStorage.removeItem('spotify_code_verifier');
+  },
+
+  /**
    * Make an authenticated API request to Spotify with enhanced controls
    */
-  async apiRequest(endpoint, options = {}, useClientTokenFallback = true) {
+  async apiRequest(endpoint, options = {}, useClientTokenFallback = false) { // Changed default to false
     try {
       // For user-specific endpoints, don't fallback to client credentials
       const isUserEndpoint = endpoint.startsWith('/me') || 
                             endpoint.includes('/me/') ||
                             endpoint.includes('oauth-required');
       
-      // If it's a user endpoint and we're not logged in, throw an error
-      if (isUserEndpoint && !this.isLoggedIn()) {
+      // If we're not logged in and it's not a public endpoint, throw an error
+      if (!this.isLoggedIn() && (isUserEndpoint || !useClientTokenFallback)) {
         throw new Error('Authentication required for this request');
       }
       
-      // Try to get a token - for user endpoints, don't use client token fallback
-      const token = isUserEndpoint ? 
-        await this.getUserToken() : 
-        await this.getAccessToken();
+      // Try to get a token - only use user token, not client credentials
+      const token = await this.getUserToken().catch(e => {
+        console.error('Failed to get user token:', e);
+        throw new Error('Authentication required');
+      });
       
       const url = `${this._apiBase}${endpoint}`;
       
@@ -363,27 +344,6 @@ export const spotifyService = {
       console.error(`Error in Spotify API request to ${endpoint}:`, error);
       throw error;
     }
-  },
-
-  /**
-   * Check if user is logged in
-   */
-  isLoggedIn: () => {
-    try {
-      const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
-      return !!(tokenData.access_token && tokenData.refresh_token);
-    } catch {
-      return false;
-    }
-  },
-  
-  /**
-   * Log user out by clearing token
-   */
-  logout: () => {
-    localStorage.removeItem(spotifyService._tokenKey);
-    localStorage.removeItem('spotify_auth_state');
-    localStorage.removeItem('spotify_code_verifier');
   },
 
   /**
@@ -474,15 +434,24 @@ export const spotifyService = {
    */
   getNewReleases: async (limit = 20) => {
     try {
-      return await spotifyService.apiRequest('/browse/new-releases', {
-        params: { limit, country: 'US' }
-      });
+      // Check if user is logged in before attempting to use user token
+      if (spotifyService.isLoggedIn()) {
+        return await spotifyService.apiRequest('/browse/new-releases', {
+          params: { 
+            limit,
+            country: 'US'
+          }
+        });
+      } else {
+        // Don't attempt API call without authentication
+        throw new Error('Authentication required for Spotify new releases');
+      }
     } catch (error) {
       console.error('Error fetching new releases:', error);
       throw error;
     }
   },
-  
+
   /**
    * Search Spotify
    */
@@ -877,5 +846,33 @@ export function createDebouncedSpotifySearch(wait = 500) {
         }
       }, wait);
     });
+  };
+}
+
+/**
+ * Add a fallback function that returns curated data when auth fails
+ */
+async function fetchFallbackNewReleases(limit) {
+  // You could:
+  // 1. Use a different API that doesn't require auth
+  // 2. Return cached/hardcoded data
+  // 3. Fetch from your backend proxy
+  
+  // For now, return an example structure with a message
+  return {
+    albums: {
+      items: [
+        {
+          id: "demo1",
+          name: "Sample Album 1",
+          artists: [{ name: "Sample Artist" }],
+          images: [{ url: "https://via.placeholder.com/300x300?text=Sample+Album" }],
+          release_date: new Date().toISOString().split('T')[0],
+          total_tracks: 10,
+          external_urls: { spotify: "https://spotify.com" }
+        },
+        // Add more sample albums here...
+      ]
+    }
   };
 }

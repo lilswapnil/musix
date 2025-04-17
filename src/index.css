@@ -23,13 +23,14 @@ body {
   min-height: 100vh;
 }
 
-/* Add any global utility classes here */
+/* Custom utility classes for text handling */
 @layer utilities {
+  /* Balances text for better readability */
   .text-balance {
     text-wrap: balance;
   }
 
-  /* Add to src/index.css if not already using Tailwind's truncate class */
+  /* Prevents text overflow with ellipsis */
   .text-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -37,11 +38,13 @@ body {
     max-width: 100%;
   }
 
+  /* Creates a flex container */
   .flex-container {
     display: flex;
     width: 100%;
   }
 
+  /* Ensures text does not overflow in flex containers */
   .flex-text {
     min-width: 0;
     overflow: hidden;

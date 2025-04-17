@@ -153,26 +153,7 @@ export const deezerService = {
       }
       
       const data = await response.json();
-      
-      // Process image URLs to ensure they work with CORS
-      if (data) {
-        // Fix potential CORS issues with image URLs
-        const corsifyUrl = (url) => {
-          if (!url) return null;
-          // If already using CORS proxy or is a relative URL, return as is
-          if (url.includes('corsproxy.io') || !url.startsWith('http')) return url;
-          // Otherwise add CORS proxy
-          return `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        };
-        
-        // Update image URLs
-        if (data.picture_xl) data.picture_xl = corsifyUrl(data.picture_xl);
-        if (data.picture_big) data.picture_big = corsifyUrl(data.picture_big);
-        if (data.picture_medium) data.picture_medium = corsifyUrl(data.picture_medium);
-        if (data.picture) data.picture = corsifyUrl(data.picture);
-        
-        console.log("Processed artist data:", data);
-      }
+      console.log(`Fetched artist data:`, data);
       
       // Cache the result
       if (deezerService._memoryCache) {
@@ -348,7 +329,7 @@ export const deezerService = {
       }
       
       const data = await response.json();
-      
+      console.log(`Fetched album data:`, data);
       // Cache the result
       if (deezerService._memoryCache) {
         deezerService._memoryCache.set(`album_${albumId}`, {
@@ -485,30 +466,37 @@ export const deezerService = {
       }
       
       const albums = { data: Array.from(albumsMap.values()) };
+      
+      // Process artist data from map into the results array
       const artists = { data: Array.from(artistsMap.values()) };
       
-      // Build complete response
+      // Compile search results from all data types
       const result = {
         tracks,
         albums,
         artists
       };
       
-      // Cache the results in memory instead of sessionStorage
+      /**
+       * Memory cache implementation
+       * Prevents repeated API calls for the same search query
+       * More efficient than sessionStorage for large response data
+       */
       try {
+        // Store with timestamp for cache invalidation
         deezerService._memoryCache.set(cacheKey, {
           data: result,
           timestamp: now
         });
         
-        // Limit cache size to prevent memory issues (keep last 20 searches)
+        // Prevent memory leaks by limiting cache size
         if (deezerService._memoryCache.size > 20) {
           const oldestKey = [...deezerService._memoryCache.keys()][0];
           deezerService._memoryCache.delete(oldestKey);
         }
       } catch (cacheErr) {
         console.warn('Could not cache search results:', cacheErr);
-        // Continue even if caching fails - it's just a performance optimization
+        // Non-critical error - continue execution
       }
       
       return result;
@@ -518,19 +506,54 @@ export const deezerService = {
     }
   },
 
-  getArtistTracks: async (artistId, page = 1, limit = 50, signal = null) => {
+  getArtistTracks: async (artistId, page = 1, limit = 100, signal = null) => {
     try {
+      if (!artistId) {
+        throw new Error("Invalid artistId: artistId is required");
+      }
+      
+      // Check the throttle to avoid rate limiting
       deezerService._throttle.search.check();
       
-      const apiUrl = `https://api.deezer.com/artist/${artistId}/radio?limit=${limit}&index=${(page-1)*limit}`;
-      const proxiedUrl = corsProxyService.getProxiedUrl(apiUrl);
+      // Use the artist/top endpoint to get actual artist tracks 
+      // instead of radio (similar songs)
+      const corsProxy = 'https://corsproxy.io/?';
+      const deezerUrl = `https://api.deezer.com/artist/${artistId}/top?limit=${limit}&index=${(page-1)*limit}`;
+      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      const response = await fetch(proxiedUrl, { signal });
+      console.log(`Fetching artist tracks from: ${fullUrl}`);
+      
+      // Cache key based on artist ID, page and limit
+      const cacheKey = `artist_tracks_${artistId}_${page}_${limit}`;
+      
+      // Check cache first
+      if (deezerService._memoryCache) {
+        const cachedItem = deezerService._memoryCache.get(cacheKey);
+        
+        if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
+          console.log(`Returning cached artist tracks for artistId: ${artistId}, page: ${page}`);
+          return cachedItem.data;
+        }
+      }
+      
+      const options = signal ? { signal } : {};
+      const response = await fetch(fullUrl, options);
+      
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        throw new Error(`API error: ${response.status} - ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log(`Fetched ${data.data?.length || 0} tracks for artist ${artistId}`);
+      
+      // Cache the result
+      if (deezerService._memoryCache) {
+        deezerService._memoryCache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+      
       return data;
     } catch (error) {
       console.error(`Error fetching artist tracks:`, error);

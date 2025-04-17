@@ -43,4 +43,9 @@ export const generatePKCEChallenge = async () => {
 const CODE_VERIFIER_KEY = 'pkce_code_verifier';
 export const storeCodeVerifier = (codeVerifier) => localStorage.setItem(CODE_VERIFIER_KEY, codeVerifier);
 export const getCodeVerifier = () => localStorage.getItem(CODE_VERIFIER_KEY);
+
+/**
+ * Removes the PKCE code verifier from local storage
+ * Important for security to clear after auth flow completes
+ */
 export const clearCodeVerifier = () => localStorage.removeItem(CODE_VERIFIER_KEY);

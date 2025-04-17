@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { deezerService } from "../../../services/deezerServices";
+import { musicService } from "../../../services/musicService"; // Update import
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause, faSearch, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
@@ -109,10 +109,10 @@ export default function SearchPage() {
     setLoading(true);
     setError("");
     
-    // Use a single API call to fetch all types rather than three separate calls
+    // Use musicService for search instead of direct Deezer API call
     try {
-      const response = await deezerService.searchAll(searchQuery, abortControllerRef.current.signal);
-      
+      const response = await musicService.searchAll(searchQuery);
+
       if (response.tracks && response.tracks.data) {
         const mappedTracks = response.tracks.data.map(track => ({
           id: track.id,
@@ -124,7 +124,7 @@ export default function SearchPage() {
           externalUrl: track.link,
           popularity: track.rank || 0,
         }));
-        
+        console.log("Tracks", mappedTracks);
         const sortedTracks = mappedTracks.sort((a, b) => b.popularity - a.popularity);
         setSongs(sortedTracks);
       }
@@ -139,12 +139,21 @@ export default function SearchPage() {
           trackCount: album.nb_tracks,
           link: album.link || `https://www.deezer.com/album/${album.id}`
         }));
-        
+        console.log("Processed albums:", processedAlbums);
+        console.log("Album artist:", albums[0]?.artist?.name);
         setAlbums(processedAlbums);
       }
       
       if (response.artists && response.artists.data) {
         setArtists(response.artists.data);
+        const processedArtists = response.artists.data.map(artist => ({
+          id: artist.id,
+          name: artist.name,
+          picture: artist.picture_medium || artist.picture_big || artist.picture,
+          picture_medium: artist.picture_medium || artist.picture_big || artist.picture,
+          picture_big: artist.picture_big || artist.picture,
+          nb_fan: artist.nb_fan || 0
+        }));
       }
       
     } catch (err) {
@@ -341,7 +350,7 @@ export default function SearchPage() {
                     <div className="p-2 sm:p-3 md:p-4">
                       <div className="text-center">
                         <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{album.name}</h3>
-                        <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist.name}</p>
+                        <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist}</p>
                         {album.releaseDate && (
                           <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
                             {album.releaseDate.substring(0, 4)}

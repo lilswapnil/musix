@@ -103,6 +103,7 @@ export default function TopAlbums() {
           </div>
         ))}
       </div>
+      {/* Closing tags */}
     </ScrollableSection>
   );
 }
