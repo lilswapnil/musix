@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { musicService } from "../../../services/musicService"; // Update import
+import { musicService } from "../../../services/musicService";
+import axios from 'axios';
+import { ensureValidToken } from '../../../utils/refreshToken';
+import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause, faSearch, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
@@ -8,22 +11,21 @@ import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 import { debounce } from "../../../utils/requestUtils";
 
 export default function SearchPage() {
-  // Keep existing state variables
   const [albums, setAlbums] = useState([]);
   const [artists, setArtists] = useState([]);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [source, setSource] = useState('deezer');
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [likedSongs, setLikedSongs] = useState({});
-  const [searchInput, setSearchInput] = useState(""); // Track input field separately
+  const [searchInput, setSearchInput] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search).get("query") || "";
   const audioRef = useRef(null);
   const abortControllerRef = useRef(null);
-  
-  // Load liked songs on mount
+
   useEffect(() => {
     try {
       const savedLikes = localStorage.getItem('likedSongs');
@@ -33,30 +35,27 @@ export default function SearchPage() {
     } catch (error) {
       console.error('Error loading liked songs:', error);
     }
-    
-    // Set input field to match URL query
+
     setSearchInput(query);
-    
-    // Initial search if query exists
+
     if (query) {
       search(query);
     }
-    
-    // Cleanup function to cancel any pending requests
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     };
-  }, [query]); // Add query as a dependency
+  }, [query]);
 
-  // Memoize the search function to use in dependencies
   const memoizedSearch = useCallback(search, []);
 
-  // Create debounced search function with a longer delay
   const debouncedSearch = useCallback(
     debounce((searchQuery) => {
-      // Update URL with debounced query
       if (searchQuery) {
         const searchParams = new URLSearchParams();
         searchParams.set("query", searchQuery);
@@ -65,99 +64,297 @@ export default function SearchPage() {
           search: searchParams.toString()
         }, { replace: true });
       }
-      
-      // Execute the actual search
+
       memoizedSearch(searchQuery);
-    }, 800), // Increased debounce time
-    [navigate, location.pathname, memoizedSearch] // Include search in dependencies
+    }, 800),
+    [navigate, location.pathname, memoizedSearch]
   );
-  
-  // Search handler for input changes
+
+  const fetchWithRetry = async (fetchFunc, maxRetries = 3, delay = 6000) => {
+    let retries = 0;
+    while (retries < maxRetries) {
+      try {
+        return await fetchFunc();
+      } catch (err) {
+        if (err.message && err.message.includes('Rate limit exceeded') && retries < maxRetries - 1) {
+          console.log(`Rate limited, retrying in ${delay / 1000}s... (attempt ${retries + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          retries++;
+        } else {
+          throw err;
+        }
+      }
+    }
+  };
+
   const handleSearchInput = (event) => {
     const newQuery = event.target.value;
     setSearchInput(newQuery);
-    
+
     if (newQuery.trim().length > 1) {
       debouncedSearch(newQuery);
     } else if (newQuery.trim() === '') {
-      // Clear results if search is emptied
       setSongs([]);
       setAlbums([]);
       setArtists([]);
-      
-      // Update URL to remove query
+
       navigate({
         pathname: location.pathname
       }, { replace: true });
     }
   };
 
-  // Main search function with request batching and cache
   async function search(searchQuery) {
     if (!searchQuery || searchQuery.trim().length < 2) {
       return;
     }
-    
-    // Cancel any previous requests
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
-    // Create a new abort controller for this search
+
     abortControllerRef.current = new AbortController();
-    
     setLoading(true);
     setError("");
-    
-    // Use musicService for search instead of direct Deezer API call
-    try {
-      const response = await musicService.searchAll(searchQuery);
 
-      if (response.tracks && response.tracks.data) {
-        const mappedTracks = response.tracks.data.map(track => ({
-          id: track.id,
-          name: track.title,
-          artist: track.artist.name,
-          album: track.album.title,
-          albumArt: track.album.cover_medium || track.album.cover_small,
-          previewUrl: track.preview,
-          externalUrl: track.link,
-          popularity: track.rank || 0,
-        }));
-        console.log("Tracks", mappedTracks);
-        const sortedTracks = mappedTracks.sort((a, b) => b.popularity - a.popularity);
-        setSongs(sortedTracks);
+    try {
+      console.log(`Searching for "${searchQuery}"...`);
+      let deezerResults = null;
+      let spotifyResults = null;
+      let preferSpotify = false;
+
+      // Try Deezer first as primary source
+      try {
+        console.log('Searching with Deezer API as primary source');
+        deezerResults = await fetchWithRetry(
+          () => deezerService.searchAll(searchQuery)
+        );
+
+        if (deezerResults) {
+          console.log('Received search results from Deezer');
+          setSource('deezer');
+
+          // Process Deezer tracks
+          let deezerTracks = [];
+          if (deezerResults.tracks && deezerResults.tracks.data) {
+            deezerTracks = deezerResults.tracks.data.map(track => ({
+              id: track.id,
+              name: track.title,
+              artist: track.artist.name,
+              album: track.album.title,
+              albumArt: track.album.cover_medium || track.album.cover_small,
+              previewUrl: track.preview,
+              externalUrl: track.link,
+              popularity: track.rank || 0,
+              source: 'deezer'
+            }));
+          }
+
+          // Process Deezer albums
+          let deezerAlbums = [];
+          if (deezerResults.albums && deezerResults.albums.data) {
+            deezerAlbums = deezerResults.albums.data.map(album => ({
+              id: album.id,
+              name: album.title || album.name,
+              artist: album.artist?.name || "Unknown Artist",
+              coverArt: album.cover_big || album.cover_medium || album.cover || "https://via.placeholder.com/300x300?text=No+Cover",
+              releaseDate: album.release_date,
+              trackCount: album.nb_tracks,
+              link: album.link || `https://www.deezer.com/album/${album.id}`,
+              popularity: album.fans || 0,
+              source: 'deezer'
+            }));
+          }
+
+          // Process Deezer artists
+          let deezerArtists = [];
+          if (deezerResults.artists && deezerResults.artists.data) {
+            deezerArtists = deezerResults.artists.data.map(artist => ({
+              ...artist,
+              popularity: artist.nb_fan || 0,
+              source: 'deezer'
+            }));
+          }
+
+          // Now try Spotify as fallback/comparison source
+          try {
+            const token = await ensureValidToken();
+
+            if (token) {
+              console.log('Also checking Spotify API for better results');
+
+              const response = await axios.get('https://api.spotify.com/v1/search', {
+                params: {
+                  q: searchQuery,
+                  type: 'album,artist,track',
+                  limit: 50,
+                  market: 'US'
+                },
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+
+              if (response.data) {
+                console.log('Received search results from Spotify');
+                spotifyResults = response.data;
+
+                // Process Spotify tracks
+                let spotifyTracks = [];
+                if (spotifyResults.tracks && spotifyResults.tracks.items) {
+                  spotifyTracks = spotifyResults.tracks.items.map(track => ({
+                    id: track.id,
+                    name: track.name,
+                    artist: track.artists[0]?.name || "Unknown Artist",
+                    album: track.album?.name || "Unknown Album",
+                    albumArt: track.album?.images[1]?.url || track.album?.images[0]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
+                    previewUrl: track.preview_url,
+                    externalUrl: track.external_urls?.spotify,
+                    popularity: track.popularity * 10000 || 0, // Normalize Spotify popularity (0-100) to compare with Deezer
+                    source: 'spotify'
+                  }));
+                }
+
+                // Process Spotify albums
+                let spotifyAlbums = [];
+                if (spotifyResults.albums && spotifyResults.albums.items) {
+                  spotifyAlbums = spotifyResults.albums.items.map(album => ({
+                    id: album.id,
+                    name: album.name,
+                    artist: album.artists[0]?.name || "Unknown Artist",
+                    coverArt: album.images[0]?.url || album.images[1]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
+                    releaseDate: album.release_date,
+                    trackCount: album.total_tracks || 0,
+                    link: album.external_urls?.spotify,
+                    popularity: album.popularity * 1000 || 0, // Normalize popularity
+                    source: 'spotify'
+                  }));
+                }
+
+                // Process Spotify artists
+                let spotifyArtists = [];
+                if (spotifyResults.artists && spotifyResults.artists.items) {
+                  spotifyArtists = spotifyResults.artists.items.map(artist => ({
+                    id: artist.id,
+                    name: artist.name,
+                    picture: artist.images[1]?.url || artist.images[0]?.url,
+                    picture_medium: artist.images[1]?.url,
+                    picture_big: artist.images[0]?.url,
+                    nb_fan: artist.followers?.total || 0,
+                    popularity: artist.followers?.total || 0,
+                    source: 'spotify'
+                  }));
+                }
+
+                // Compare overall popularity between Spotify and Deezer results
+                const spotifyAvgPopularity = calculateAveragePopularity(spotifyTracks);
+                const deezerAvgPopularity = calculateAveragePopularity(deezerTracks);
+
+                // If Spotify content is significantly more popular (20% threshold), prefer it
+                if (spotifyAvgPopularity > deezerAvgPopularity * 1.2 && spotifyTracks.length > 0) {
+                  console.log('Spotify content appears more popular, preferring Spotify results');
+                  preferSpotify = true;
+                  setSource('spotify');
+
+                  // Use Spotify results but supplement with Deezer where missing
+                  const combinedTracks = mergeAndSortResults(spotifyTracks, deezerTracks);
+                  const combinedAlbums = mergeAndSortResults(spotifyAlbums, deezerAlbums);
+                  const combinedArtists = mergeAndSortResults(spotifyArtists, deezerArtists);
+
+                  setSongs(combinedTracks);
+                  setAlbums(combinedAlbums);
+                  setArtists(combinedArtists);
+                  return; // Exit early as we've set all the state
+                }
+              }
+            }
+          } catch (spotifyErr) {
+            console.warn('Spotify search failed or returned no results, using Deezer only:', spotifyErr);
+          }
+
+          // If we reach here, either Spotify failed or Deezer results were preferred
+          setSongs(deezerTracks.sort((a, b) => b.popularity - a.popularity));
+          setAlbums(deezerAlbums);
+          setArtists(deezerArtists);
+        }
+      } catch (deezerErr) {
+        console.error('Deezer search failed, falling back to Spotify:', deezerErr);
+
+        // Fall back to Spotify if Deezer fails
+        try {
+          const token = await ensureValidToken();
+
+          if (token) {
+            console.log('Falling back to Spotify API');
+            setSource('spotify');
+
+            const response = await axios.get('https://api.spotify.com/v1/search', {
+              params: {
+                q: searchQuery,
+                type: 'album,artist,track',
+                limit: 50,
+                market: 'US'
+              },
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.data) {
+              console.log('Received search results from Spotify (fallback)');
+
+              if (response.data.tracks && response.data.tracks.items) {
+                const mappedTracks = response.data.tracks.items.map(track => ({
+                  id: track.id,
+                  name: track.name,
+                  artist: track.artists[0]?.name || "Unknown Artist",
+                  album: track.album?.name || "Unknown Album",
+                  albumArt: track.album?.images[1]?.url || track.album?.images[0]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
+                  previewUrl: track.preview_url,
+                  externalUrl: track.external_urls?.spotify,
+                  popularity: track.popularity || 0,
+                }));
+
+                setSongs(mappedTracks.sort((a, b) => b.popularity - a.popularity));
+              }
+
+              if (response.data.albums && response.data.albums.items) {
+                const processedAlbums = response.data.albums.items.map(album => ({
+                  id: album.id,
+                  name: album.name,
+                  artist: album.artists[0]?.name || "Unknown Artist",
+                  coverArt: album.images[0]?.url || album.images[1]?.url || "https://via.placeholder.com/300x300?text=No+Cover",
+                  releaseDate: album.release_date,
+                  trackCount: album.total_tracks || 0,
+                  link: album.external_urls?.spotify
+                }));
+
+                setAlbums(processedAlbums);
+              }
+
+              if (response.data.artists && response.data.artists.items) {
+                const processedArtists = response.data.artists.items.map(artist => ({
+                  id: artist.id,
+                  name: artist.name,
+                  picture: artist.images[1]?.url || artist.images[0]?.url,
+                  picture_medium: artist.images[1]?.url,
+                  picture_big: artist.images[0]?.url,
+                  nb_fan: artist.followers?.total || 0
+                }));
+
+                setArtists(processedArtists);
+              }
+            }
+          } else {
+            throw new Error('No Spotify authentication available');
+          }
+        } catch (spotifyFallbackErr) {
+          console.error('Both Deezer and Spotify search failed:', spotifyFallbackErr);
+          setError('Search failed. Please try again later.');
+        }
       }
-      
-      if (response.albums && response.albums.data) {
-        const processedAlbums = response.albums.data.map(album => ({
-          id: album.id,
-          name: album.title || album.name,
-          artist: album.artist?.name || "Unknown Artist",
-          coverArt: album.cover_big || album.cover_medium || album.cover || "https://via.placeholder.com/300x300?text=No+Cover",
-          releaseDate: album.release_date,
-          trackCount: album.nb_tracks,
-          link: album.link || `https://www.deezer.com/album/${album.id}`
-        }));
-        console.log("Processed albums:", processedAlbums);
-        console.log("Album artist:", albums[0]?.artist?.name);
-        setAlbums(processedAlbums);
-      }
-      
-      if (response.artists && response.artists.data) {
-        setArtists(response.artists.data);
-        const processedArtists = response.artists.data.map(artist => ({
-          id: artist.id,
-          name: artist.name,
-          picture: artist.picture_medium || artist.picture_big || artist.picture,
-          picture_medium: artist.picture_medium || artist.picture_big || artist.picture,
-          picture_big: artist.picture_big || artist.picture,
-          nb_fan: artist.nb_fan || 0
-        }));
-      }
-      
     } catch (err) {
-      if (err.name !== 'AbortError') { // Ignore abort errors
+      if (err.name !== 'AbortError') {
         console.error("Search error:", err);
         setError(err.message === 'Rate limited' 
           ? "Searching too quickly. Please wait a moment." 
@@ -168,81 +365,74 @@ export default function SearchPage() {
     }
   }
 
-  // Handle song playback
   const handlePlayPause = (songId, previewUrl, event) => {
     if (event) {
       event.stopPropagation();
     }
-    
-    // If clicked on currently playing song, pause it
+
     if (currentlyPlaying === songId) {
       audioRef.current.pause();
       setCurrentlyPlaying(null);
       return;
     }
-    
-    // If there's currently a song playing, pause it
+
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    
-    // Play the new song
+
     if (previewUrl) {
-      // Create a new audio element
       const audio = new Audio(previewUrl);
       audio.addEventListener('ended', () => setCurrentlyPlaying(null));
       audioRef.current = audio;
-      audio.play();
+      audio.play().catch(err => console.error("Error playing audio:", err));
       setCurrentlyPlaying(songId);
     }
   };
 
-  // Handle like button click
   const handleLike = (songId, event) => {
     if (event) {
       event.stopPropagation();
     }
-    
+
     setLikedSongs(prev => {
       const newLikes = {
         ...prev,
         [songId]: !prev[songId]
       };
-      
-      // Save to localStorage
+
       localStorage.setItem('likedSongs', JSON.stringify(newLikes));
       return newLikes;
     });
   };
 
-  // Group songs into categories based on popularity
   const groupedSongs = songs.reduce((groups, song) => {
     let groupName;
-    
-    // Group songs based on popularity ranking
+
     if (song.popularity > 500000) {
       groupName = 'Top Results';
     } else {
       groupName = 'Songs';
-    } 
-    
-    // Create group if it doesn't exist
+    }
+
     if (!groups[groupName]) {
       groups[groupName] = [];
     }
-    
+
     groups[groupName].push(song);
     return groups;
   }, {});
 
   return (
     <div className="my-4">
-      {/* Improved search input for immediate searching */}      
-      <h2 className="text-3xl font-bold mb-6 text-start">
-        {query ? `Search Results for "${query}"` : "Search for music"}
-      </h2>
-      
-      {/* Display user-friendly error */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-bold text-start">
+          {query ? `Search Results for "${query}"` : "Search for music"}
+        </h2>
+        {(songs.length > 0 || albums.length > 0 || artists.length > 0) && 
+          <span className="text-xs text-muted">via {source === 'spotify' ? 'Spotify' : 'Deezer'}</span>
+        }
+      </div>
+
       {error && (
         <div className="bg-primary-light/50 p-4 mb-6 rounded-lg text-center">
           <p className="text-amber-500 mb-2">{error}</p>
@@ -251,17 +441,15 @@ export default function SearchPage() {
           )}
         </div>
       )}
-      
+
       {loading && songs.length === 0 && albums.length === 0 ? (
         <LoadingSpinner message="Searching..." />
       ) : (
         <>
-          {/* Songs Section - With horizontal scrolling and popularity-based grouping */}
           {songs.length > 0 && Object.entries(groupedSongs).map(([groupName, groupSongs]) => (
             <div key={groupName} className="mb-8">
               <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">{groupName}</h3>}>
                 <div className="flex space-x-2">
-                  {/* Split tracks into groups of 4 for horizontal scrolling */}
                   {Array.from({ length: Math.ceil(groupSongs.length / 4) }).map((_, groupIndex) => {
                     const groupTracks = groupSongs.slice(groupIndex * 4, groupIndex * 4 + 4);
                     return (
@@ -273,13 +461,17 @@ export default function SearchPage() {
                           <div 
                             key={song.id} 
                             className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-primary-light transition-colors cursor-pointer"
-                            onClick={() => navigate(`/song/${song.id}`)} // Changed from /album/ to /song/
+                            onClick={() => navigate(`/song/${song.id}`)}
                           >
                             <div className="w-12 h-12 flex-shrink-0 relative group">
                               <img 
                                 src={song.albumArt} 
                                 alt={song.name}
                                 className="w-full h-full object-cover rounded"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
+                                }}
                               />
                               {song.previewUrl && (
                                 <button
@@ -298,7 +490,6 @@ export default function SearchPage() {
                               <div className="font-semibold text-white truncate">{song.name}</div>
                               <div className="flex justify-between">
                                 <div className="text-xs text-muted truncate">{song.artist}</div>
-                                
                               </div>
                             </div>
                             
@@ -322,7 +513,6 @@ export default function SearchPage() {
             </div>
           ))}
 
-          {/* Albums Section - Now with same style as TopAlbums */}
           {albums.length > 0 && (
             <ScrollableSection title="Albums">
               <div className="flex space-x-2 pb-1">
@@ -337,6 +527,10 @@ export default function SearchPage() {
                         src={album.coverArt}
                         alt={album.name}
                         className="w-full h-32 sm:h-40 md:h-48 object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
+                        }}
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
@@ -364,7 +558,6 @@ export default function SearchPage() {
             </ScrollableSection>
           )}
 
-          {/* Artists Section - Now with same style as TopArtists */}
           {artists.length > 0 && (
             <ScrollableSection title="Artists">
               <div className="flex space-x-2 pb-1">
@@ -372,11 +565,9 @@ export default function SearchPage() {
                   <div 
                     key={artist.id} 
                     className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
-                    //Testing
                     onClick={() => navigate(`/artist/${artist.id}`)}
                     style={{ aspectRatio: '1.6/1.7' }}
                   >
-                    {/* Blurred background image */}
                     <div className="absolute inset-0 overflow-hidden">
                       <div 
                         className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
@@ -385,13 +576,16 @@ export default function SearchPage() {
                       <div className="absolute inset-0 bg-black bg-opacity-40"></div>
                     </div>
                     
-                    {/* Card content with circular image */}
                     <div className="relative h-full flex flex-col items-center justify-center p-4">
                       <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 relative mb-3 border-2 border-white overflow-hidden rounded-full">
                         <img 
                           src={artist.picture_medium || artist.picture_big || artist.picture}
                           alt={artist.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://via.placeholder.com/300x300?text=No+Artist+Image";
+                          }}
                         />
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <FontAwesomeIcon 
@@ -416,15 +610,13 @@ export default function SearchPage() {
             </ScrollableSection>
           )}
 
-          {/* Empty state if no results */}
           {!loading && songs.length === 0 && albums.length === 0 && query && (
             <div className="text-center p-8 bg-primary-light/30 rounded-lg">
               <p className="text-lg text-muted">No results found for "{query}"</p>
-              <p className="text-sm mt-2">Refreshing</p>
+              <p className="text-sm mt-2">Try a different search term</p>
             </div>
           )}
           
-          {/* Initial state */}
           {!loading && songs.length === 0 && albums.length === 0 && !query && (
             <div className="text-center p-8 bg-primary-light/30 rounded-lg">
               <p className="text-lg text-muted">Enter a search query to find music</p>
@@ -437,7 +629,6 @@ export default function SearchPage() {
   );
 }
 
-// Helper function to format popularity for display
 function formatPopularity(value) {
   if (value >= 1000000) {
     return `${(value / 1000000).toFixed(1)}M`;
@@ -447,7 +638,6 @@ function formatPopularity(value) {
   return value.toString();
 }
 
-// Helper function to format fan count
 function formatFanCount(value) {
   if (value >= 1000000) {
     return `${(value / 1000000).toFixed(1)}M`;
@@ -455,4 +645,30 @@ function formatFanCount(value) {
     return `${(value / 1000).toFixed(0)}K`;
   }
   return value.toString();
+}
+
+// Helper function to calculate average popularity of content
+function calculateAveragePopularity(items) {
+  if (!items || items.length === 0) return 0;
+  const sum = items.reduce((acc, item) => acc + (item.popularity || 0), 0);
+  return sum / items.length;
+}
+
+// Helper function to merge results from both APIs, preferring one source but keeping unique items
+function mergeAndSortResults(preferred, secondary) {
+  // Start with all preferred items
+  const result = [...preferred];
+  
+  // Add secondary items that don't have a name match in the preferred list
+  const preferredNames = new Set(preferred.map(item => item.name?.toLowerCase()));
+  
+  secondary.forEach(item => {
+    // If this item name doesn't exist in preferred results, add it
+    if (item.name && !preferredNames.has(item.name.toLowerCase())) {
+      result.push(item);
+    }
+  });
+  
+  // Sort by popularity
+  return result.sort((a, b) => b.popularity - a.popularity);
 }
