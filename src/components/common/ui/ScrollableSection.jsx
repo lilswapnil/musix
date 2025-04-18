@@ -86,6 +86,7 @@ export default function ScrollableSection({ title, children }) {
           {typeof title === 'string' ? <h2 className="text-3xl font-bold text-start">{title}</h2> : title}
         </div>
         
+        {/* Remove arrows from here if you want to rely only on dots */}
         {isOverflowing && (
           <div className="flex space-x-2">
             <button
@@ -108,11 +109,15 @@ export default function ScrollableSection({ title, children }) {
         )}
       </div>
       
-      {/* Scrollable content */}
+      {/* Scrollable content - with enhanced scrollbar hiding */}
       <div
         ref={scrollContainerRef}
-        className="flex overflow-x-auto pb-4 hide-scrollbar"
-        style={{ scrollBehavior: 'smooth' }}
+        className="flex overflow-x-auto scrollbar-none"
+        style={{ 
+          scrollBehavior: 'smooth',
+          msOverflowStyle: 'none',  /* IE and Edge */
+          scrollbarWidth: 'none',   /* Firefox */
+        }}
       >
         {children}
       </div>

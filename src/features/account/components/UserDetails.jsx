@@ -175,38 +175,7 @@ export default function UserDetails() {
         
         {/* Recently played tracks */}
         <div className="bg-primary-light/30 rounded-lg p-4">
-          <ScrollableSection title="Recently Saved">
-            <div className="flex space-x-3 pb-2">
-              {recentlyPlayed.map((item, index) => (
-                <div 
-                  key={`${item.track.id}-${index}`}
-                  className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden border border-muted rounded-lg hover:border-accent transition-colors cursor-pointer"
-                  onClick={() => window.open(item.track.external_urls.spotify, '_blank')}
-                >
-                  <img 
-                    src={item.track.album.images[0]?.url || "https://via.placeholder.com/300x300?text=No+Cover"} 
-                    alt={item.track.name}
-                    className="w-full aspect-square object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "https://via.placeholder.com/300x300?text=No+Cover";
-                    }}
-                  />
-                  <div className="p-3">
-                    <h3 className="font-semibold text-white text-sm truncate">{item.track.name}</h3>
-                    <p className="text-xs text-muted truncate">{item.track.artists.map(artist => artist.name).join(', ')}</p>
-                    <p className="text-xs text-muted mt-1">{new Date(item.played_at).toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
-              
-              {recentlyPlayed.length === 0 && (
-                <div className="text-center w-full p-4">
-                  <p className="text-muted">No recently played tracks found</p>
-                </div>
-              )}
-            </div>
-          </ScrollableSection>
+          
         </div>
       </div>
 
