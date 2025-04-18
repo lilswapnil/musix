@@ -35,15 +35,16 @@ export default function HomePage() {
       <TrendingSongs /> 
       <TopAlbums />
       <TopArtists />
-      <FeaturedPlaylists />
       
       {/* Only show Spotify-dependent components when authenticated */}
       {isSpotifyAuthenticated && (
         <>
           <NewReleases />
-          <FeaturedGenres />
+          {/* <FeaturedGenres /> */}
         </>
       )}
+
+      <FeaturedPlaylists />
     </div>
   );
 }

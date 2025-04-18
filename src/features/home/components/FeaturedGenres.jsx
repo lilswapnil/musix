@@ -7,17 +7,24 @@ export default function FeaturedGenres() {
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [source, setSource] = useState(''); // To display the source of genres
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadGenres = async () => {
       try {
         setLoading(true);
+        console.log('Loading genre recommendations...');
         
-        // Get genres - returns cached or defaults immediately,
-        // and triggers background generation if needed
+        // Get genres from the updated service
         const recommendedGenres = await genreService.getRecommendedGenres();
-        setGenres(recommendedGenres);
+        
+        if (recommendedGenres && recommendedGenres.length > 0) {
+          setGenres(recommendedGenres);
+          // Set the source for displaying in the UI
+          setSource(recommendedGenres[0].source || 'api');
+          console.log(`Loaded ${recommendedGenres.length} genres from ${recommendedGenres[0].source || 'api'}`);
+        }
       } catch (err) {
         console.error('Error loading genres:', err);
         setError('Could not load genre recommendations');
@@ -99,6 +106,7 @@ export default function FeaturedGenres() {
             </div>
           ))}
         </div>
+        <p className="text-sm text-muted mt-4">Source: {source}</p>
       </ScrollableSection>
     </div>
   );
