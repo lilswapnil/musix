@@ -54,13 +54,31 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  const logout = () => {
+    // Clear all tokens from storage
+    localStorage.removeItem('spotify_access_token');
+    localStorage.removeItem('spotify_refresh_token');
+    localStorage.removeItem('spotify_token_expiry');
+    localStorage.removeItem('spotify_user_profile');
+    
+    // Clear any other user-related data
+    sessionStorage.removeItem('spotify_state');
+    
+    // Update auth state
+    setIsAuthenticated(false);
+    setUserProfile(null);
+    
+    console.log('User successfully logged out');
+  };
+
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 
       isLoading,
       userProfile, 
       setUserProfile,
-      setIsAuthenticated 
+      setIsAuthenticated,
+      logout
     }}>
       {children}
     </AuthContext.Provider>

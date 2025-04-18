@@ -31,16 +31,9 @@ export default function HomePage() {
 
   return (
     <div>
-<<<<<<< HEAD
-      <TrendingSongs /> 
-      <TopAlbums />
-      
-      <NewReleases />
-=======
       {/* These components use Deezer API and don't require Spotify auth */}
       <TrendingSongs /> 
       <TopAlbums />
->>>>>>> origin/main
       <TopArtists />
       <FeaturedPlaylists />
       
