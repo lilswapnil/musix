@@ -247,7 +247,7 @@ export default function Albums() {
         </div>
         
         {/* Album cover art remains the same */}
-        <div className="w-full md:w-48 lg:w-64 xl:w-80 flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative z-10">
+        <div className="w-full md:w-[11rem] lg:w-64 xl:w-80 flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative z-10">
           <div className="aspect-square w-full rounded-lg overflow-hidden shadow-xl">
             <img 
               src={album.cover_xl || album.cover_big || album.cover_medium || album.cover} 

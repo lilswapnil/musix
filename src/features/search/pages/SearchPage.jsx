@@ -367,7 +367,7 @@ export default function SearchPage() {
                     return (
                       <div 
                         key={groupIndex} 
-                        className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[400px] lg:w-[390px]"
+                        className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]"
                       >
                         {groupTracks.map((song) => (
                           <div 
@@ -431,7 +431,7 @@ export default function SearchPage() {
                 {albums.map((album) => (
                   <div 
                     key={album.id} 
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
+                    className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
                     onClick={() => navigate(`/album/${album.id}`)}
                   >
                     <div className="relative">
@@ -476,7 +476,7 @@ export default function SearchPage() {
                 {artists.map((artist) => (
                   <div 
                     key={artist.id} 
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
+                    className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
                     onClick={() => navigate(`/artist/${artist.id}`)}
                     style={{ aspectRatio: '1.6/1.7' }}
                   >
