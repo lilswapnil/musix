@@ -27,7 +27,8 @@ export function throttle(limit = 1000) {
   const timestamps = new Map();
   
   return function(key) {
-    return function(func) {
+    // Create a function that can be checked without execution
+    const throttleFn = function(func) {
       return function(...args) {
         const now = Date.now();
         const lastCall = timestamps.get(key) || 0;
@@ -52,6 +53,19 @@ export function throttle(limit = 1000) {
         }
       };
     };
+    
+    // Add a check method to allow checking without execution
+    throttleFn.check = function() {
+      const now = Date.now();
+      const lastCall = timestamps.get(key) || 0;
+      
+      if (now - lastCall < limit) {
+        const retryAfter = Math.ceil((lastCall + limit - now) / 1000);
+        throw new Error(`Rate limited: ${key} endpoint (retry in ${retryAfter}s)`);
+      }
+    };
+    
+    return throttleFn;
   };
 }
 

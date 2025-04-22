@@ -71,7 +71,7 @@ export default function TopAlbums() {
         {albums.map((album) => (
           <div 
             key={album.id} 
-            className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
+            className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
             onClick={() =>  navigate(`/album/${album.id}`)}
           >
             <div className="relative">

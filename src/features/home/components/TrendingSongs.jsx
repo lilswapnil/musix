@@ -177,7 +177,7 @@ export default function TrendingSongs() {
                 return (
                   <div 
                     key={groupIndex} 
-                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[400px] lg:w-[390px]"
+                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]"
                   >
                     {groupTracks.map((song, index) => (
                       <div 

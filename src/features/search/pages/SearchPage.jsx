@@ -76,9 +76,13 @@ export default function SearchPage() {
       try {
         return await fetchFunc();
       } catch (err) {
-        if (err.message && err.message.includes('Rate limit exceeded') && retries < maxRetries - 1) {
-          console.log(`Rate limited, retrying in ${delay / 1000}s... (attempt ${retries + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+        if ((err.message && err.message.includes('Rate limit exceeded') || 
+             err.status === 429) && 
+            retries < maxRetries - 1) {
+          // Get retry delay from error if available, or use default
+          const retryDelay = (err.retryAfter ? err.retryAfter * 1000 : delay);
+          console.log(`Rate limited, retrying in ${retryDelay / 1000}s... (attempt ${retries + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
           retries++;
         } else {
           throw err;

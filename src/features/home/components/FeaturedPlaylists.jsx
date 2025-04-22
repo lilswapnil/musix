@@ -75,7 +75,7 @@ export default function FeaturedPlaylists() {
                 {playlists.map((playlist) => (
                     <div 
                         key={playlist.id} 
-                        className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
+                        className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
                         onClick={() => window.open(playlist.link, "_blank")}
                     >   
                         <div className="relative">

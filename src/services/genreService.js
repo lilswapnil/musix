@@ -52,8 +52,16 @@ const genreService = {
       // Only try to get user top artists if logged in
       if (spotifyService.isLoggedIn()) {
         try {
-          const topArtists = await spotifyService.apiRequest('/me/top/artists', {
+          // Fix the API request call to match existing pattern in the code
+          const topArtists = await fetch('https://api.spotify.com/v1/me/top/artists', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${await spotifyService.getAccessToken()}`
+            },
             params: { limit: 50, time_range: 'medium_term' }
+          }).then(res => {
+            if (!res.ok) throw new Error(`API Error: ${res.status}`);
+            return res.json();
           });
           
           if (topArtists && topArtists.items && topArtists.items.length > 0) {

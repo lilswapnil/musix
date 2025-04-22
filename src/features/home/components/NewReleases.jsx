@@ -85,15 +85,15 @@ export default function NewReleases() {
           console.log('Falling back to Deezer for new releases');
           try {
             // Use the retry mechanism for Deezer calls
-            const deezerAlbums = await fetchWithRetry(
+            const deezerResponse = await fetchWithRetry(
               () => deezerService.getTrendingAlbums(20)
             );
 
-            if (deezerAlbums && deezerAlbums.length > 0) {
-              console.log(`Successfully fetched ${deezerAlbums.length} new releases from Deezer`);
+            if (deezerResponse && deezerResponse.data && deezerResponse.data.length > 0) {
+              console.log(`Successfully fetched ${deezerResponse.data.length} new releases from Deezer`);
 
               // Map Deezer data to our format
-              newReleases = deezerAlbums.map(album => ({
+              newReleases = deezerResponse.data.map(album => ({
                 id: album.id,
                 title: album.title,
                 artist: album.artist.name,
@@ -183,7 +183,7 @@ export default function NewReleases() {
         {albums.map((album) => (
           <div
             key={album.id}
-            className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
+            className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
             onClick={() => handleAlbumClick(album.link)}
           >
             <div className="relative">

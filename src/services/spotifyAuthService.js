@@ -24,10 +24,17 @@ export const redirectToSpotify = async () => {
     const currentLocation = window.location.pathname + window.location.search;
     localStorage.setItem('app_redirect_location', currentLocation);
 
+    // Use simpler redirect URI logic
+    const redirectUri = window.location.hostname === 'localhost' 
+      ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI
+      : import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+    
+    console.log('Using redirect URI:', redirectUri); // Debug log
+
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `client_id=${CLIENT_ID}` +
       `&response_type=code` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&scope=${SCOPES}` +
       `&code_challenge_method=S256` +
       `&code_challenge=${codeChallenge}`;

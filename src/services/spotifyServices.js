@@ -53,20 +53,6 @@ export const spotifyService = {
   },
 
   /**
-   * Generate a code challenge for PKCE flow
-   */
-  _generateCodeChallenge: async (codeVerifier) => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(codeVerifier);
-    const digest = await window.crypto.subtle.digest('SHA-256', data);
-    
-    return btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/=/g, '')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_');
-  },
-
-  /**
    * Generate authorization URL for Spotify OAuth
    */
   createAuthUrl: async () => {
