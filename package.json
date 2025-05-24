@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build && cp .nojekyll dist/",
-    "deploy": "gh-pages -d dist -r https://github.com/lilswapnil/musix.git"
+    "deploy": "gh-pages -d dist -r https://github.com/lilswapnil/musix.git",
+    "test": "echo \"No tests specified\""
   },
   "homepage": "https://lilswapnil.github.io/musix",
   "author": "Scott",
