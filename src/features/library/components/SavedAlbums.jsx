@@ -166,7 +166,10 @@ export default function SavedAlbums() {
       <h2 className="text-3xl font-bold mb-4 text-start">Saved Albums</h2>
       
       {sortedGroups.map(([groupName, albums]) => (
-        <ScrollableSection key={groupName} title={groupName}>
+        <ScrollableSection 
+          key={groupName} 
+          title={<h3 className="text-xl font-semibold text-start">{groupName}</h3>}
+        >
           <div className="flex space-x-2 pb-1">
             {albums.map((album) => (
               <div 

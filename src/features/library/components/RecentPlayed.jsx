@@ -158,7 +158,7 @@ export default function RecentPlayed({ token }) {
 
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-start">Recently Played</h2>
+      <h2 className="text-3xl font-bold mb-4 text-start">Recently Played</h2>
       
       {Object.entries(groupedTracks).map(([groupName, tracks]) => (
         <div key={groupName} className="mb-6">
