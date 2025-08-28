@@ -84,7 +84,7 @@ export default function Songs() {
           if (albumData.tracks && albumData.tracks.data) {
             const processedTracks = albumData.tracks.data
               .filter(track => track.id !== parseInt(songId))
-              .map((track, index) => ({
+              .map((track) => ({
                 id: track.id,
                 name: track.title,
                 artist: track.artist?.name,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useSpotifyPlayer } from '../../hooks/useSpotifyPlayer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -16,9 +16,6 @@ export default function SpotifyPlayer() {
     currentTrack, 
     playerError, 
     isPremium,
-    playTrack,
-    pause,
-    resume,
     togglePlay
   } = useSpotifyPlayer();
   

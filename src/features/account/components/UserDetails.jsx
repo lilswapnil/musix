@@ -3,13 +3,13 @@ import { spotifyService } from '../../../services/spotifyServices';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit, faKey, faSignOutAlt, faMusic, faCalendarAlt, faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import { faSignOutAlt, faMusic, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 import { getAccessToken, getUserProfile } from '../../../utils/tokenStorage';
 
 export default function UserDetails() {
   const [user, setUser] = useState(null);
-  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
+  const [_, setRecentlyPlayed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export default function UserDetails() {
     };
     
     // Fetch user's recently played tracks only
-    const fetchRecentlyPlayed = async (token) => {
+    const fetchRecentlyPlayed = async () => {
       try {
         const recentPlayed = await spotifyService.apiRequest('/me/player/recently-played', {
           params: { limit: 10 }
@@ -64,7 +64,7 @@ export default function UserDetails() {
     };
     
     // Fetch both profile and recently played
-    const fetchFullProfileData = async (token) => {
+    const fetchFullProfileData = async () => {
       // Fetch user data
       const userData = await spotifyService.getCurrentUser();
       setUser(userData);

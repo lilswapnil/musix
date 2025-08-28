@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { deezerService } from '../../../services/deezerServices';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
-import { getAccessToken } from '../../../utils/tokenStorage';
+// Removed unused getAccessToken
 import { ensureValidToken } from '../../../utils/refreshToken';
 
 export default function NewReleases() {
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [source, setSource] = useState('deezer'); // Default to Deezer until we know we have Spotify
-  const navigate = useNavigate();
+  const [source, setSource] = useState('deezer');
 
   useEffect(() => {
     // Add retry mechanism for rate limiting
@@ -126,11 +125,7 @@ export default function NewReleases() {
     fetchNewReleases();
   }, []);
 
-  const handleAlbumClick = (link) => {
-    if (link) {
-      window.open(link, '_blank');
-    }
-  };
+  // Removed unused handleAlbumClick
 
   // While loading, show spinner
   if (loading) {

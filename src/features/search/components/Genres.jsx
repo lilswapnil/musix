@@ -17,7 +17,7 @@ export default function Genres() {
     const location = useLocation();
     const navigate = useNavigate();
     const genreState = location.state || {};
-    const [loading, setLoading] = useState(false);
+    const [loading] = useState(false);
     const [spotifyAlbums, setSpotifyAlbums] = useState([]);
     const [deezerAlbums, setDeezerAlbums] = useState([]);
     const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
@@ -129,7 +129,7 @@ export default function Genres() {
         
         fetchAlbumsByGenre();
         fetchPlaylistsByGenre();
-    }, [genreName, decodedGenreName]);
+    }, [genreName, decodedGenreName, genreState]);
     
     // Go back to previous page
     const handleGoBack = () => {

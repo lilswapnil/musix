@@ -650,13 +650,13 @@ export const spotifyService = {
         }
       });
       
-      this._player.addListener('ready', ({ device_id }) => {
-        console.log('Spotify player ready with device ID:', device_id);
-        this._deviceId = device_id;
+      this._player.addListener('ready', ({ device_id: devId }) => {
+        console.log('Spotify player ready with device ID:', devId);
+        this._deviceId = devId;
         this._isPlayerReady = true;
       });
       
-      this._player.addListener('not_ready', ({ device_id }) => {
+      this._player.addListener('not_ready', () => {
         console.log('Spotify player disconnected');
         this._isPlayerReady = false;
       });
@@ -838,27 +838,4 @@ export function createDebouncedSpotifySearch(wait = 500) {
 /**
  * Add a fallback function that returns curated data when auth fails
  */
-async function fetchFallbackNewReleases(limit) {
-  // You could:
-  // 1. Use a different API that doesn't require auth
-  // 2. Return cached/hardcoded data
-  // 3. Fetch from your backend proxy
-  
-  // For now, return an example structure with a message
-  return {
-    albums: {
-      items: [
-        {
-          id: "demo1",
-          name: "Sample Album 1",
-          artists: [{ name: "Sample Artist" }],
-          images: [{ url: "https://via.placeholder.com/300x300?text=Sample+Album" }],
-          release_date: new Date().toISOString().split('T')[0],
-          total_tracks: 10,
-          external_urls: { spotify: "https://spotify.com" }
-        },
-        // Add more sample albums here...
-      ]
-    }
-  };
-}
+// Removed unused fetchFallbackNewReleases

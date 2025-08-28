@@ -1,6 +1,5 @@
 import NavBar from "./NavBar";
 import { Outlet, useLocation } from "react-router-dom";
-import logo from '../../assets/logo-light.svg';
 
 export default function Layout() {
   const location = useLocation();

@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from 'react';
 import { removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faClock } from "@fortawesome/free-solid-svg-icons";
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
 // Update the function signature to accept token prop

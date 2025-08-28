@@ -30,7 +30,7 @@ export default function TopAlbums() {
         } else {
           throw new Error('Invalid response format');
         }
-      } catch (err) {
+      } catch {
         setError('Could not load trending albums');
       } finally {
         setLoading(false);

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAccessToken, getUserProfile, getRefreshToken, clearAuthData } from '../utils/tokenStorage';
+import { getAccessToken, getUserProfile, getRefreshToken } from '../utils/tokenStorage';
 import { ensureValidToken } from '../utils/refreshToken';
 
 export const AuthContext = createContext();

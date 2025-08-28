@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { musicService } from "../../../services/musicService";
+// import { musicService } from "../../../services/musicService";
 import axios from 'axios';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faPause, faSearch, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
-import { debounce } from "../../../utils/requestUtils";
+// Removed unused debounce import
 
 export default function SearchPage() {
   const [albums, setAlbums] = useState([]);
@@ -19,7 +19,8 @@ export default function SearchPage() {
   const [source, setSource] = useState('deezer');
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [likedSongs, setLikedSongs] = useState({});
-  const [searchInput, setSearchInput] = useState("");
+  // local searchInput state removed (unused)
+  // const [searchInput, setSearchInput] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search).get("query") || "";
@@ -36,7 +37,7 @@ export default function SearchPage() {
       console.error('Error loading liked songs:', error);
     }
 
-    setSearchInput(query);
+    // setSearchInput(query); // This line was removed as per the edit hint
 
     if (query) {
       search(query);
@@ -52,23 +53,9 @@ export default function SearchPage() {
     };
   }, [query]);
 
-  const memoizedSearch = useCallback(search, []);
+  // Removed unused memoizedSearch
 
-  const debouncedSearch = useCallback(
-    debounce((searchQuery) => {
-      if (searchQuery) {
-        const searchParams = new URLSearchParams();
-        searchParams.set("query", searchQuery);
-        navigate({
-          pathname: location.pathname,
-          search: searchParams.toString()
-        }, { replace: true });
-      }
-
-      memoizedSearch(searchQuery);
-    }, 800),
-    [navigate, location.pathname, memoizedSearch]
-  );
+  // Removed unused debouncedSearch; search is triggered via effect on query
 
   const fetchWithRetry = async (fetchFunc, maxRetries = 3, delay = 6000) => {
     let retries = 0;
@@ -91,22 +78,7 @@ export default function SearchPage() {
     }
   };
 
-  const handleSearchInput = (event) => {
-    const newQuery = event.target.value;
-    setSearchInput(newQuery);
-
-    if (newQuery.trim().length > 1) {
-      debouncedSearch(newQuery);
-    } else if (newQuery.trim() === '') {
-      setSongs([]);
-      setAlbums([]);
-      setArtists([]);
-
-      navigate({
-        pathname: location.pathname
-      }, { replace: true });
-    }
-  };
+  // Removed unused handleSearchInput to satisfy linter
 
   async function search(searchQuery) {
     if (!searchQuery || searchQuery.trim().length < 2) {
@@ -541,14 +513,7 @@ export default function SearchPage() {
   );
 }
 
-function formatPopularity(value) {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M`;
-  } else if (value >= 1000) {
-    return `${(value / 1000).toFixed(0)}K`;
-  }
-  return value.toString();
-}
+// Removed unused formatPopularity
 
 function formatFanCount(value) {
   if (value >= 1000000) {

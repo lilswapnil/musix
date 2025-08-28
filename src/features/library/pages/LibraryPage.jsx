@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import RecentPlayed from '../components/RecentPlayed';
 import CurrentlyPlaying from '../components/CurrentlyPlaying';
 import SavedAlbums from '../components/SavedAlbums';
-import { useAuth } from '../../../context/AuthContext';
+// import { useAuth } from '../../../context/AuthContext';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { useNavigate } from 'react-router-dom';
 import SpotifyPlayer from '../../../components/player/SpotifyPlayer';
@@ -16,7 +16,7 @@ export default function LibraryPage() {
   const [token, setToken] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {

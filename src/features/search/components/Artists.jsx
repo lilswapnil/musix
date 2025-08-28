@@ -7,9 +7,6 @@ import {
   faPlay, 
   faPause, 
   faArrowLeft, 
-  faClock,
-  faUser,
-  faCompactDisc,
   faMusic,
   faUsers
 } from "@fortawesome/free-solid-svg-icons";
@@ -29,7 +26,7 @@ export default function Artist() {
   const navigate = useNavigate();
   
   const [allSongs, setAllSongs] = useState([]);
-  const [artists, setArtists] = useState([]);
+  const [_, setArtistList] = useState([]);
   const [loadingMoreSongs, setLoadingMoreSongs] = useState(false);
   const [hasMoreSongs, setHasMoreSongs] = useState(false);
   const [page, setPage] = useState(1);
@@ -61,7 +58,7 @@ export default function Artist() {
         setArtist(artistData);
 
         if (artistData.artists && artistData.artists.data) {
-          setArtists(artistData.artists.data);
+          setArtistList(artistData.artists.data);
         }
 
         // Process artist data with explicit image handling
@@ -225,12 +222,7 @@ export default function Artist() {
   };
   
   // Format time from seconds to mm:ss
-  const formatTime = (seconds) => {
-    if (!seconds) return "--:--";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Removed unused formatTime
   
   // Format fan count for display
   const formatFanCount = (value) => {

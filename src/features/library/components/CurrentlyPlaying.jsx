@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faPlay, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 
 // Update the function signature to accept token prop
 export default function CurrentlyPlaying({ token }) {

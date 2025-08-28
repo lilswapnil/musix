@@ -5,7 +5,7 @@ import TopAlbums from '../components/TopAlbums';
 import TrendingSongs from '../components/TrendingSongs';
 import TopArtists from '../components/TopArtists';
 import NewReleases from '../components/NewReleases';
-import { spotifyService } from '../../../services/spotifyServices';
+// import { spotifyService } from '../../../services/spotifyServices';
 import { getAccessToken } from '../../../utils/tokenStorage';
 
 

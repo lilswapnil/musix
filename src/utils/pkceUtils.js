@@ -1,4 +1,4 @@
-import pkceChallenge from 'pkce-challenge';
+// pkceChallenge is not used; remove import to satisfy lint
 
 /**
  * PKCE Challenge Generator for Spotify OAuth

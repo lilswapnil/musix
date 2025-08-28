@@ -1,5 +1,5 @@
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import logo from '../../assets/logo-light.svg';
 import { debounce } from '../../utils/requestUtils';
 
@@ -10,14 +10,13 @@ export default function NavBar() {
   const location = useLocation();
 
   // Create debounced search handler
-  const debouncedSearch = useCallback(
+  const debouncedSearch = useMemo(() => 
     debounce((query) => {
       if (query.trim()) {
         navigate(`/search?query=${encodeURIComponent(query)}`);
       }
-    }, 500),
-    [navigate]
-  );
+    }, 500)
+  , [navigate]);
 
   // Update search input and trigger debounced search
   const handleSearchInput = (e) => {

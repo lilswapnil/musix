@@ -11,7 +11,6 @@ import {
   faCompactDisc,
   faCalendar,
   faMusic,
-  faGuitar,
   faUser
 } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
@@ -360,7 +359,7 @@ export default function Albums() {
         {/* Track list */}
         {tracks.length > 0 ? (
           <div className="space-y-2">
-            {tracks.map((track, index) => (
+            {tracks.map((track) => (
               <div 
                 key={track.id} 
                 className={`grid grid-cols-12 items-center py-2 px-2 rounded-md hover:bg-primary-light/50 transition-colors ${
