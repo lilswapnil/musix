@@ -183,8 +183,7 @@ export default function NewReleases() {
         {albums.map((album) => (
           <div
             key={album.id}
-            className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
-            onClick={() => handleAlbumClick(album.link)}
+            className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
           >
             <div className="relative">
               <img

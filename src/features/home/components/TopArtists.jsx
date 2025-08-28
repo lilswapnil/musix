@@ -72,7 +72,7 @@ export default function TopArtists() {
         {artists.map((artist) => (
           <div 
             key={artist.id} 
-            className="flex-shrink-0 w-32 sm:w-40 md:w-[11rem] overflow-hidden  cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
+            className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden  cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
             onClick={() => window.open(artist.link, '_blank')}
             style={{ aspectRatio: '1.6/1.7' }}
           >
