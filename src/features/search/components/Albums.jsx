@@ -347,7 +347,7 @@ export default function Albums() {
         {/* Table header */}
         <div className="hidden md:grid grid-cols-12 border-b border-muted/30 pb-2 mb-2 text-muted text-sm">
           <div className="col-span-1 text-center">#</div>
-          <div className="col-span-5">Title</div>
+          <div className="col-span-5 text-start">Title</div>
           <div className="col-span-4">Artist</div>
           <div className="col-span-1 text-center">
             <FontAwesomeIcon icon={faClock} />
@@ -390,7 +390,7 @@ export default function Albums() {
                 </div>
                 
                 {/* Title */}
-                <div className="col-span-11 md:col-span-5 text-white font-medium truncate pl-2 md:pl-0">
+                <div className="col-span-11 md:col-span-5 text-white font-medium truncate pl-2 md:pl-0 text-start">
                   {track.name}
                 </div>
                 
