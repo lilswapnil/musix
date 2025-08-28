@@ -348,7 +348,7 @@ export default function Albums() {
         <div className="hidden md:grid grid-cols-12 border-b border-muted/30 pb-2 mb-2 text-muted text-sm">
           <div className="col-span-1 text-center">#</div>
           <div className="col-span-5 text-start">Title</div>
-          <div className="col-span-4">Artist</div>
+          <div className="col-span-4 text-start">Artist</div>
           <div className="col-span-1 text-center">
             <FontAwesomeIcon icon={faClock} />
           </div>
@@ -395,7 +395,7 @@ export default function Albums() {
                 </div>
                 
                 {/* Artist - Only visible on md and up */}
-                <div className="hidden md:block col-span-4 text-accent text-sm truncate">
+                <div className="hidden md:block col-span-4 text-accent text-sm truncate text-start">
                   {track.artist}
                 </div>
                 
