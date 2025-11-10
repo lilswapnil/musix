@@ -24,14 +24,6 @@ export function useSpotifyPlayer() {
         
         if (mounted) setIsPremium(hasPremium);
         
-        // For debugging, force premium to true (remove this later)
-        if (mounted) setIsPremium(true);
-        
-        if (!hasPremium) {
-          console.warn('Premium check failed, but continuing anyway for debugging');
-          // Continue with player init even without premium for testing
-        }
-        
         // Initialize the player with state change callback
         const success = await spotifyService.initializePlayer((state) => {
           if (!mounted) return;

@@ -1,10 +1,7 @@
-// pkceChallenge is not used; remove import to satisfy lint
-
 /**
  * PKCE Challenge Generator for Spotify OAuth
  */
 
-// Generate a random string for code verifier
 function generateRandomString(length) {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
   return Array.from({ length }, () => 

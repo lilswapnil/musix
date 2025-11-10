@@ -2,12 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { exchangeCodeForToken } from '../../../services/spotifyAuthService';
 import { getAccessToken } from '../../../utils/tokenStorage';
-import genreService from '../../../services/genreService'; // Import genre service
+import genreService from '../../../services/genreService';
 
-// Function to get the access code from localStorage
 const getAccessCode = () => {
   const code = localStorage.getItem('spotify_auth_code');
-  // Remove the code from localStorage after reading it
   if (code) {
     localStorage.removeItem('spotify_auth_code');
   }
@@ -37,16 +35,9 @@ export default function AuthCallback() {
           return;
         }
         
-        // Exchange the code for tokens and fetch user profile
         await exchangeCodeForToken(code);
-        
-        // Trigger genre generation in background
         genreService.generateUserGenresInBackground();
-        
-        // Redirect to homepage after successful authentication
-        const redirectTo = '/home';
-        localStorage.removeItem('app_redirect_location');
-        navigate(redirectTo);
+        navigate('/home');
       } catch (error) {
         console.error('Authentication failed:', error);
         setError('Authentication failed');

@@ -20,16 +20,9 @@ export const redirectToSpotify = async () => {
     const { codeVerifier, codeChallenge } = await generatePKCEChallenge();
     storeCodeVerifier(codeVerifier);
 
-    // Store the current app location
-    const currentLocation = window.location.pathname + window.location.search;
-    localStorage.setItem('app_redirect_location', currentLocation);
-
-    // Use simpler redirect URI logic
     const redirectUri = window.location.hostname === 'localhost' 
       ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI
       : import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
-    
-    console.log('Using redirect URI:', redirectUri); // Debug log
 
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `client_id=${CLIENT_ID}` +
