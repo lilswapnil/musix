@@ -1,95 +1,236 @@
-# Musix 🎵
+# 🎵 Musix - Spotify Music Discovery Platform
 
-[![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18.16.0-green)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-4.18.2-lightgrey)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.0.8-green)](https://www.mongodb.com/)
+A modern music streaming web application that integrates with Spotify API to discover, stream, and manage your favorite music. Built with React, Vite, and modern web technologies.
 
-Musix is a full-stack music streaming web application designed to deliver a seamless music experience. Discover new tracks, create playlists, and enjoy personalized recommendations based on your listening habits.
+[![React](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Spotify API](https://img.shields.io/badge/Spotify_API-v1-1DB954?logo=spotify&logoColor=white)](https://developer.spotify.com/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-## Features ✨
+## 📋 Table of Contents
 
-- **User Authentication**: Secure signup/login with JWT.
-- **Playlist Management**: Create, edit, and delete playlists.
-- **Music Interaction**: Like/unlike songs, view listening history.
-- **Search**: Find songs, artists, or albums quickly.
-- **Recommendations**: AI-powered suggestions based on your preferences.
-- **Responsive Design**: Works smoothly on all devices.
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [API Integration](#-api-integration)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-## Installation 🛠️
+## ✨ Features
 
-### Prerequisites
-- Node.js (v18+)
-- npm (v9+)
-- MongoDB Atlas account or local MongoDB instance
+### Core Functionality
+- 🔐 **Spotify Authentication** - Secure OAuth 2.0 with PKCE flow
+- 🎵 **Music Discovery** - Browse trending songs, albums, and artists
+- 🎸 **Genre Exploration** - Discover music by genre
+- 🎧 **Track Management** - Save and organize your favorite tracks
+- 📚 **Library Management** - View your saved albums and songs
+- ⭐ **Personalization** - Top tracks, artists, and recently played
+- 🔍 **Advanced Search** - Search songs, artists, albums, and genres
+- 🎨 **Modern UI** - Beautiful, responsive design with Tailwind CSS
+- 🌙 **Theme Support** - Dark/light mode compatibility
 
-### Steps
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/lilswapnil/musix.git
-   cd musix
+## 💻 Tech Stack
 
-2. **Install dependencies**
-   # Client
-   ```cd client && npm install
-   
-   # Server
-   ```cd ../server && npm install
-   Configure Environment Variables
+### Frontend
+| Technology | Purpose |
+|-----------|---------|
+| **React 19** | UI framework |
+| **Vite** | Build tool & dev server |
+| **React Router** | Client-side routing |
+| **Tailwind CSS** | Styling & responsive design |
+| **FontAwesome** | Icons |
+| **Axios** | HTTP client |
 
-3. **Create .env in /server:**
-   
-   JWT_SECRET=your_jwt_secret_key
-   MONGO_URI=your_mongodb_connection_string
-   PORT=5000
-   CLIENT_URL=http://localhost:3000
-   Start the application
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| **Node.js** | Runtime environment |
+| **Express.js** | Web framework |
+| **CORS** | Cross-origin requests |
+| **dotenv** | Environment variables |
 
-# From root directory
-npm run dev  # Starts both client and server concurrently
-Access client at http://localhost:3000
+### Third-party Services
+| Service | Purpose |
+|---------|---------|
+| **Spotify Web API** | Music data & streaming |
+| **Deezer API** | Additional music sources |
+| **YouTube API** | Video content |
 
-Server runs on http://localhost:5000
+## 📦 Prerequisites
 
-Tech Stack 💻
-Component	Technology
-Frontend	React, Redux Toolkit, Tailwind CSS
-Backend	Node.js, Express
-Database	MongoDB, Mongoose ODM
-Authentication	JSON Web Tokens (JWT)
-Deployment	(Specify if deployed, e.g., Vercel + Render)
-Contributing 🤝
-Fork the repository.
+- **Node.js** v18 or higher
+- **npm** v9 or higher
+- **Spotify Developer Account** (free)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
-Create a feature branch: git checkout -b feature/your-idea.
+## 🚀 Installation
 
-Commit changes: git commit -m 'Add awesome feature'.
+### 1. Clone the Repository
+\`\`\`bash
+git clone https://github.com/lilswapnil/musix.git
+cd musix
+\`\`\`
 
-Push to the branch: git push origin feature/your-idea.
+### 2. Install Dependencies
+\`\`\`bash
+npm install
+\`\`\`
 
-Open a Pull Request.
+### 3. Set Up Environment Variables
+Create a \`.env\` file in the project root:
 
-License 📄
-This project is licensed under the MIT License - see LICENSE for details.
+\`\`\`env
+# Spotify OAuth
+VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id
+VITE_SPOTIFY_REDIRECT_URI=http://localhost:5173/callback
+VITE_SPOTIFY_LOCAL_REDIRECT_URI=http://localhost:5173/callback
 
-Acknowledgments 🙏
-Built with ❤️ by Scott.
+# Optional APIs
+VITE_YOUTUBE_CLIENT_ID=your_youtube_client_id
+VITE_YOUTUBE_API_KEY=your_youtube_api_key
 
-UI inspiration from Spotify.
+# Backend
+VITE_BACKEND_URL=http://localhost:5000
+\`\`\`
 
-React Icons for iconography.
+### 4. Spotify Setup
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Create a new app
+3. Accept terms and create the app
+4. Copy your **Client ID**
+5. Paste it in \`.env\` as \`VITE_SPOTIFY_CLIENT_ID\`
 
-Happy Listening! 🎧
-Report an Issue | View API Docs if available
+## ⚙️ Configuration
 
-Copy
+### Update Backend URL (if different)
+Edit \`src/services/spotifyAuthService.js\` if running on a different backend:
+\`\`\`javascript
+const REDIRECT_URI = 'http://your-backend-url/callback';
+\`\`\`
+
+### Tailwind CSS
+Customization available in \`tailwind.config.js\`
+
+### Vite Configuration
+Modify \`vite.config.js\` for build optimization
+
+## 💿 Usage
+
+### Development Server
+\`\`\`bash
+npm run dev
+\`\`\`
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5000 (if running)
+
+### Production Build
+\`\`\`bash
+npm run build
+\`\`\`
+Creates optimized build in \`dist/\` directory
+
+### Preview Build
+\`\`\`bash
+npm run preview
+\`\`\`
+
+### Linting
+\`\`\`bash
+npm run lint
+\`\`\`
+
+## 📂 Project Structure
+
+\`\`\`
+musix/
+├── src/
+│   ├── features/              # Feature modules
+│   │   ├── auth/             # Authentication flow
+│   │   ├── home/             # Home page components
+│   │   ├── search/           # Search functionality
+│   │   ├── library/          # User library
+│   │   └── account/          # Account settings
+│   ├── components/            # Reusable components
+│   │   ├── common/           # UI components
+│   │   ├── layout/           # Layout components
+│   │   ├── player/           # Player controls
+│   │   └── routes/           # Route protectors
+│   ├── services/              # API services
+│   │   ├── spotifyServices.js
+│   │   ├── spotifyAuthService.js
+│   │   ├── genreService.js
+│   │   └── musicService.js
+│   ├── utils/                 # Utility functions
+│   ├── context/               # React Context
+│   ├── hooks/                 # Custom hooks
+│   ├── App.jsx               # Main app component
+│   └── main.jsx              # Entry point
+├── public/                    # Static assets
+├── backend/                   # Express backend
+├── script/                    # Analysis scripts
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+└── README.md
+\`\`\`
+
+## 🔗 API Integration
+
+### Spotify Authentication
+- **Flow**: OAuth 2.0 with PKCE
+- **File**: \`src/services/spotifyAuthService.js\`
+- **Scope**: User data, library access, playback
+
+### Available Endpoints
+- Search tracks, artists, albums
+- Get user's top items
+- Fetch user library
+- Get recommendations
+- Browse featured playlists
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch: \`git checkout -b feature/amazing-feature\`
+3. **Commit** changes: \`git commit -m 'Add amazing feature'\`
+4. **Push** to branch: \`git push origin feature/amazing-feature\`
+5. **Open** a Pull Request
+
+### Coding Standards
+- Use functional components with React Hooks
+- Follow ESLint configuration
+- Keep components modular and reusable
+- Add comments for complex logic
+- Test changes before submitting PR
+
+## 📝 License
+
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Spotify** for the amazing Music API
+- **React** community for fantastic resources
+- **Tailwind CSS** for beautiful styling
+- **Vite** for blazing-fast builds
+
+## 📞 Support
+
+- 🐛 Report bugs via [GitHub Issues](https://github.com/lilswapnil/musix/issues)
+- 💬 Ask questions in Discussions
+- �� Contact: [GitHub](https://github.com/lilswapnil)
 
 ---
 
-### Notes:
-1. Replace `your_jwt_secret_key` and `your_mongodb_connection_string` with actual values.
-2. Add real screenshots by uploading images to the repo and updating the `![Musix Screenshot]` URL.
-3. Customize the "Deployment" section if the app is hosted live.
-4. Include API documentation link if available.
-New chat
-
+<div align="center">
+  <strong>Made with ❤️ by Scott</strong>
+  <br/>
+  <sub>Happy streaming! 🎧</sub>
+</div>
