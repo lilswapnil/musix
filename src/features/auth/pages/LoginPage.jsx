@@ -1,27 +1,41 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { youtubeService } from '../../../services/youtubeService';
 import { redirectToSpotify } from '../../../services/spotifyAuthService';
+import { useAuth } from '../../../context/AuthContext';
 import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { setIsAuthenticated, setUserProfile } = useAuth();
+  const [isYouTubeLoading, setIsYouTubeLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     youtubeService.initClient().catch((error) => {
       console.error('Error initializing YouTube API client:', error);
+      setError('Failed to initialize YouTube login. Please try Spotify instead.');
     });
   }, []);
 
   const handleYouTubeLogin = async () => {
     try {
-      const accessToken = await youtubeService.signIn();
+      setIsYouTubeLoading(true);
+      setError(null);
+
+      const { accessToken, userProfile } = await youtubeService.signIn();
       console.log('YouTube Access Token:', accessToken);
 
-      // Redirect to the home page or another page
+      // Update auth context with user profile
+      setIsAuthenticated(true);
+      setUserProfile(userProfile);
+
+      // Redirect to the home page
       navigate('/home');
     } catch (error) {
       console.error('YouTube Login Error:', error);
+      setError('Failed to login with YouTube. Please try again.');
+      setIsYouTubeLoading(false);
     }
   };
 
@@ -43,6 +57,12 @@ export default function LoginPage() {
           <p className="text-muted">Connect with your music.</p>
         </div>
 
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
         <div className="flex flex-col space-y-4">
           <button
             className="flex items-center justify-center rounded-lg bg-[#1DB954] p-3 text-white hover:bg-[#1DB954]/90 transition-colors"
@@ -55,13 +75,23 @@ export default function LoginPage() {
           </button>
 
           <button
-            className="flex items-center justify-center rounded-lg bg-[#FF0000] p-3 text-white hover:bg-[#FF0000]/90 transition-colors"
+            className="flex items-center justify-center rounded-lg bg-[#FF0000] p-3 text-white hover:bg-[#FF0000]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleYouTubeLogin}
+            disabled={isYouTubeLoading}
           >
-            <svg className="mr-2 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M21.8 8.001a2.75 2.75 0 0 0-1.936-1.945C18.2 6 12 6 12 6s-6.2 0-7.864.056A2.75 2.75 0 0 0 2.2 8.001 28.8 28.8 0 0 0 2 12a28.8 28.8 0 0 0 .2 3.999 2.75 2.75 0 0 0 1.936 1.945C5.8 18 12 18 12 18s6.2 0 7.864-.056A2.75 2.75 0 0 0 21.8 16 28.8 28.8 0 0 0 22 12a28.8 28.8 0 0 0-.2-3.999zM9.75 15V9l5.25 3-5.25 3z" />
-            </svg>
-            Continue with YouTube
+            {isYouTubeLoading ? (
+              <>
+                <div className="mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Signing in...
+              </>
+            ) : (
+              <>
+                <svg className="mr-2 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.8 8.001a2.75 2.75 0 0 0-1.936-1.945C18.2 6 12 6 12 6s-6.2 0-7.864.056A2.75 2.75 0 0 0 2.2 8.001 28.8 28.8 0 0 0 2 12a28.8 28.8 0 0 0 .2 3.999 2.75 2.75 0 0 0 1.936 1.945C5.8 18 12 18 12 18s6.2 0 7.864-.056A2.75 2.75 0 0 0 21.8 16 28.8 28.8 0 0 0 22 12a28.8 28.8 0 0 0-.2-3.999zM9.75 15V9l5.25 3-5.25 3z" />
+                </svg>
+                Continue with YouTube
+              </>
+            )}
           </button>
 
           <button

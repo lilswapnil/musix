@@ -2,9 +2,18 @@ import { generatePKCEChallenge, storeCodeVerifier, getCodeVerifier, clearCodeVer
 import { setAccessToken, setRefreshToken, setUserProfile, getRefreshToken } from '../utils/tokenStorage';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-const REDIRECT_URI = import.meta.env.MODE === 'development'
-  ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI
-  : import.meta.env.VITE_SPOTIFY_REDIRECT_URI.replace(/#/g, '%23');
+
+// Helper function to get consistent redirect URI
+const getRedirectUri = () => {
+  // Check if running on localhost (development)
+  const isLocalhost = window.location.hostname === 'localhost' ||
+                      window.location.hostname === '127.0.0.1';
+
+  return isLocalhost
+    ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI
+    : import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+};
+
 const SCOPES = [
   'user-read-private',
   'user-read-email',
@@ -22,9 +31,7 @@ export const redirectToSpotify = async () => {
     const { codeVerifier, codeChallenge } = await generatePKCEChallenge();
     storeCodeVerifier(codeVerifier);
 
-    const redirectUri = window.location.hostname === 'localhost' 
-      ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI
-      : import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+    const redirectUri = getRedirectUri();
 
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `client_id=${CLIENT_ID}` +
@@ -53,7 +60,7 @@ export const exchangeCodeForToken = async (code) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: getRedirectUri(),
         client_id: CLIENT_ID,
         code_verifier: codeVerifier,
       }).toString(),
@@ -61,13 +68,13 @@ export const exchangeCodeForToken = async (code) => {
 
     const data = await response.json();
     if (response.ok) {
-      setAccessToken(data.access_token);
+      setAccessToken(data.access_token, data.expires_in);
       setRefreshToken(data.refresh_token);
       clearCodeVerifier();
-      
+
       // Fetch and store user profile
       await fetchAndStoreUserProfile(data.access_token);
-      
+
       return data.access_token;
     } else {
       throw new Error(data.error || 'Token exchange failed.');
@@ -118,7 +125,7 @@ export const refreshAccessToken = async () => {
 
     const data = await response.json();
     if (response.ok) {
-      setAccessToken(data.access_token);
+      setAccessToken(data.access_token, data.expires_in);
       if (data.refresh_token) setRefreshToken(data.refresh_token);
       return data.access_token;
     } else {
