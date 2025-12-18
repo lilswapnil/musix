@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Authenticating - Musix</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musix - Authenticating</title>
   <style>
     * {
       margin: 0;
@@ -58,22 +60,30 @@
     }
   </style>
   <script>
-    window.onload = function() {
-      // Get the code from URL
+    (function() {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
 
-      if (code) {
-        // Store the code in localStorage
-        localStorage.setItem('spotify_auth_code', code);
-        // Redirect to the Auth component in React app
-        window.location.href = '/musix/#/callback';
+      const isLocalhost = window.location.hostname === 'localhost' ||
+                          window.location.hostname === '127.0.0.1';
+      const basePath = isLocalhost ? '' : '/musix';
+
+      if (error) {
+        console.error('Spotify auth error:', error, errorDescription);
+        window.location.href = `${basePath}/#/login?error=${encodeURIComponent(errorDescription || error)}`;
         return;
       }
 
-      // If no code found, redirect to login
-      window.location.href = '/musix/#/login';
-    };
+      if (code) {
+        window.location.href = `${basePath}/#/callback?code=${encodeURIComponent(code)}`;
+        return;
+      }
+
+      console.warn('No authorization code received');
+      window.location.href = `${basePath}/#/login?error=${encodeURIComponent('No authorization code received')}`;
+    })();
   </script>
 </head>
 <body>

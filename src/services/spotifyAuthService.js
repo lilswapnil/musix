@@ -9,9 +9,13 @@ const getRedirectUri = () => {
   const isLocalhost = window.location.hostname === 'localhost' ||
                       window.location.hostname === '127.0.0.1';
 
-  return isLocalhost
-    ? import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI
-    : import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+  if (isLocalhost) {
+    return import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI;
+  }
+  
+  // For production (GitHub Pages), use the full URL with base path
+  // The redirect goes to callback.html which then redirects to the React app
+  return import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
 };
 
 const SCOPES = [
@@ -32,6 +36,9 @@ export const redirectToSpotify = async () => {
     storeCodeVerifier(codeVerifier);
 
     const redirectUri = getRedirectUri();
+    
+    console.log('Spotify Auth - Redirect URI:', redirectUri);
+    console.log('Spotify Auth - Client ID:', CLIENT_ID);
 
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `client_id=${CLIENT_ID}` +
@@ -39,19 +46,30 @@ export const redirectToSpotify = async () => {
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&scope=${SCOPES}` +
       `&code_challenge_method=S256` +
-      `&code_challenge=${codeChallenge}`;
+      `&code_challenge=${codeChallenge}` +
+      `&show_dialog=false`;
 
+    console.log('Redirecting to Spotify authorization...');
     window.location.href = authUrl;
   } catch (error) {
     console.error('Error redirecting to Spotify:', error);
+    throw new Error(`Failed to initiate Spotify login: ${error.message}`);
   }
 };
 
 export const exchangeCodeForToken = async (code) => {
-  if (!code) throw new Error('Authorization code is missing.');
+  if (!code) {
+    throw new Error('Authorization code is missing.');
+  }
 
   const codeVerifier = getCodeVerifier();
-  if (!codeVerifier) throw new Error('Code verifier is missing.');
+  if (!codeVerifier) {
+    throw new Error('Code verifier is missing. Please try logging in again.');
+  }
+
+  const redirectUri = getRedirectUri();
+  console.log('Exchanging code for token...');
+  console.log('Redirect URI:', redirectUri);
 
   try {
     const response = await fetch('https://accounts.spotify.com/api/token', {
@@ -60,14 +78,16 @@ export const exchangeCodeForToken = async (code) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: getRedirectUri(),
+        redirect_uri: redirectUri,
         client_id: CLIENT_ID,
         code_verifier: codeVerifier,
       }).toString(),
     });
 
     const data = await response.json();
+    
     if (response.ok) {
+      console.log('Token exchange successful');
       setAccessToken(data.access_token, data.expires_in);
       setRefreshToken(data.refresh_token);
       clearCodeVerifier();
@@ -77,10 +97,13 @@ export const exchangeCodeForToken = async (code) => {
 
       return data.access_token;
     } else {
-      throw new Error(data.error || 'Token exchange failed.');
+      console.error('Token exchange failed:', data);
+      const errorMsg = data.error_description || data.error || 'Token exchange failed';
+      throw new Error(errorMsg);
     }
   } catch (error) {
     console.error('Error exchanging code for token:', error);
+    clearCodeVerifier(); // Clean up on error
     throw error;
   }
 };
@@ -88,6 +111,7 @@ export const exchangeCodeForToken = async (code) => {
 // Add new function to fetch user profile
 export const fetchAndStoreUserProfile = async (accessToken) => {
   try {
+    console.log('Fetching user profile...');
     const response = await fetch('https://api.spotify.com/v1/me', {
       headers: {
         Authorization: `Bearer ${accessToken}`
@@ -96,10 +120,12 @@ export const fetchAndStoreUserProfile = async (accessToken) => {
     
     if (response.ok) {
       const userProfile = await response.json();
+      console.log('User profile fetched:', userProfile.display_name || userProfile.id);
       setUserProfile(userProfile);
       return userProfile;
     } else {
-      console.error('Failed to fetch user profile');
+      const errorData = await response.json();
+      console.error('Failed to fetch user profile:', errorData);
       return null;
     }
   } catch (error) {
