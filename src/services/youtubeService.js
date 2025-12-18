@@ -32,9 +32,22 @@ export const youtubeService = {
       const user = await authInstance.signIn();
       const accessToken = user.getAuthResponse().access_token;
 
-      // Save the token to localStorage or context
+      // Save the token to localStorage
       localStorage.setItem('youtube_access_token', accessToken);
-      return accessToken;
+
+      // Get and save user profile
+      const profile = user.getBasicProfile();
+      const userProfile = {
+        id: profile.getId(),
+        name: profile.getName(),
+        email: profile.getEmail(),
+        image: profile.getImageUrl(),
+        provider: 'youtube'
+      };
+
+      localStorage.setItem('youtube_user_profile', JSON.stringify(userProfile));
+
+      return { accessToken, userProfile };
     } catch (error) {
       console.error('YouTube Sign-In Error:', error);
       throw error;

@@ -55,19 +55,26 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = () => {
-    // Clear all tokens from storage
+    // Clear all Spotify tokens from storage
     localStorage.removeItem('spotify_access_token');
     localStorage.removeItem('spotify_refresh_token');
     localStorage.removeItem('spotify_token_expiry');
     localStorage.removeItem('spotify_user_profile');
-    
+
+    // Clear YouTube tokens
+    localStorage.removeItem('youtube_access_token');
+    localStorage.removeItem('youtube_user_profile');
+
+    // Clear PKCE verifier
+    localStorage.removeItem('pkce_code_verifier');
+
     // Clear any other user-related data
     sessionStorage.removeItem('spotify_state');
-    
+
     // Update auth state
     setIsAuthenticated(false);
     setUserProfile(null);
-    
+
     console.log('User successfully logged out');
   };
 
