@@ -50,20 +50,28 @@ export default function AuthCallback() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-red-500">
-          <h1 className="text-xl font-semibold mb-2">Authentication Error</h1>
-          <p>{error}</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-primary to-primary-dark">
+        <div className="text-center bg-primary-light p-8 rounded-xl shadow-lg max-w-md">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h1 className="text-xl font-semibold mb-2 text-white">Authentication Error</h1>
+          <p className="text-muted mb-4">{error}</p>
+          <button
+            onClick={() => navigate('/login')}
+            className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
+          >
+            Back to Login
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-primary to-primary-dark">
       <div className="text-center">
-        <h1 className="text-xl font-semibold mb-2">Authenticating...</h1>
-        <p>Please wait while we log you in</p>
+        <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <h1 className="text-xl font-semibold mb-2 text-white">Authenticating...</h1>
+        <p className="text-muted">Please wait while we log you in</p>
       </div>
     </div>
   );

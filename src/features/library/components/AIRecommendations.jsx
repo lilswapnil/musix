@@ -251,41 +251,6 @@ export default function AIRecommendations() {
         </div>
       )}
 
-      {/* How It Works */}
-      {!isEnabled && (
-        <div className="bg-primary-light/50 rounded-xl p-6 mt-6">
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <FontAwesomeIcon icon={faBrain} className="text-accent" />
-            How It Works
-          </h3>
-          <ul className="space-y-2 text-sm text-muted">
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">1.</span>
-              <span>AI monitors what's currently playing on your Spotify account</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">2.</span>
-              <span>
-                Analyzes the track's audio features (energy, mood, tempo, etc.)
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">3.</span>
-              <span>
-                Uses Spotify's recommendation engine to find similar tracks you'll love
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">4.</span>
-              <span>Automatically adds the best match to your playback queue</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">5.</span>
-              <span>Repeats the process as you listen, creating an endless personalized flow</span>
-            </li>
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

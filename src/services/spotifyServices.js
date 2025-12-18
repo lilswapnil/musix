@@ -1,4 +1,6 @@
 import { enhancedApiRequest, throttle } from '../utils/requestUtils';
+import { getAccessToken, getRefreshToken, getTokenExpiry } from '../utils/tokenStorage';
+import { refreshAccessToken as refreshToken } from './spotifyAuthService';
 
 /**
  * Spotify API Services with debouncing and throttling
@@ -203,20 +205,24 @@ export const spotifyService = {
    */
   getUserToken: async function() {
     try {
-      const tokenData = JSON.parse(localStorage.getItem(this._tokenKey) || '{}');
-      
-      if (tokenData.access_token && tokenData.expires) {
-        if (tokenData.expires <= Date.now() + 60000) {
-          if (tokenData.refresh_token) {
-            return await this.refreshAccessToken();
-          }
-          throw new Error('Token expired and no refresh token available');
-        } else {
-          return tokenData.access_token;
-        }
+      const token = getAccessToken();
+      const expiry = getTokenExpiry();
+      const refreshTokenValue = getRefreshToken();
+
+      if (!token) {
+        throw new Error('No user token available');
       }
-      
-      throw new Error('No user token available');
+
+      // Check if token is expired or about to expire (within 1 minute)
+      if (expiry && expiry <= Date.now() + 60000) {
+        if (refreshTokenValue) {
+          console.log('Token expired, refreshing...');
+          return await refreshToken();
+        }
+        throw new Error('Token expired and no refresh token available');
+      }
+
+      return token;
     } catch (error) {
       console.error('Error getting user token:', error);
       throw error;
@@ -228,8 +234,9 @@ export const spotifyService = {
    */
   isLoggedIn: () => {
     try {
-      const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
-      return !!(tokenData.access_token && tokenData.refresh_token);
+      const token = getAccessToken();
+      const refreshTokenValue = getRefreshToken();
+      return !!(token && refreshTokenValue);
     } catch {
       return false;
     }
