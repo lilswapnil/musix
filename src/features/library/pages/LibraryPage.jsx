@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import RecentPlayed from '../components/RecentPlayed';
 import CurrentlyPlaying from '../components/CurrentlyPlaying';
 import SavedAlbums from '../components/SavedAlbums';
+import AIRecommendations from '../components/AIRecommendations';
 // import { useAuth } from '../../../context/AuthContext';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { useNavigate } from 'react-router-dom';
@@ -105,6 +106,7 @@ export default function LibraryPage() {
       <>
         <SpotifyPlayer />
         <CurrentlyPlaying token={token} />
+        <AIRecommendations />
         <RecentPlayed token={token} />
         <SavedAlbums token={token} />
       </>

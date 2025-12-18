@@ -10,8 +10,10 @@ const SCOPES = [
   'user-read-email',
   'user-read-currently-playing',
   'user-read-playback-state',
+  'user-modify-playback-state',
   'user-read-recently-played',
   'user-library-read',
+  'user-library-modify',
   'user-top-read',
 ].join('%20');
 

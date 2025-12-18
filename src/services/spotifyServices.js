@@ -811,6 +811,176 @@ export const spotifyService = {
       this._deviceId = null;
       this._isPlayerReady = false;
     }
+  },
+
+  /**
+   * Get currently playing track
+   * @returns {Promise<Object>} Currently playing track data
+   */
+  getCurrentlyPlaying: async function() {
+    try {
+      const response = await this.apiRequest('/me/player/currently-playing');
+      // Spotify returns 204 No Content when nothing is playing
+      if (!response || Object.keys(response).length === 0) {
+        return null;
+      }
+      return response;
+    } catch (error) {
+      console.error('Error getting currently playing track:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get AI-powered track recommendations based on seeds
+   * @param {Object} options - Recommendation parameters
+   * @param {Array<string>} options.seed_tracks - Track IDs to use as seeds (max 5 combined with artists and genres)
+   * @param {Array<string>} options.seed_artists - Artist IDs to use as seeds
+   * @param {Array<string>} options.seed_genres - Genre names to use as seeds
+   * @param {number} options.limit - Number of recommendations (default 20, max 100)
+   * @param {Object} options.target_* - Target audio features (energy, danceability, etc.)
+   * @returns {Promise<Object>} Recommended tracks
+   */
+  getRecommendations: async function(options = {}) {
+    try {
+      const params = {
+        limit: options.limit || 20,
+        market: 'US'
+      };
+
+      // Add seeds (max 5 total across all seed types)
+      if (options.seed_tracks && options.seed_tracks.length > 0) {
+        params.seed_tracks = options.seed_tracks.slice(0, 5).join(',');
+      }
+      if (options.seed_artists && options.seed_artists.length > 0) {
+        params.seed_artists = options.seed_artists.slice(0, 5).join(',');
+      }
+      if (options.seed_genres && options.seed_genres.length > 0) {
+        params.seed_genres = options.seed_genres.slice(0, 5).join(',');
+      }
+
+      // Add target audio features if provided
+      const audioFeatures = [
+        'target_acousticness', 'target_danceability', 'target_energy',
+        'target_instrumentalness', 'target_liveness', 'target_loudness',
+        'target_speechiness', 'target_tempo', 'target_valence',
+        'min_energy', 'max_energy', 'min_tempo', 'max_tempo'
+      ];
+
+      audioFeatures.forEach(feature => {
+        if (options[feature] !== undefined) {
+          params[feature] = options[feature];
+        }
+      });
+
+      return await this.apiRequest('/recommendations', { params });
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Add a track to the user's playback queue
+   * @param {string} trackUri - Spotify URI of the track to add (e.g., 'spotify:track:xxxxx')
+   * @param {string} deviceId - Optional device ID (uses active device if not specified)
+   * @returns {Promise<void>}
+   */
+  addToQueue: async function(trackUri, deviceId = null) {
+    try {
+      const params = { uri: trackUri };
+      if (deviceId) {
+        params.device_id = deviceId;
+      }
+
+      await this.apiRequest('/me/player/queue', {
+        method: 'POST',
+        params
+      });
+
+      console.log(`Added track to queue: ${trackUri}`);
+    } catch (error) {
+      console.error('Error adding track to queue:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Skip to next track in queue
+   * @param {string} deviceId - Optional device ID
+   * @returns {Promise<void>}
+   */
+  skipToNext: async function(deviceId = null) {
+    try {
+      const params = {};
+      if (deviceId) {
+        params.device_id = deviceId;
+      }
+
+      await this.apiRequest('/me/player/next', {
+        method: 'POST',
+        params
+      });
+
+      console.log('Skipped to next track');
+    } catch (error) {
+      console.error('Error skipping to next track:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Skip to previous track
+   * @param {string} deviceId - Optional device ID
+   * @returns {Promise<void>}
+   */
+  skipToPrevious: async function(deviceId = null) {
+    try {
+      const params = {};
+      if (deviceId) {
+        params.device_id = deviceId;
+      }
+
+      await this.apiRequest('/me/player/previous', {
+        method: 'POST',
+        params
+      });
+
+      console.log('Skipped to previous track');
+    } catch (error) {
+      console.error('Error skipping to previous track:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get audio features for a track
+   * @param {string} trackId - Track ID
+   * @returns {Promise<Object>} Audio features data
+   */
+  getAudioFeatures: async function(trackId) {
+    try {
+      return await this.apiRequest(`/audio-features/${trackId}`);
+    } catch (error) {
+      console.error('Error getting audio features:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get audio features for multiple tracks
+   * @param {Array<string>} trackIds - Array of track IDs (max 100)
+   * @returns {Promise<Object>} Audio features data for multiple tracks
+   */
+  getMultipleAudioFeatures: async function(trackIds) {
+    try {
+      return await this.apiRequest('/audio-features', {
+        params: { ids: trackIds.join(',') }
+      });
+    } catch (error) {
+      console.error('Error getting multiple audio features:', error);
+      throw error;
+    }
   }
 };
 
