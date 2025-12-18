@@ -34,7 +34,7 @@ export default function HomePage() {
     <div>
       {/* Only show AI Recommendations when authenticated with Spotify */}
       {isSpotifyAuthenticated && (
-        <AIRecommendations />
+        <AIRecommendations mode="single" />
       )}
 
       {/* These components use Deezer API and don't require Spotify auth */}

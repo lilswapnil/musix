@@ -303,6 +303,95 @@ class AIRecommendationService {
       checkIntervalMs: this.checkIntervalMs
     };
   }
+
+  /**
+   * Get list of AI recommendations based on current track (without queueing)
+   * @param {Object} options - Configuration options
+   * @param {number} options.limit - Number of recommendations to fetch (default: 20)
+   * @param {Object} options.track - Optional track object to base recommendations on (uses currently playing if not provided)
+   * @returns {Promise<Array>} Array of recommended tracks
+   */
+  async getRecommendationsList(options = {}) {
+    try {
+      let currentTrack = options.track;
+      
+      // If no track provided, get currently playing track
+      if (!currentTrack) {
+        const currentlyPlaying = await spotifyService.getCurrentlyPlaying();
+        if (!currentlyPlaying || !currentlyPlaying.item) {
+          return [];
+        }
+        currentTrack = currentlyPlaying.item;
+      }
+
+      // Extract seed data from current track
+      const seedTracks = [currentTrack.id];
+      const seedArtists = currentTrack.artists.slice(0, 2).map(artist => artist.id);
+
+      // Get audio features to better match recommendations
+      let audioFeatures = null;
+      try {
+        audioFeatures = await spotifyService.getAudioFeatures(currentTrack.id);
+      } catch (error) {
+        console.warn('Could not fetch audio features:', error);
+      }
+
+      // Build recommendation options
+      const recommendationOptions = {
+        seed_tracks: seedTracks,
+        seed_artists: seedArtists,
+        limit: options.limit || 20
+      };
+
+      // Add audio features as targets if available
+      if (audioFeatures) {
+        recommendationOptions.target_energy = audioFeatures.energy;
+        recommendationOptions.target_danceability = audioFeatures.danceability;
+        recommendationOptions.target_valence = audioFeatures.valence;
+      }
+
+      // Fetch recommendations from Spotify
+      const recommendations = await spotifyService.getRecommendations(recommendationOptions);
+
+      if (!recommendations || !recommendations.tracks || recommendations.tracks.length === 0) {
+        return [];
+      }
+
+      // Format and return recommendations
+      return recommendations.tracks.map(track => ({
+        id: track.id,
+        name: track.name,
+        artists: track.artists.map(a => ({ id: a.id, name: a.name })),
+        album: {
+          id: track.album.id,
+          name: track.album.name,
+          images: track.album.images
+        },
+        preview_url: track.preview_url,
+        external_urls: track.external_urls,
+        uri: track.uri,
+        duration_ms: track.duration_ms,
+        popularity: track.popularity
+      }));
+    } catch (error) {
+      console.error('Error getting recommendations list:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get next recommended song (single recommendation)
+   * @returns {Promise<Object|null>} Next recommended track or null
+   */
+  async getNextRecommendation() {
+    try {
+      const recommendations = await this.getRecommendationsList({ limit: 1 });
+      return recommendations.length > 0 ? recommendations[0] : null;
+    } catch (error) {
+      console.error('Error getting next recommendation:', error);
+      return null;
+    }
+  }
 }
 
 // Export singleton instance
