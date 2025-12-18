@@ -5,6 +5,7 @@ import TopAlbums from '../components/TopAlbums';
 import TrendingSongs from '../components/TrendingSongs';
 import TopArtists from '../components/TopArtists';
 import NewReleases from '../components/NewReleases';
+import AIRecommendations from '../../library/components/AIRecommendations';
 // import { spotifyService } from '../../../services/spotifyServices';
 import { getAccessToken } from '../../../utils/tokenStorage';
 
@@ -31,11 +32,16 @@ export default function HomePage() {
 
   return (
     <div>
+      {/* Only show AI Recommendations when authenticated with Spotify */}
+      {isSpotifyAuthenticated && (
+        <AIRecommendations />
+      )}
+
       {/* These components use Deezer API and don't require Spotify auth */}
-      <TrendingSongs /> 
+      <TrendingSongs />
       <TopAlbums />
       <TopArtists />
-      
+
       {/* Only show Spotify-dependent components when authenticated */}
       {isSpotifyAuthenticated && (
         <>

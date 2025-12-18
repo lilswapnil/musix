@@ -20,10 +20,10 @@ export default function AuthCallback() {
           setTimeout(() => navigate('/home'), 500);
           return;
         }
-        
+
         // Get the code from URL parameters
         const code = searchParams.get('code');
-        
+
         if (!code) {
           const errorMsg = searchParams.get('error') || 'No authorization code found';
           console.error('Auth error:', errorMsg);
@@ -31,15 +31,15 @@ export default function AuthCallback() {
           setTimeout(() => navigate('/login'), 2000);
           return;
         }
-        
+
         // Exchange code for token
         setStatus('Exchanging authorization code...');
         await exchangeCodeForToken(code);
-        
+
         // Generate user genres in background
         setStatus('Setting up your account...');
         genreService.generateUserGenresInBackground();
-        
+
         // Success! Redirect to home
         setStatus('Success! Opening app...');
         setTimeout(() => navigate('/home'), 500);
@@ -56,27 +56,23 @@ export default function AuthCallback() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-indigo-800">
-        <div className="text-center bg-white p-8 rounded-lg shadow-2xl max-w-md">
-          <div className="text-red-500 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold mb-2 text-gray-800">Authentication Error</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-500">Redirecting to login page...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-primary to-primary-dark">
+        <div className="text-center bg-primary-light p-8 rounded-xl shadow-lg max-w-md">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h1 className="text-xl font-semibold mb-2 text-white">Authentication Error</h1>
+          <p className="text-muted mb-4">{error}</p>
+          <p className="text-sm text-muted">Redirecting to login page...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-indigo-800">
-      <div className="text-center bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-lg shadow-2xl">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
-        <h1 className="text-2xl font-semibold mb-2 text-white">{status}</h1>
-        <p className="text-gray-200">Please wait...</p>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-primary to-primary-dark">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <h1 className="text-xl font-semibold mb-2 text-white">{status}</h1>
+        <p className="text-muted">Please wait...</p>
       </div>
     </div>
   );
