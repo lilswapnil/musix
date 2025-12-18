@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { youtubeService } from '../../../services/youtubeService';
 import { redirectToSpotify } from '../../../services/spotifyAuthService';
 import { useAuth } from '../../../context/AuthContext';
@@ -7,16 +7,25 @@ import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setIsAuthenticated, setUserProfile } = useAuth();
   const [isYouTubeLoading, setIsYouTubeLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Check for error in URL params (from failed auth redirect)
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+    
     youtubeService.initClient().catch((error) => {
       console.error('Error initializing YouTube API client:', error);
-      setError('Failed to initialize YouTube login. Please try Spotify instead.');
+      if (!errorParam) {
+        setError('Failed to initialize YouTube login. Please try Spotify instead.');
+      }
     });
-  }, []);
+  }, [searchParams]);
 
   const handleYouTubeLogin = async () => {
     try {
@@ -39,8 +48,14 @@ export default function LoginPage() {
     }
   };
 
-  const handleSpotifyLogin = () => {
-    redirectToSpotify();
+  const handleSpotifyLogin = async () => {
+    try {
+      setError(null);
+      await redirectToSpotify();
+    } catch (error) {
+      console.error('Spotify Login Error:', error);
+      setError('Failed to initiate Spotify login. Please try again.');
+    }
   };
 
   return (
