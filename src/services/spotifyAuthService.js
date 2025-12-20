@@ -12,9 +12,7 @@ const getRedirectUri = () => {
   if (isLocalhost) {
     return import.meta.env.VITE_SPOTIFY_LOCAL_REDIRECT_URI;
   }
-  
-  // For production (GitHub Pages), use the full URL with base path
-  // The redirect goes to callback.html which then redirects to the React app
+
   return import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
 };
 
@@ -36,10 +34,6 @@ export const redirectToSpotify = async () => {
     storeCodeVerifier(codeVerifier);
 
     const redirectUri = getRedirectUri();
-    
-    console.log('Spotify Auth - Redirect URI:', redirectUri);
-    console.log('Spotify Auth - Client ID:', CLIENT_ID);
-
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `client_id=${CLIENT_ID}` +
       `&response_type=code` +
@@ -49,7 +43,6 @@ export const redirectToSpotify = async () => {
       `&code_challenge=${codeChallenge}` +
       `&show_dialog=false`;
 
-    console.log('Redirecting to Spotify authorization...');
     window.location.href = authUrl;
   } catch (error) {
     console.error('Error redirecting to Spotify:', error);
@@ -68,8 +61,6 @@ export const exchangeCodeForToken = async (code) => {
   }
 
   const redirectUri = getRedirectUri();
-  console.log('Exchanging code for token...');
-  console.log('Redirect URI:', redirectUri);
 
   try {
     const response = await fetch('https://accounts.spotify.com/api/token', {
@@ -85,16 +76,12 @@ export const exchangeCodeForToken = async (code) => {
     });
 
     const data = await response.json();
-    
+
     if (response.ok) {
-      console.log('Token exchange successful');
       setAccessToken(data.access_token, data.expires_in);
       setRefreshToken(data.refresh_token);
       clearCodeVerifier();
-
-      // Fetch and store user profile
       await fetchAndStoreUserProfile(data.access_token);
-
       return data.access_token;
     } else {
       console.error('Token exchange failed:', data);
@@ -103,7 +90,7 @@ export const exchangeCodeForToken = async (code) => {
     }
   } catch (error) {
     console.error('Error exchanging code for token:', error);
-    clearCodeVerifier(); // Clean up on error
+    clearCodeVerifier();
     throw error;
   }
 };
@@ -111,16 +98,14 @@ export const exchangeCodeForToken = async (code) => {
 // Add new function to fetch user profile
 export const fetchAndStoreUserProfile = async (accessToken) => {
   try {
-    console.log('Fetching user profile...');
     const response = await fetch('https://api.spotify.com/v1/me', {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
     });
-    
+
     if (response.ok) {
       const userProfile = await response.json();
-      console.log('User profile fetched:', userProfile.display_name || userProfile.id);
       setUserProfile(userProfile);
       return userProfile;
     } else {

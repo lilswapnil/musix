@@ -1,36 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBrain,
-  faPlay,
-  faPause,
-  faMusic,
-  faHistory,
-  faCheckCircle,
-  faExclamationCircle,
-  faRobot,
-  faForward,
-  faList
+  faBrain, faPlay, faMusic, faSpinner, faChevronLeft, faChevronRight, faExternalLinkAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { aiRecommendationService } from '../../../services/aiRecommendationService';
 import { spotifyService } from '../../../services/spotifyServices';
 
-export default function AIRecommendations({ mode = 'single' }) {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [lastRecommendation, setLastRecommendation] = useState(null);
-  const [currentTrack, setCurrentTrack] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('AI recommendations are off');
-  const [recommendedTracks, setRecommendedTracks] = useState([]);
-  const [nextRecommendation, setNextRecommendation] = useState(null);
-  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center">
+    <div className="relative w-12 h-12">
+      <div className="absolute inset-0 bg-gradient-to-r from-accent to-accent/50 rounded-full animate-spin"></div>
+      <div className="absolute inset-1 bg-primary-light rounded-full"></div>
+    </div>
+  </div>
+);
 
-  // Fetch recommendations function - memoized with useCallback
+export default function AIRecommendations({ mode = 'single' }) {
+  const [nextRecommendation, setNextRecommendation] = useState(null);
+  const [recommendedTracks, setRecommendedTracks] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
   const fetchRecommendations = useCallback(async () => {
     try {
-      setIsLoadingRecommendations(true);
+      setIsLoading(true);
       if (mode === 'list') {
         const tracks = await aiRecommendationService.getRecommendationsList({ limit: 20 });
         setRecommendedTracks(tracks);
@@ -40,421 +33,215 @@ export default function AIRecommendations({ mode = 'single' }) {
       }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
-      // Set empty state on error
-      if (mode === 'list') {
-        setRecommendedTracks([]);
-      } else {
-        setNextRecommendation(null);
-      }
     } finally {
-      setIsLoadingRecommendations(false);
+      setIsLoading(false);
     }
   }, [mode]);
 
   useEffect(() => {
-    // Set up event listener for recommendation service
-    const handleRecommendationEvent = (event) => {
-      console.log('Recommendation event:', event);
-
-      switch (event.type) {
-        case 'started':
-          setStatusMessage('AI is listening for tracks...');
-          break;
-
-        case 'stopped':
-          setStatusMessage('AI recommendations are off');
-          setLastRecommendation(null);
-          setCurrentTrack(null);
-          break;
-
-        case 'track_changed':
-          setCurrentTrack(event.track);
-          setStatusMessage(`Analyzing: ${event.track.name}`);
-          // Refresh recommendations when track changes
-          if (mode === 'list' || mode === 'single') {
-            fetchRecommendations();
-          }
-          break;
-
-        case 'track_queued':
-          setLastRecommendation(event.recommendedTrack);
-          setStatusMessage(
-            `Queued: ${event.recommendedTrack.name} by ${event.recommendedTrack.artists.join(', ')}`
-          );
-          // Update history
-          setHistory(aiRecommendationService.getHistory(10));
-          // Refresh recommendations after queueing
-          if (mode === 'list' || mode === 'single') {
-            fetchRecommendations();
-          }
-          break;
-
-        case 'no_track_playing':
-          setStatusMessage('No track playing - play something to start!');
-          break;
-
-        case 'no_recommendations':
-          setStatusMessage('Could not find recommendations for this track');
-          break;
-
-        case 'error':
-          setStatusMessage(`Error: ${event.error}`);
-          break;
-
-        case 'queue_error':
-          setStatusMessage(`Queue error: ${event.error}`);
-          break;
-
-        default:
-          break;
-      }
-
-      // Update status
-      setStatus(aiRecommendationService.getStatus());
-    };
-
-    // Add listener
-    aiRecommendationService.addListener(handleRecommendationEvent);
-
-    // Get initial status
-    const initialStatus = aiRecommendationService.getStatus();
-    setIsEnabled(initialStatus.isEnabled);
-    setStatus(initialStatus);
-
-    if (initialStatus.isEnabled) {
-      setHistory(aiRecommendationService.getHistory(10));
-    }
-
-    // Fetch initial recommendations if in list or single mode
-    if (mode === 'list' || mode === 'single') {
-      fetchRecommendations();
-    }
-
-    // Set up periodic refresh for list mode (every 5 minutes)
-    let refreshInterval = null;
-    if (mode === 'list') {
-      refreshInterval = setInterval(() => {
-        fetchRecommendations();
-      }, 5 * 60 * 1000); // 5 minutes
-    }
-
-    // Cleanup
-    return () => {
-      aiRecommendationService.removeListener(handleRecommendationEvent);
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [mode, fetchRecommendations]);
-
-  const handleToggle = () => {
-    if (isEnabled) {
-      aiRecommendationService.stop();
-      setIsEnabled(false);
-    } else {
-      aiRecommendationService.start({
-        checkInterval: 30000 // Check every 30 seconds
-      });
-      setIsEnabled(true);
-      setHistory(aiRecommendationService.getHistory(10));
-    }
-  };
-
-  const handleClearHistory = () => {
-    aiRecommendationService.clearHistory();
-    setHistory([]);
-    setLastRecommendation(null);
-  };
+    fetchRecommendations();
+    const refreshInterval = setInterval(fetchRecommendations, 5 * 60 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [fetchRecommendations]);
 
   const handlePlayTrack = async (trackUri) => {
     try {
       await spotifyService.addToQueue(trackUri);
-      // Refresh recommendations after adding to queue
-      fetchRecommendations();
     } catch (error) {
       console.error('Error adding track to queue:', error);
     }
   };
 
-  // Render list mode (for library page)
-  if (mode === 'list') {
+  const scroll = (direction) => {
+    const container = document.getElementById('ai-tracks-scroll');
+    if (container) {
+      const scrollAmount = 300;
+      const newPosition = direction === 'left' 
+        ? Math.max(0, scrollPosition - scrollAmount)
+        : scrollPosition + scrollAmount;
+      container.scrollTo({ left: newPosition, behavior: 'smooth' });
+      setScrollPosition(newPosition);
+    }
+  };
+
+  if (mode === 'single') {
     return (
-      <div className="mb-8">
-        {/* Header Section */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <FontAwesomeIcon icon={faBrain} className="text-3xl text-accent" />
-            <h2 className="text-3xl font-bold">AI Recommended Tracks</h2>
+      <div className="mb-12">
+        <h2 className="text-3xl font-bold mb-4 text-start">For You</h2>
+        
+        {isLoading ? (
+          <div className="relative h-80 rounded-xl overflow-hidden shadow-lg bg-primary-light flex items-center justify-center">
+            <LoadingSpinner />
           </div>
-          <button
-            onClick={fetchRecommendations}
-            disabled={isLoadingRecommendations}
-            className="px-4 py-2 rounded-full font-semibold transition-all duration-300 flex items-center gap-2 bg-primary-light text-text hover:bg-primary-light/80 disabled:opacity-50"
-          >
-            <FontAwesomeIcon icon={faList} />
-            {isLoadingRecommendations ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-
-        {/* Description */}
-        <p className="text-muted mb-6">
-          Discover tracks recommended by AI based on your listening history and preferences.
-        </p>
-
-        {/* Recommended Tracks List */}
-        {isLoadingRecommendations ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-pulse flex flex-col items-center">
-              <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-accent">Loading recommendations...</p>
+        ) : nextRecommendation ? (
+          <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg group">
+            <div className="absolute inset-0">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-primary/50">
+                {nextRecommendation.album?.images?.[0]?.url && (
+                  <img 
+                    src={nextRecommendation.album.images[0].url}
+                    alt={nextRecommendation.album.name}
+                    className="w-full h-full object-cover opacity-50 blur-sm scale-110"
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        ) : recommendedTracks.length > 0 ? (
-          <div className="bg-primary-light rounded-xl p-6 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recommendedTracks.map((track) => (
-                <div
-                  key={track.id}
-                  className="bg-primary/30 p-4 rounded-lg hover:bg-primary/40 transition cursor-pointer"
-                  onClick={() => handlePlayTrack(track.uri)}
-                >
-                  <div className="flex items-start gap-3">
-                    {track.album.images && track.album.images.length > 0 && (
-                      <img
-                        src={track.album.images[0].url}
-                        alt={track.album.name}
-                        className="w-16 h-16 rounded object-cover"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm truncate">{track.name}</h4>
-                      <p className="text-xs text-muted truncate">
-                        {track.artists.map(a => a.name).join(', ')}
-                      </p>
-                      <p className="text-xs text-muted mt-1 truncate">{track.album.name}</p>
+            
+            <div className="relative p-4 sm:p-8 flex flex-col sm:flex-row">
+              <div className="mx-auto sm:mx-0 mb-4 sm:mb-0 sm:mr-6 md:mr-8 flex-shrink-0">
+                {nextRecommendation.album?.images?.[0]?.url ? (
+                  <img 
+                    src={nextRecommendation.album.images[0].url}
+                    alt={nextRecommendation.album.name}
+                    className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 object-cover shadow-lg rounded-lg"
+                  />
+                ) : (
+                  <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-primary-light flex items-center justify-center rounded-lg">
+                    <FontAwesomeIcon icon={faPlay} className="text-4xl text-muted" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1 flex flex-col justify-end text-center sm:text-start">
+                <div>
+                  <div className="flex flex-col sm:flex-row items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FontAwesomeIcon icon={faBrain} className="text-accent text-lg" />
+                        <span className="text-xs font-semibold text-accent uppercase tracking-wide">Next Up</span>
+                      </div>
+                      <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold text-white mb-2 truncate">{nextRecommendation.name}</h2>
+                      <p className="text-lg sm:text-lg text-white/80 mb-1">{nextRecommendation.artists?.map(a => a.name).join(', ')}</p>
+                      <p className="text-white sm:block hidden text-sm">{nextRecommendation.album?.name}</p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePlayTrack(track.uri);
-                      }}
-                      className="p-2 text-accent hover:bg-accent/20 rounded-full transition"
+                    
+                    <button 
+                      onClick={() => handlePlayTrack(nextRecommendation.uri)}
+                      className="p-2 sm:p-3 rounded-full hover:bg-accent/20 transition-colors mx-auto sm:mx-0 mt-2 sm:mt-0"
                     >
-                      <FontAwesomeIcon icon={faPlay} />
+                      <FontAwesomeIcon 
+                        icon={faPlay} 
+                        className="text-2xl sm:text-3xl text-accent hover:text-accent/80 transition"
+                      />
                     </button>
                   </div>
                 </div>
-              ))}
+                
+                <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start gap-3">
+                  <button
+                    onClick={() => handlePlayTrack(nextRecommendation.uri)}
+                    className="flex items-center bg-accent hover:bg-accent/80 text-primary py-2 px-4 rounded-full transition-colors font-semibold"
+                  >
+                    <FontAwesomeIcon icon={faPlay} className="mr-2" />
+                    Add to Queue
+                  </button>
+                  <a 
+                    href={nextRecommendation.external_urls?.spotify} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center bg-accent/20 hover:bg-accent/30 text-accent py-2 px-4 rounded-full transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faExternalLinkAlt} className="mr-2" />
+                    Open
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="bg-primary-light rounded-xl p-6 shadow-lg text-center">
-            <div className="flex flex-col items-center gap-3">
-              <FontAwesomeIcon icon={faMusic} className="text-4xl text-muted" />
-              <div>
-                <p className="text-muted font-medium mb-1">No recommendations available</p>
-                <p className="text-sm text-muted">
-                  {isLoadingRecommendations 
-                    ? 'Loading recommendations...' 
-                    : 'Start playing a track on Spotify to get AI recommendations!'}
-                </p>
-              </div>
-            </div>
+          <div className="text-center p-8 bg-primary-light/30 rounded-lg">
+            <p className="text-lg text-muted">No recommendation available</p>
+            <p className="text-sm mt-2">Play music on Spotify to get recommendations</p>
           </div>
         )}
       </div>
     );
   }
 
-  // Render single mode (for home page)
+  // List mode for library page
   return (
-    <div className="mb-8">
-      {/* Header Section */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon icon={faBrain} className="text-3xl text-accent" />
-          <h2 className="text-3xl font-bold">AI Auto-Queue</h2>
-        </div>
-        <button
-          onClick={handleToggle}
-          className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center gap-2 ${
-            isEnabled
-              ? 'bg-accent text-white hover:bg-accent/80 shadow-lg'
-              : 'bg-primary-light text-text hover:bg-primary-light/80'
-          }`}
+    <div className="mb-12">
+      <h2 className="text-3xl font-bold mb-4 text-start">Recommended For You</h2>
+      
+      <div className="relative">
+        {recommendedTracks.length > 0 && (
+          <>
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 p-2 bg-accent rounded-full hover:bg-accent/80 transition text-primary"
+            >
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
+            <button
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 p-2 bg-accent rounded-full hover:bg-accent/80 transition text-primary"
+            >
+              <FontAwesomeIcon icon={faChevronRight} />
+            </button>
+          </>
+        )}
+
+        <div
+          id="ai-tracks-scroll"
+          className="overflow-x-auto scrollbar-hide"
+          style={{ scrollBehavior: 'smooth' }}
         >
-          <FontAwesomeIcon icon={isEnabled ? faPause : faPlay} />
-          {isEnabled ? 'Stop AI' : 'Start AI'}
-        </button>
-      </div>
-
-      {/* Description */}
-      <p className="text-muted mb-6">
-        AI automatically analyzes what you're listening to and queues similar tracks based on your taste.
-      </p>
-
-      {/* Next Recommended Song */}
-      {isLoadingRecommendations ? (
-        <div className="bg-primary-light rounded-xl p-6 mb-6 shadow-lg">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-muted">Loading next recommendation...</p>
-          </div>
-        </div>
-      ) : nextRecommendation ? (
-        <div className="bg-primary-light rounded-xl p-6 mb-6 shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <FontAwesomeIcon icon={faForward} className="text-accent" />
-            <h3 className="text-xl font-semibold">Next Recommended Song</h3>
-          </div>
-          <div className="flex items-center gap-4">
-            {nextRecommendation.album.images && nextRecommendation.album.images.length > 0 && (
-              <img
-                src={nextRecommendation.album.images[0].url}
-                alt={nextRecommendation.album.name}
-                className="w-20 h-20 rounded object-cover"
-              />
-            )}
-            <div className="flex-1">
-              <h4 className="font-semibold text-lg">{nextRecommendation.name}</h4>
-              <p className="text-sm text-muted">
-                {nextRecommendation.artists.map(a => a.name).join(', ')}
-              </p>
-              <p className="text-xs text-muted mt-1">{nextRecommendation.album.name}</p>
-            </div>
-            <button
-              onClick={() => handlePlayTrack(nextRecommendation.uri)}
-              className="px-4 py-2 bg-accent text-white rounded-full hover:bg-accent/80 transition flex items-center gap-2"
-            >
-              <FontAwesomeIcon icon={faPlay} />
-              Add to Queue
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-primary-light rounded-xl p-6 mb-6 shadow-lg text-center">
-          <div className="flex flex-col items-center gap-3">
-            <FontAwesomeIcon icon={faMusic} className="text-4xl text-muted" />
-            <div>
-              <p className="text-muted font-medium mb-1">No recommendation available</p>
-              <p className="text-sm text-muted">Start playing a track on Spotify to get AI recommendations!</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status Card */}
-      <div className="bg-primary-light rounded-xl p-6 mb-6 shadow-lg">
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className={`w-3 h-3 rounded-full ${
-              isEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-            }`}
-          />
-          <h3 className="text-xl font-semibold">Status</h3>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FontAwesomeIcon
-              icon={isEnabled ? faCheckCircle : faExclamationCircle}
-              className={isEnabled ? 'text-green-500' : 'text-gray-500'}
-            />
-            <span className="text-sm">{statusMessage}</span>
-          </div>
-
-          {currentTrack && isEnabled && (
-            <div className="bg-primary/30 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <FontAwesomeIcon icon={faMusic} className="text-accent" />
-                <span className="text-sm font-semibold">Currently Analyzing</span>
+          <div className="flex gap-4 pb-4 px-2">
+            {isLoading ? (
+              <div className="w-full flex justify-center items-center py-12">
+                <LoadingSpinner />
               </div>
-              <p className="text-sm truncate">
-                {currentTrack.name} • {currentTrack.artists.map(a => a.name).join(', ')}
-              </p>
-            </div>
-          )}
-
-          {lastRecommendation && isEnabled && (
-            <div className="bg-accent/10 p-4 rounded-lg border-l-4 border-accent">
-              <div className="flex items-center gap-2 mb-2">
-                <FontAwesomeIcon icon={faForward} className="text-accent" />
-                <span className="text-sm font-semibold">Last Queued</span>
-              </div>
-              <p className="text-sm font-medium">{lastRecommendation.name}</p>
-              <p className="text-xs text-muted">
-                {lastRecommendation.artists.join(', ')} • {lastRecommendation.album}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* History Section */}
-      {isEnabled && history.length > 0 && (
-        <div className="bg-primary-light rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faHistory} className="text-accent" />
-              <h3 className="text-xl font-semibold">Recommendation History</h3>
-            </div>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="text-sm text-accent hover:underline"
-            >
-              {showHistory ? 'Hide' : 'Show'} ({history.length})
-            </button>
-          </div>
-
-          {showHistory && (
-            <>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {history.map((entry, index) => (
-                  <div
-                    key={index}
-                    className="bg-primary/30 p-4 rounded-lg hover:bg-primary/40 transition"
-                  >
-                    <div className="flex items-start gap-3">
-                      <FontAwesomeIcon icon={faRobot} className="text-accent mt-1" />
-                      <div className="flex-1">
-                        <div className="text-xs text-muted mb-1">
-                          {new Date(entry.timestamp).toLocaleString()}
-                        </div>
-                        <div className="text-sm">
-                          <span className="text-muted">Based on:</span>{' '}
-                          <span className="font-medium">{entry.currentTrack.name}</span>
-                          <span className="text-muted">
-                            {' '}
-                            by {entry.currentTrack.artists.join(', ')}
-                          </span>
-                        </div>
-                        <div className="text-sm mt-1">
-                          <FontAwesomeIcon icon={faForward} className="text-accent mr-2" />
-                          <span className="font-medium text-accent">
-                            {entry.recommendedTrack.name}
-                          </span>
-                          <span className="text-muted">
-                            {' '}
-                            by {entry.recommendedTrack.artists.join(', ')}
-                          </span>
-                        </div>
+            ) : recommendedTracks.length > 0 ? (
+              recommendedTracks.map((track) => (
+                <div
+                  key={track.id}
+                  className="flex-shrink-0 w-48 group cursor-pointer"
+                  onClick={() => handlePlayTrack(track.uri)}
+                >
+                  <div className="relative mb-4 overflow-hidden rounded-lg">
+                    {track.album?.images?.[0]?.url ? (
+                      <img
+                        src={track.album.images[0].url}
+                        alt={track.name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-primary-light flex items-center justify-center">
+                        <FontAwesomeIcon icon={faMusic} className="text-4xl text-muted" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <div className="p-3 bg-accent rounded-full text-primary">
+                        <FontAwesomeIcon icon={faPlay} className="text-2xl" />
                       </div>
                     </div>
                   </div>
-                ))}
+                  
+                  <div className="px-1">
+                    <h3 className="font-semibold text-sm truncate group-hover:text-accent transition">{track.name}</h3>
+                    <p className="text-xs text-muted truncate mt-1">
+                      {track.artists?.map(a => a.name).join(', ')}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-primary-light rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent"
+                          style={{ width: `${track.popularity}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-muted">{track.popularity}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="w-full text-center py-12">
+                <p className="text-muted">No recommendations available</p>
               </div>
-
-              <button
-                onClick={handleClearHistory}
-                className="mt-4 text-sm text-error hover:underline"
-              >
-                Clear History
-              </button>
-            </>
-          )}
+            )}
+          </div>
         </div>
-      )}
-
+      </div>
     </div>
   );
 }
