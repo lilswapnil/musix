@@ -15,6 +15,221 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 
+// Vinyl record presentation for the album header
+const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)",
+        padding: "40px",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Decorative dots background */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage:
+            "radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px)",
+          backgroundSize: "30px 30px",
+          opacity: 0.3,
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          maxWidth: "1200px",
+          width: "100%",
+        }}
+      >
+        {/* Vinyl Record */}
+        <div
+          style={{
+            position: "relative",
+            width: "500px",
+            height: "500px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)",
+            boxShadow:
+              "0 20px 60px rgba(0,0,0,0.3), inset 0 0 40px rgba(0,0,0,0.5)",
+            zIndex: 2,
+          }}
+        >
+          {/* Vinyl grooves effect */}
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: `${90 - i * 5}%`,
+                height: `${90 - i * 5}%`,
+                borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,0.03)",
+                pointerEvents: "none",
+              }}
+            />
+          ))}
+
+          {/* Record label (center circle) */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "180px",
+              height: "180px",
+              borderRadius: "50%",
+              background: "#f5f5f5",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Artist image in center */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 50%)",
+                background: artistImage
+                  ? `url(${artistImage})`
+                  : "linear-gradient(135deg, #4a90e2 0%, #357abd 100%)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+
+            {/* "MUSIC" text curved on label */}
+            <svg
+              viewBox="0 0 180 180"
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                top: 0,
+                left: 0,
+              }}
+            >
+              <defs>
+                <path
+                  id="circlePath"
+                  d="M 90, 90 m -70, 0 a 70,70 0 1,1 140,0 a 70,70 0 1,1 -140,0"
+                />
+              </defs>
+              <text
+                fill="#2c5aa0"
+                fontSize="32"
+                fontWeight="bold"
+                fontFamily="Arial, sans-serif"
+                letterSpacing="8"
+              >
+                <textPath href="#circlePath" startOffset="15%">
+                  MUSIC
+                </textPath>
+              </text>
+            </svg>
+
+            {/* Center hole */}
+            <div
+              style={{
+                position: "absolute",
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                background: "radial-gradient(circle, #1a1a1a 0%, #000 100%)",
+                boxShadow: "inset 0 2px 8px rgba(0,0,0,0.8)",
+                zIndex: 3,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Album Cover Card */}
+        <div
+          style={{
+            position: "relative",
+            width: "480px",
+            height: "480px",
+            marginLeft: "-80px",
+            background: "#ffffff",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            zIndex: 1,
+            overflow: "hidden",
+          }}
+        >
+          {albumImage ? (
+            <img
+              src={albumImage}
+              alt={albumTitle || "Album Cover"}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
+                color: "#999",
+                fontSize: "24px",
+                fontFamily: "Arial, sans-serif",
+              }}
+            >
+              Album Cover
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Vexels credit */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "30px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          color: "#666",
+          fontSize: "14px",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
+        <span>designed by</span>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#666" />
+          <path d="M2 17L12 22L22 17L12 12L2 17Z" fill="#666" />
+        </svg>
+        <span style={{ fontWeight: "bold", letterSpacing: "1px" }}>vexels</span>
+      </div>
+    </div>
+  );
+};
+
 export default function Albums() {
   const { albumId } = useParams();
   const [album, setAlbum] = useState(null);
@@ -227,7 +442,7 @@ export default function Albums() {
         Back
       </button>
       
-      {/* Album header with artist background and vinyl-style cover */}
+      {/* Album header with artist background and album cover art */}
       <div className="flex flex-col md:flex-row mb-8 bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
         {/* Blurry background from artist image with fallback to album art */}
         <div className="absolute inset-0 overflow-hidden">
@@ -245,43 +460,14 @@ export default function Albums() {
           <div className="absolute inset-0 bg-primary-dark/70"></div>
         </div>
         
-        {/* Vinyl-style cover: square sleeve + peeking record */}
+        {/* Album cover art remains the same */}
         <div className="w-full md:w-[11rem] lg:w-64 xl:w-80 flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative z-10">
-          <div className="relative aspect-square w-full">
-            {/* Sleeve (album art) */}
-            <div className="absolute inset-0 rounded-lg overflow-hidden shadow-xl z-20">
-              <img 
-                src={album.cover_xl || album.cover_big || album.cover_medium || album.cover} 
-                alt={album.title} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Vinyl disc peeking from the right */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2 left-[45%] md:left-[55%] w-[150%] md:w-[160%] aspect-square rounded-full z-10 shadow-2xl"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle at 30% 30%, #222 0%, #111 55%, #000 60%), repeating-radial-gradient(circle at center, rgba(255,255,255,0.08) 0, rgba(255,255,255,0.08) 1px, transparent 3px, transparent 6px)',
-                backgroundBlendMode: 'overlay',
-              }}
-            >
-              {/* Center label with artist image (transparent) */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[28%] aspect-square rounded-full overflow-hidden ring-2 ring-white/20 shadow">
-                  <img
-                    src={
-                      (artistImage || album.artist?.picture_xl || album.artist?.picture_big || album.artist?.picture_medium || album.artist?.picture) ||
-                      album.cover_medium || album.cover
-                    }
-                    alt="Label"
-                    className="w-full h-full object-cover opacity-80"
-                  />
-                </div>
-                {/* Spindle hole */}
-                <div className="absolute w-2 h-2 md:w-3 md:h-3 bg-black/90 rounded-full"></div>
-              </div>
-            </div>
+          <div className="aspect-square w-full rounded-lg overflow-hidden shadow-xl">
+            <img 
+              src={album.cover_xl || album.cover_big || album.cover_medium || album.cover} 
+              alt={album.title} 
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
         
