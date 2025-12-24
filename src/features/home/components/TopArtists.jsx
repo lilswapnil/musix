@@ -102,7 +102,7 @@ export default function TopArtists() {
               </div>
               
               <div className="text-center mt-1 z-10">
-                <h3 className="font-bold text-white text-xs sm:text-sm truncate drop-shadow">{artist.name}</h3>
+                <h3 className="font-bold text-white text-sm sm:text-base md:text-lg truncate drop-shadow">{artist.name}</h3>
                 {artist.fans > 0 && (
                   <p className="text-[10px] sm:text-xs text-white mt-0.5 drop-shadow-lg">
                     {artist.fans.toLocaleString()} fans

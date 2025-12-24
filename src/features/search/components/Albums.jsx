@@ -227,7 +227,7 @@ export default function Albums() {
         Back
       </button>
       
-      {/* Album header with artist background and album cover art */}
+      {/* Album header with artist background and vinyl-style cover */}
       <div className="flex flex-col md:flex-row mb-8 bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
         {/* Blurry background from artist image with fallback to album art */}
         <div className="absolute inset-0 overflow-hidden">
@@ -245,14 +245,43 @@ export default function Albums() {
           <div className="absolute inset-0 bg-primary-dark/70"></div>
         </div>
         
-        {/* Album cover art remains the same */}
+        {/* Vinyl-style cover: square sleeve + peeking record */}
         <div className="w-full md:w-[11rem] lg:w-64 xl:w-80 flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative z-10">
-          <div className="aspect-square w-full rounded-lg overflow-hidden shadow-xl">
-            <img 
-              src={album.cover_xl || album.cover_big || album.cover_medium || album.cover} 
-              alt={album.title} 
-              className="w-full h-full object-cover"
-            />
+          <div className="relative aspect-square w-full">
+            {/* Sleeve (album art) */}
+            <div className="absolute inset-0 rounded-lg overflow-hidden shadow-xl z-20">
+              <img 
+                src={album.cover_xl || album.cover_big || album.cover_medium || album.cover} 
+                alt={album.title} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Vinyl disc peeking from the right */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 left-[45%] md:left-[55%] w-[150%] md:w-[160%] aspect-square rounded-full z-10 shadow-2xl"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 30% 30%, #222 0%, #111 55%, #000 60%), repeating-radial-gradient(circle at center, rgba(255,255,255,0.08) 0, rgba(255,255,255,0.08) 1px, transparent 3px, transparent 6px)',
+                backgroundBlendMode: 'overlay',
+              }}
+            >
+              {/* Center label with artist image (transparent) */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-[28%] aspect-square rounded-full overflow-hidden ring-2 ring-white/20 shadow">
+                  <img
+                    src={
+                      (artistImage || album.artist?.picture_xl || album.artist?.picture_big || album.artist?.picture_medium || album.artist?.picture) ||
+                      album.cover_medium || album.cover
+                    }
+                    alt="Label"
+                    className="w-full h-full object-cover opacity-80"
+                  />
+                </div>
+                {/* Spindle hole */}
+                <div className="absolute w-2 h-2 md:w-3 md:h-3 bg-black/90 rounded-full"></div>
+              </div>
+            </div>
           </div>
         </div>
         

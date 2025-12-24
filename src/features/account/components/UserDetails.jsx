@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faMusic, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 import { getAccessToken, getUserProfile } from '../../../utils/tokenStorage';
+import ListeningHistoryChart from "../components/ListeningHistoryChart";
 
 export default function UserDetails() {
   const [user, setUser] = useState(null);
@@ -213,6 +214,10 @@ export default function UserDetails() {
             </div>
           </div>
         </div>
+      </div>
+      
+      <div className="mb-8">
+              <ListeningHistoryChart />
       </div>
 
       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">

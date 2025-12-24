@@ -368,7 +368,7 @@ export default function Artist() {
           
           {/* Rest of the artist info continues... */}
           <div className="text-center md:text-left z-10 flex-1">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow">{artist.name}</h1>
+            <h1 className="text-6xl md:text-5xl lg:text-7xl font-bold text-white mb-2 drop-shadow">{artist.name}</h1>
             
             {/* Artist metadata - new layout with latest album */}
             <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6 justify-center md:justify-start">

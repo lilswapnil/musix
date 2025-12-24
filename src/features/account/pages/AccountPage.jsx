@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import UserDetails from "../components/UserDetails";
+
 import { getAccessToken } from '../../../utils/tokenStorage';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,6 +40,7 @@ export default function AccountPage() {
 
   return (
     <>
+      
       <UserDetails />
     </>
   );
