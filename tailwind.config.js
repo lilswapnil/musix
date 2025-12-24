@@ -84,12 +84,6 @@ export default {
       minHeight: {
         'touch': '44px', // Minimum touch target height
       },
-
-      perspective: {
-        '1000': '1000px',
-        '1500': '1500px',
-        '2000': '2000px',
-      },
     },
     screens: {
       'xs': '375px',  // Small phone
