@@ -23,22 +23,21 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)",
+        minHeight: "60vh",
+        background: "transparent",
         padding: "40px",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Decorative dots background */}
+      {/* Decorative dots background removed for transparent look */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage:
-            "radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px)",
+          backgroundImage: "none",
           backgroundSize: "30px 30px",
-          opacity: 0.3,
+          opacity: 0,
         }}
       />
 
@@ -58,10 +57,10 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
             width: "500px",
             height: "500px",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)",
+            background: "linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)",
             boxShadow:
               "0 20px 60px rgba(0,0,0,0.3), inset 0 0 40px rgba(0,0,0,0.5)",
-            zIndex: 2,
+            zIndex: 0,
           }}
         >
           {/* Vinyl grooves effect */}
@@ -117,36 +116,6 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
                 backgroundPosition: "center",
               }}
             />
-
-            {/* "MUSIC" text curved on label */}
-            <svg
-              viewBox="0 0 180 180"
-              style={{
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-                top: 0,
-                left: 0,
-              }}
-            >
-              <defs>
-                <path
-                  id="circlePath"
-                  d="M 90, 90 m -70, 0 a 70,70 0 1,1 140,0 a 70,70 0 1,1 -140,0"
-                />
-              </defs>
-              <text
-                fill="#2c5aa0"
-                fontSize="32"
-                fontWeight="bold"
-                fontFamily="Arial, sans-serif"
-                letterSpacing="8"
-              >
-                <textPath href="#circlePath" startOffset="15%">
-                  MUSIC
-                </textPath>
-              </text>
-            </svg>
 
             {/* Center hole */}
             <div
@@ -206,26 +175,7 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
         </div>
       </div>
 
-      {/* Vexels credit */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "30px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          color: "#666",
-          fontSize: "14px",
-          fontFamily: "Arial, sans-serif",
-        }}
-      >
-        <span>designed by</span>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#666" />
-          <path d="M2 17L12 22L22 17L12 12L2 17Z" fill="#666" />
-        </svg>
-        <span style={{ fontWeight: "bold", letterSpacing: "1px" }}>vexels</span>
-      </div>
+      {/* Credit removed per request */}
     </div>
   );
 };
@@ -442,116 +392,20 @@ export default function Albums() {
         Back
       </button>
       
-      {/* Album header with artist background and album cover art */}
-      <div className="flex flex-col md:flex-row mb-8 bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
-        {/* Blurry background from artist image with fallback to album art */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
-            style={{ 
-              backgroundImage: `url(${
-                // Try artist image first
-                artistImage || 
-                // Fall back to album cover if no artist image
-                album.cover_xl || album.cover_big || album.cover_medium || album.cover
-              })` 
-            }}
-          ></div>
-          <div className="absolute inset-0 bg-primary-dark/70"></div>
-        </div>
-        
-        {/* Album cover art remains the same */}
-        <div className="w-full md:w-[11rem] lg:w-64 xl:w-80 flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative z-10">
-          <div className="aspect-square w-full rounded-lg overflow-hidden shadow-xl">
-            <img 
-              src={album.cover_xl || album.cover_big || album.cover_medium || album.cover} 
-              alt={album.title} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-        
-        {/* Album info - now with artist image if available */}
-        <div className="flex flex-col justify-between relative z-10 text-start">
-          <div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">{album.title}</h1>
-            
-            {/* Artist with image if available */}
-            <div className="flex items-center mb-4">
-              {artistImage && (
-                <div className="w-8 h-8 mr-2 overflow-hidden rounded-full border border-white/30">
-                  <img 
-                    src={artistImage} 
-                    alt={album.artist?.name || "Artist"} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <h2 
-                className="text-lg md:text-xl text-accent hover:underline cursor-pointer"
-                onClick={() => album.artist?.id && navigate(`/artist/${album.artist.id}`)}
-              >
-                {album.artist?.name || "Unknown Artist"}
-              </h2>
-            </div>
-            
-            {/* Rest of album metadata remains the same */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm m-2">
-              {album.nb_tracks && (
-                <div className="flex items-center text-muted">
-                  <FontAwesomeIcon icon={faMusic} className="mr-2" />
-                  {album.nb_tracks} tracks
-                </div>
-              )}
-              {album.duration && (
-                <div className="flex items-center text-muted">
-                  <FontAwesomeIcon icon={faClock} className="mr-2" />
-                  {Math.floor(album.duration / 60)} minutes
-                </div>
-              )}
-              {album.release_date && (
-                <div className="flex items-center text-muted">
-                  <FontAwesomeIcon icon={faCalendar} className="mr-2" />
-                  Released: {new Date(album.release_date).toLocaleDateString()}
-                </div>
-              )}
-              
-              {/* Display genre information if available */}
-              {album.genres && album.genres.data && album.genres.data.length > 0 ? (
-                <div className="flex items-center text-muted">
-                  <FontAwesomeIcon icon={faMusic} className="mr-2" />
-                  {album.genres.data.map(genre => genre.name).join(', ')}
-                </div>
-              ) : (
-                <div className="flex items-center text-muted">
-                  <FontAwesomeIcon icon={faMusic} className="mr-2" />
-                  {album.genre_id ? `Genre ID: ${album.genre_id}` : "Unknown Genre"}
-                </div>
-              )}
-            
-            </div>
-          </div>
-
-          {/* External links */}
-          <div className="mt-4 flex gap-3">
-            <a 
-              href={album.link || `https://www.deezer.com/album/${album.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary hover:bg-primary/80 border-2 border-muted hover:border-accent text-white px-4 py-3 rounded-md inline-block transition-colors"
-            >
-              Play on Deezer
-            </a>
-            <a 
-              href={`https://open.spotify.com/search/${encodeURIComponent(album.title + ' ' + (album.artist?.name || ''))}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-spotify hover:bg-[#1DB954]/80 text-white px-4 py-3 rounded-md inline-block transition-colors"
-            >
-              Play on Spotify
-            </a>
-          </div>
-        </div>
+      {/* Album header replaced with VinylRecord component */}
+      <div className="mb-8">
+        <VinylRecord
+          albumImage={album.cover_xl || album.cover_big || album.cover_medium || album.cover}
+          artistImage={
+            artistImage ||
+            album.artist?.picture_xl ||
+            album.artist?.picture_big ||
+            album.artist?.picture_medium ||
+            album.artist?.picture
+          }
+          albumTitle={album.title}
+          artistName={album.artist?.name || "Unknown Artist"}
+        />
       </div>
       
       {/* Track listing */}
