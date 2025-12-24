@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
+import AlbumCard from "../components/AlbumCard";
 // Removed unused debounce import
 
 export default function SearchPage() {
@@ -399,44 +400,16 @@ export default function SearchPage() {
 
           {albums.length > 0 && (
             <ScrollableSection title="Albums">
-              <div className="flex space-x-2 pb-1">
+              <div className="flex space-x-6 pb-1">
                 {albums.map((album) => (
-                  <div 
-                    key={album.id} 
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
-                    onClick={() => navigate(`/album/${album.id}`)}
-                  >
-                    <div className="relative">
-                      <img 
-                        src={album.coverArt}
-                        alt={album.name}
-                        className="w-full h-32 sm:h-40 md:h-48 object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
-                          <FontAwesomeIcon 
-                            icon={faExternalLinkAlt} 
-                            className="text-white text-sm sm:text-base md:text-xl"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-2 sm:p-3 md:p-4">
-                      <div className="text-center">
-                        <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{album.name}</h3>
-                        <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist}</p>
-                        {album.releaseDate && (
-                          <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
-                            {album.releaseDate.substring(0, 4)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <AlbumCard
+                    key={album.id}
+                    album={{
+                      ...album,
+                      title: album.name,
+                      trackCount: album.trackCount
+                    }}
+                  />
                 ))}
               </div>
             </ScrollableSection>
