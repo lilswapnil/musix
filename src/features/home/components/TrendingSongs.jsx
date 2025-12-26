@@ -138,7 +138,7 @@ export default function TrendingSongs() {
     return (
       <div>
         <h2 className="text-3xl font-bold mb-4 text-start">Trending Now</h2>
-        <div className="bg-primary-light p-6 text-center">
+        <div className="glass p-6 text-center rounded-lg shadow-lg">
           <p className="text-error mb-4">{error}</p>
           <button 
             className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
@@ -155,7 +155,7 @@ export default function TrendingSongs() {
     return (
       <div>
         <h2 className="text-3xl font-bold mb-6 text-start">Trending Now</h2>
-        <div className="text-center p-8 bg-primary-light/30 rounded-lg">
+        <div className="text-center p-8 glass-light rounded-lg shadow-lg">
           <p className="text-lg text-muted">No trending tracks available right now.</p>
           <p className="text-sm mt-2">Check back soon for the latest hits!</p>
         </div>
@@ -182,7 +182,7 @@ export default function TrendingSongs() {
                     {groupTracks.map((song, index) => (
                       <div 
                         key={`${song.id}-${index}`} 
-                        className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-opacity-90 transition-colors cursor-pointer"
+                        className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer"
                         onClick={() => window.open(song.externalUrl, '_blank')}
                       >
                         <div className="w-12 h-12 flex-shrink-0 relative group">

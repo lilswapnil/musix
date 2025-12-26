@@ -66,7 +66,7 @@ export default function LoginPage() {
         <p className="text-muted">Your music companion</p>
       </div>
 
-      <div className="w-full max-w-md rounded-lg bg-primary-light p-8 shadow-lg">
+      <div className="w-full max-w-md rounded-lg glass-card p-8 shadow-2xl">
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-bold text-white">Unwind Yourself</h1>
           <p className="text-muted">Connect with your music.</p>

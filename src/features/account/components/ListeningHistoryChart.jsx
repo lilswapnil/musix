@@ -201,7 +201,7 @@ export default function ListeningHistoryChart() {
 
   if (loading) {
     return (
-      <div className="bg-primary-light/40 border border-primary-light/30 rounded-xl p-6 flex items-center justify-center">
+      <div className="glass border border-white/10 rounded-xl p-6 flex items-center justify-center shadow-lg">
         <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
         <span className="ml-3 text-muted">Loading listening history…</span>
       </div>

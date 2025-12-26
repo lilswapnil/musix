@@ -6,6 +6,7 @@ import { faHeart, faPlay, faExternalLinkAlt } from "@fortawesome/free-solid-svg-
 // Update the function signature to accept token prop
 export default function CurrentlyPlaying({ token }) {
   const [currentTrack, setCurrentTrack] = useState(null);
+  const [artistImage, setArtistImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [liked, setLiked] = useState(false);
@@ -43,6 +44,24 @@ export default function CurrentlyPlaying({ token }) {
         if (contentLength && parseInt(contentLength) > 0) {
           const data = await response.json();
           setCurrentTrack(data.item);
+          
+          // Fetch artist image
+          if (data.item && data.item.artists && data.item.artists[0]) {
+            try {
+              const artistResponse = await fetch(`https://api.spotify.com/v1/artists/${data.item.artists[0].id}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
+              
+              if (artistResponse.ok) {
+                const artistData = await artistResponse.json();
+                setArtistImage(artistData.images[0]?.url || null);
+              }
+            } catch (artistErr) {
+              console.warn('Could not fetch artist image:', artistErr);
+            }
+          }
         } else {
           // Empty response but not 204
           setCurrentTrack(null);
@@ -67,7 +86,7 @@ export default function CurrentlyPlaying({ token }) {
     return (
       <div className="mb-12 mt-4">
         <h2 className="text-3xl font-bold mb-4 text-start">Now Playing</h2>
-        <div className="relative h-80 rounded-xl overflow-hidden shadow-lg bg-primary-light flex items-center justify-center">
+        <div className="relative h-80 rounded-xl overflow-hidden shadow-lg glass flex items-center justify-center">
           <div className="animate-pulse flex flex-col items-center">
             <div className="w-16 h-16 border-4 border-muted border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-4 text-accent">Checking what's playing...</p>
@@ -81,7 +100,7 @@ export default function CurrentlyPlaying({ token }) {
     return (
       <div className="mb-12 mt-4">
         <h2 className="text-3xl font-bold mb-4 text-start">Now Playing</h2>
-        <div className="bg-primary-light p-6 text-center rounded-lg">
+        <div className="glass p-6 text-center rounded-lg shadow-lg">
           <p className="text-error mb-4">{error}</p>
           <button 
             className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
@@ -98,7 +117,7 @@ export default function CurrentlyPlaying({ token }) {
     return (
       <div className="mb-12">
         <h2 className="text-3xl font-bold mb-4 text-start">Now Playing</h2>
-        <div className="text-center p-8 bg-primary-light/30 rounded-lg">
+        <div className="text-center p-8 glass-light rounded-lg shadow-lg">
           <p className="text-lg text-muted">No track is currently playing.</p>
           <p className="text-sm mt-2">Play some music on Spotify!</p>
         </div>
@@ -112,10 +131,10 @@ export default function CurrentlyPlaying({ token }) {
     <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg group">
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/50">
-          {currentTrack.album.images[0]?.url && (
+          {(artistImage || currentTrack.album.images[0]?.url) && (
             <img 
-              src={currentTrack.album.images[0].url}
-              alt={currentTrack.album.name}
+              src={artistImage || currentTrack.album.images[0].url}
+              alt={currentTrack.artists[0]?.name || currentTrack.album.name}
               className="w-full h-full object-cover opacity-50 blur-sm scale-110"
             />
           )}
@@ -128,10 +147,10 @@ export default function CurrentlyPlaying({ token }) {
             <img 
               src={currentTrack.album.images[0].url}
               alt={currentTrack.album.name}
-              className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 object-cover shadow-lg rounded-lg"
+              className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 object-cover shadow-lg"
             />
           ) : (
-            <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-primary-dark flex items-center justify-center rounded-lg">
+            <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-primary-dark flex items-center justify-center">
               <FontAwesomeIcon icon={faPlay} className="text-4xl text-muted" />
             </div>
           )}

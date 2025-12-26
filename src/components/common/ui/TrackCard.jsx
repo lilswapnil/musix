@@ -42,7 +42,7 @@ export default function TrackCard({
   
   return (
     <div 
-      className="flex-shrink-0 bg-primary-light rounded-lg overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group"
+      className="flex-shrink-0 glass-card rounded-lg overflow-hidden hover:bg-white/10 transition-all cursor-pointer group shadow-lg"
       onClick={handleCardClick}
     >
       <div className="relative">

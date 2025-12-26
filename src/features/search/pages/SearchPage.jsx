@@ -344,7 +344,7 @@ export default function SearchPage() {
                         {groupTracks.map((song) => (
                           <div 
                             key={song.id} 
-                            className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-primary-light transition-colors cursor-pointer"
+                            className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer"
                             onClick={() => navigate(`/song/${song.id}`)}
                           >
                             <div className="w-12 h-12 flex-shrink-0 relative group">
@@ -416,14 +416,7 @@ export default function SearchPage() {
                           e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
                         }}
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
-                          <FontAwesomeIcon 
-                            icon={faExternalLinkAlt} 
-                            className="text-white text-sm sm:text-base md:text-xl"
-                          />
-                        </div>
-                      </div>
+                      <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
                     <div className="p-2 sm:p-3 md:p-4">
                       <div className="text-center">
@@ -448,7 +441,7 @@ export default function SearchPage() {
                 {artists.map((artist) => (
                   <div 
                     key={artist.id} 
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
+                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted glass-hover transition-all"
                     onClick={() => navigate(`/artist/${artist.id}`)}
                     style={{ aspectRatio: '1.6/1.7' }}
                   >
@@ -471,12 +464,7 @@ export default function SearchPage() {
                             e.target.src = "https://via.placeholder.com/300x300?text=No+Artist+Image";
                           }}
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <FontAwesomeIcon 
-                            icon={faExternalLinkAlt} 
-                            className="text-white text-sm sm:text-base md:text-xl"
-                          />
-                        </div>
+                        {/* Removed hover icon overlay for cleaner hover */}
                       </div>
                       
                       <div className="text-center mt-1 z-10">
@@ -495,14 +483,14 @@ export default function SearchPage() {
           )}
 
           {!loading && songs.length === 0 && albums.length === 0 && query && (
-            <div className="text-center p-8 bg-primary-light/30 rounded-lg">
+            <div className="text-center p-8 glass-light rounded-lg shadow-lg">
               <p className="text-lg text-muted">No results found for "{query}"</p>
               <p className="text-sm mt-2">Try a different search term</p>
             </div>
           )}
           
           {!loading && songs.length === 0 && albums.length === 0 && !query && (
-            <div className="text-center p-8 bg-primary-light/30 rounded-lg">
+            <div className="text-center p-8 glass-light rounded-lg shadow-lg">
               <p className="text-lg text-muted">Enter a search query to find music</p>
               <p className="text-sm mt-2">Search for your favorite artists, songs, or albums</p>
             </div>

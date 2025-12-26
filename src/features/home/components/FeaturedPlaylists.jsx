@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 
 export default function FeaturedPlaylists() {
+    const navigate = useNavigate();
     const [playlists, setFeaturedPlaylist] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -71,7 +73,8 @@ export default function FeaturedPlaylists() {
                 {playlists.map((playlist) => (
                     <div
                         key={playlist.id}
-                        className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
+                        className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden glass-hover transition-all cursor-pointer group border-muted rounded"
+                        onClick={() => navigate(`/search?query=${encodeURIComponent(playlist.title)}`)}
                     >
                         <div className="relative">
                             <img
@@ -79,14 +82,7 @@ export default function FeaturedPlaylists() {
                                 alt={playlist.title}
                                 className="w-full h-32 sm:h-40 md:h-48 object-cover"
                             />
-                            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
-                                    <FontAwesomeIcon
-                                        icon={faExternalLinkAlt}
-                                        className="text-white text-sm sm:text-base md:text-xl"
-                                    />
-                                </div>
-                            </div>
+                            <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
                         <div className="p-2 sm:p-3 md:p-4">
                             <div className="text-center">

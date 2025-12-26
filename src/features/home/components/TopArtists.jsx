@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { deezerService } from '../../../services/deezerServices';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
 export default function TopArtists() {
+  const navigate = useNavigate();
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,8 +74,8 @@ export default function TopArtists() {
         {artists.map((artist) => (
           <div 
             key={artist.id} 
-            className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden  cursor-pointer group relative border-muted hover:bg-opacity-80 transition-colors"
-            onClick={() => window.open(artist.link, '_blank')}
+            className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted glass-hover transition-all"
+            onClick={() => navigate(`/artist/${artist.id}`)}
             style={{ aspectRatio: '1.6/1.7' }}
           >
             {/* Blurred background image */}
@@ -93,12 +95,7 @@ export default function TopArtists() {
                   alt={artist.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <FontAwesomeIcon 
-                    icon={faExternalLinkAlt} 
-                    className="text-white text-sm sm:text-base md:text-xl"
-                  />
-                </div>
+                {/* Removed hover icon overlay for cleaner internal navigation */}
               </div>
               
               <div className="text-center mt-1 z-10">

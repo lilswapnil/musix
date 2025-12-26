@@ -116,7 +116,7 @@ export default function UserDetails() {
         {getGreeting()}, {user.display_name}!
       </h1>
 
-      <div className="rounded-xl p-6 bg-primary-light/30 shadow-lg">
+      <div className="rounded-xl p-6 glass shadow-lg">
         <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="relative">
             {user.images?.[0] ? (
@@ -158,7 +158,7 @@ export default function UserDetails() {
       <div>
         <h2 className="text-3xl font-bold text-start mb-6">Account Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-primary-light/30 rounded-lg p-6">
+          <div className="glass rounded-lg p-6 shadow-lg">
             <h3 className="text-xl font-bold mb-4 flex items-center">
               <FontAwesomeIcon icon={faEnvelope} className="mr-2 text-accent" />
               Contact
@@ -184,7 +184,7 @@ export default function UserDetails() {
             </div>
           </div>
 
-          <div className="bg-primary-light/30 rounded-lg p-6">
+          <div className="glass rounded-lg p-6">
             <h3 className="text-xl font-bold mb-4 flex items-center">
               <FontAwesomeIcon icon={faMusic} className="mr-2 text-accent" />
               Settings

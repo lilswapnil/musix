@@ -41,7 +41,7 @@ export default function NavBar() {
   const isSearchPage = location.pathname === '/search';
 
   return (
-    <nav className="bg-primary border-b border-muted/30 sticky top-0 z-50">
+    <nav className="glass-dark border-b border-white/20 sticky top-0 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 relative">
         <div className="flex items-center justify-between h-16">
           {/* Logo - made bigger on mobile */}
@@ -136,7 +136,7 @@ export default function NavBar() {
 
       {/* Mobile menu - fullscreen overlay with better mobile navigation */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-primary-dark bg-opacity-95 z-40 h-[100dvh]">
+        <div className="md:hidden fixed inset-0 glass bg-opacity-95 z-40 h-[100dvh]">
           <div className="px-4 pt-20 pb-6 h-full flex flex-col">
             <button
               onClick={() => setIsMobileMenuOpen(false)}

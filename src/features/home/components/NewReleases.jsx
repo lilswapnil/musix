@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 // import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { deezerService } from '../../../services/deezerServices';
@@ -9,6 +10,7 @@ import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 import { ensureValidToken } from '../../../utils/refreshToken';
 
 export default function NewReleases() {
+  const navigate = useNavigate();
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -179,6 +181,15 @@ export default function NewReleases() {
           <div
             key={album.id}
             className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
+            onClick={() => {
+              // If album source was Deezer (IDs match), open album page; else use search fallback
+              const isDeezerId = typeof album.id === 'number' || /^\d+$/.test(String(album.id));
+              if (isDeezerId) {
+                navigate(`/album/${album.id}`);
+              } else {
+                navigate(`/search?query=${encodeURIComponent(album.title)}`);
+              }
+            }}
           >
             <div className="relative">
               <img
@@ -190,14 +201,7 @@ export default function NewReleases() {
                   e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
                 }}
               />
-              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
-                  <FontAwesomeIcon
-                    icon={faExternalLinkAlt}
-                    className="text-white text-sm sm:text-base md:text-xl"
-                  />
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
             <div className="p-2 sm:p-3 md:p-4">
               <div className="text-center">

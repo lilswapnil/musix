@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { deezerService } from "../../../services/deezerServices";
+import { spotifyService } from "../../../services/spotifyServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faHeart, 
@@ -30,6 +31,23 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
         overflow: "hidden",
       }}
     >
+      {/* Reflection under the vinyl */}
+      <div
+        style={{
+          position: "absolute",
+          inset: "55% 0 0 0",
+          pointerEvents: "none",
+          background: albumImage
+            ? `linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%), url(${albumImage})`
+            : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          transform: "scaleY(-1)",
+          opacity: 0.1,
+          filter: "blur(10px)",
+        }}
+      />
+
       {/* Decorative dots background removed for transparent look */}
       <div
         style={{
@@ -54,14 +72,13 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
         <div
           style={{
             position: "relative",
-            width: "500px",
-            height: "500px",
+            width: "470px",
+            height: "470px",
             borderRadius: "50%",
             background: "linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)",
             boxShadow:
-              "0 20px 60px rgba(0,0,0,0.3), inset 0 0 40px rgba(0,0,0,0.5)",
-            zIndex: 0,
-          }}
+              "0 20px 60px rgba(0,0,0,0.35), inset 0 0 40px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.08)",
+            zIndex: 0,            transform: "translateX(70px)",          }}
         >
           {/* Vinyl grooves effect */}
           {[...Array(15)].map((_, i) => (
@@ -117,12 +134,36 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
               }}
             />
 
+            {/* Engraved artist name on white section */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "25%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "80%",
+                textAlign: "center",
+                fontSize: "11px",
+                fontWeight: "600",
+                color: "#999",
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                fontFamily: "Arial, sans-serif",
+                zIndex: 2,
+              }}
+            >
+              {artistName}
+            </div>
+
             {/* Center hole */}
             <div
               style={{
                 position: "absolute",
-                width: "32px",
-                height: "32px",
+                width: "24px",
+                height: "24px",
                 borderRadius: "50%",
                 background: "radial-gradient(circle, #1a1a1a 0%, #000 100%)",
                 boxShadow: "inset 0 2px 8px rgba(0,0,0,0.8)",
@@ -140,9 +181,10 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
             height: "480px",
             marginLeft: "-80px",
             background: "#ffffff",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            boxShadow: "0 18px 48px rgba(0,0,0,0.28), 0 0 0 2px rgba(255,255,255,0.10), 0 0 18px rgba(0,0,0,0.25)",
             zIndex: 1,
             overflow: "hidden",
+            borderRadius: "0px",
           }}
         >
           {albumImage ? (
@@ -190,6 +232,7 @@ export default function Albums() {
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [likedSongs, setLikedSongs] = useState({});
   const [artistData, setArtistData] = useState(null); // Add state for artist data
+  const [spotifyArtistData, setSpotifyArtistData] = useState(null); // Spotify-specific artist data
   const audioRef = useRef(null);
   const navigate = useNavigate();
   
@@ -225,6 +268,18 @@ export default function Albums() {
           } catch (artistErr) {
             console.warn("Could not load artist image:", artistErr);
             // No need to set error - we'll fall back to album image
+          }
+
+          // Fetch Spotify artist data for additional info
+          try {
+            const spotifyData = await spotifyService.searchArtists(albumData.artist.name, 1);
+            if (spotifyData?.artists?.items?.length > 0) {
+              const spotifyArtist = spotifyData.artists.items[0];
+              setSpotifyArtistData(spotifyArtist);
+              console.log("Spotify artist data:", spotifyArtist);
+            }
+          } catch (spotifyErr) {
+            console.warn("Could not load Spotify artist data:", spotifyErr);
           }
         }
         
@@ -431,8 +486,8 @@ export default function Albums() {
             {tracks.map((track) => (
               <div 
                 key={track.id} 
-                className={`grid grid-cols-12 items-center py-2 px-2 rounded-md hover:bg-primary-light/50 transition-colors ${
-                  currentlyPlaying === track.id ? 'bg-primary-light/30' : ''
+                className={`grid grid-cols-12 items-center py-2 px-2 rounded-md glass-hover transition-all ${
+                  currentlyPlaying === track.id ? 'glass' : ''
                 }`}
                 onClick={() => handleSongClick(track.id)}
               >
@@ -499,7 +554,7 @@ export default function Albums() {
       {artistData && (
         <div className="mb-8">
           <h3 className="text-3xl font-semibold mb-4 text-start">About the Artist</h3>
-          <div className="bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
+          <div className="glass rounded-lg p-4 md:p-6 relative overflow-hidden shadow-lg">
             {/* Artist card content */}
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
               {/* Artist image */}
@@ -533,6 +588,19 @@ export default function Albums() {
                     </div>
                   )}
                   
+                  {spotifyArtistData?.followers?.total > 0 && (
+                    <div className="flex flex-col items-center md:items-start">
+                      <span className="text-muted text-sm">Spotify Followers</span>
+                      <span className="text-white text-xl font-semibold">
+                        {spotifyArtistData.followers.total >= 1000000
+                          ? `${(spotifyArtistData.followers.total / 1000000).toFixed(1)}M`
+                          : spotifyArtistData.followers.total >= 1000
+                          ? `${(spotifyArtistData.followers.total / 1000).toFixed(0)}K`
+                          : spotifyArtistData.followers.total}
+                      </span>
+                    </div>
+                  )}
+                  
                   {album.artist.nb_album > 0 && (
                     <div className="flex flex-col items-center md:items-start">
                       <span className="text-muted text-sm">Albums</span>
@@ -540,18 +608,38 @@ export default function Albums() {
                     </div>
                   )}
                   
-                  {album.artist.nb_fan > 0 && (
+                  {spotifyArtistData?.popularity > 0 && (
                     <div className="flex flex-col items-center md:items-start">
-                      <span className="text-muted text-sm">Popularity</span>
-                      <div className="w-full max-w-[120px] bg-muted/30 rounded-full h-2 mt-2">
-                        <div 
-                          className="bg-accent h-2 rounded-full" 
-                          style={{ width: `${Math.min(100, (album.artist.nb_fan / 10000000) * 100)}%` }}
-                        ></div>
+                      <span className="text-muted text-sm">Spotify Popularity</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-full max-w-[100px] bg-muted/30 rounded-full h-2">
+                          <div 
+                            className="bg-spotify h-2 rounded-full" 
+                            style={{ width: `${spotifyArtistData.popularity}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-white text-sm font-semibold">{spotifyArtistData.popularity}</span>
                       </div>
                     </div>
                   )}
                 </div>
+                
+                {/* Genres from Spotify */}
+                {spotifyArtistData?.genres && spotifyArtistData.genres.length > 0 && (
+                  <div className="mb-4">
+                    <span className="text-muted text-sm">Genres:</span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {spotifyArtistData.genres.slice(0, 5).map((genre, index) => (
+                        <span 
+                          key={index}
+                          className="bg-primary-light/50 text-white text-xs px-3 py-1 rounded-full border border-muted/30"
+                        >
+                          {genre}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Artist links */}
                 {/* View Artist Profile button on its own line */}

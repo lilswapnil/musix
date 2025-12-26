@@ -189,7 +189,7 @@ export default function Genres() {
                     return (
                         <div 
                             key={`${source}-${albumId}`}
-                            className="bg-primary-light/30 rounded-lg overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                            className="glass-card rounded-lg overflow-hidden cursor-pointer transition-transform hover:scale-105 shadow-lg"
                             onClick={() => handleAlbumClick(album, source)}
                         >
                             <div className="aspect-square overflow-hidden">
@@ -243,7 +243,7 @@ export default function Genres() {
                     return (
                         <div 
                             key={`${source}-${playlistId}`}
-                            className="bg-primary-light/30 rounded-lg overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                            className="glass-card rounded-lg overflow-hidden cursor-pointer transition-transform hover:scale-105 shadow-lg"
                             onClick={() => handlePlaylistClick(playlist, source)}
                         >
                             <div className="aspect-square overflow-hidden">
@@ -281,7 +281,7 @@ export default function Genres() {
             </button>
             
             {/* Genre header with background and image - similar to album header */}
-            <div className="flex flex-col md:flex-row mb-8 bg-primary-light/30 rounded-lg p-4 md:p-6 relative overflow-hidden">
+            <div className="flex flex-col md:flex-row mb-8 glass rounded-lg p-4 md:p-6 relative overflow-hidden shadow-lg">
                 {/* Blurry background from genre image */}
                 <div className="absolute inset-0 overflow-hidden">
                     <div 
@@ -370,7 +370,7 @@ export default function Genres() {
                 </h3>
                 
                 {playlistsLoading ? (
-                    <div className="bg-primary-light/20 rounded-lg p-8 text-center">
+                    <div className="glass-light rounded-lg p-8 text-center shadow-lg">
                         <LoadingSpinner message={`Loading ${decodedGenreName} playlists...`} />
                     </div>
                 ) : playlistsError ? (
@@ -406,7 +406,7 @@ export default function Genres() {
                         )}
                         
                         {spotifyPlaylists.length === 0 && deezerPlaylists.length === 0 && (
-                            <div className="bg-primary-light/20 rounded-lg p-8 text-center">
+                            <div className="glass-light rounded-lg p-8 text-center shadow-lg">
                                 <p className="text-muted mb-4">No playlists found for {decodedGenreName}</p>
                                 <p className="text-sm text-muted">Try searching for a different genre</p>
                             </div>
@@ -459,7 +459,7 @@ export default function Genres() {
                         )}
                         
                         {spotifyAlbums.length === 0 && deezerAlbums.length === 0 && (
-                            <div className="bg-primary-light/20 rounded-lg p-8 text-center">
+                            <div className="glass-light rounded-lg p-8 text-center shadow-lg">
                                 <p className="text-muted mb-4">No albums found for {decodedGenreName}</p>
                                 <p className="text-sm text-muted">Try searching for a different genre</p>
                             </div>

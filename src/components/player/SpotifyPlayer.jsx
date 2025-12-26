@@ -59,7 +59,7 @@ export default function SpotifyPlayer() {
   }
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-primary-dark border-t border-primary p-2">
+    <div className="fixed bottom-0 left-0 right-0 glass border-t border-white/20 p-2 shadow-lg">
       <div className="flex items-center justify-between max-w-screen-xl mx-auto">
         {/* Track info */}
         <div className="flex items-center w-1/3">

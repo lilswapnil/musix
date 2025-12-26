@@ -287,7 +287,7 @@ export default function Songs() {
       </button>
       
       {/* Song header with artist/album image and background - matches Artists.jsx style */}
-      <div className="flex flex-col mb-6 bg-primary-light/30 rounded-lg p-4 relative overflow-hidden" style={{ aspectRatio: '2/1' }}>
+      <div className="flex flex-col mb-6 glass rounded-lg p-4 relative overflow-hidden shadow-lg" style={{ aspectRatio: '2/1' }}>
         {/* Blurred background image - uses album art or artist image */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
@@ -465,7 +465,7 @@ export default function Songs() {
                     {groupTracks.map((track) => (
                       <div 
                         key={track.id} 
-                        className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:bg-primary-light transition-colors cursor-pointer"
+                        className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer"
                         onClick={() => navigate(`/song/${track.id}`)}
                       >
                         <div className="w-12 h-12 flex-shrink-0 relative group">
@@ -525,7 +525,7 @@ export default function Songs() {
         <div className="mb-8">
           <h3 className="text-2xl font-semibold mb-4">About the Album</h3>
           <div 
-            className="bg-primary-light/30 p-4 rounded-lg cursor-pointer hover:bg-primary-light/40 transition-colors"
+            className="glass p-4 rounded-lg cursor-pointer hover:bg-white/10 transition-all shadow-lg"
             onClick={() => handleAlbumClick(album.id)}
           >
             <div className="flex items-center">

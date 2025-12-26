@@ -11,7 +11,7 @@ export default function ErrorDisplay({
     <div className="mb-8">
       {title && <h2 className="text-3xl font-bold mb-4 text-start">{title}</h2>}
       
-      <div className="bg-primary-light rounded-lg p-6 text-center">
+      <div className="glass rounded-lg p-6 text-center shadow-lg">
         <p className="text-error mb-4">{error}</p>
         
         {isAuthError && onConnect && (

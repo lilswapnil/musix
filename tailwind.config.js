@@ -8,7 +8,7 @@ export default {
     extend: {
       colors: {
         // Use flat structure for colors
-        primary: "#011627",
+        primary: "#040404",
         "primary-light": "#132738",
         "primary-dark": "#010e1a",
         secondary: "#f9f9f9",

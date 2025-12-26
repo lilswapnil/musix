@@ -57,7 +57,7 @@ export default function AuthCallback() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-primary to-primary-dark">
-        <div className="text-center bg-primary-light p-8 rounded-xl shadow-lg max-w-md">
+        <div className="text-center glass p-8 rounded-xl shadow-lg max-w-md">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
           <h1 className="text-xl font-semibold mb-2 text-white">Authentication Error</h1>
           <p className="text-muted mb-4">{error}</p>
