@@ -31,23 +31,6 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
         overflow: "hidden",
       }}
     >
-      {/* Reflection under the vinyl */}
-      <div
-        style={{
-          position: "absolute",
-          inset: "55% 0 0 0",
-          pointerEvents: "none",
-          background: albumImage
-            ? `linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%), url(${albumImage})`
-            : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          transform: "scaleY(-1)",
-          opacity: 0.1,
-          filter: "blur(10px)",
-        }}
-      />
-
       {/* Decorative dots background removed for transparent look */}
       <div
         style={{
@@ -75,10 +58,12 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
             width: "470px",
             height: "470px",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)",
+            background: "linear-gradient(135deg, #0a0a0a 0%, #0f0f0f 100%)",
             boxShadow:
-              "0 20px 60px rgba(0,0,0,0.35), inset 0 0 40px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.08)",
-            zIndex: 0,            transform: "translateX(70px)",          }}
+              "0 20px 60px rgba(0,0,0,0.35), inset 0 0 40px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.08), 0 0 60px rgba(255,255,255,0.1), inset -20px -20px 60px rgba(0,0,0,0.4), inset 20px 20px 60px rgba(255,255,255,0.05)",
+            zIndex: 0,            
+            transform: "translateX(70px)",
+          }}
         >
           {/* Vinyl grooves effect */}
           {[...Array(15)].map((_, i) => (
@@ -181,7 +166,7 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
             height: "480px",
             marginLeft: "-80px",
             background: "#ffffff",
-            boxShadow: "0 18px 48px rgba(0,0,0,0.28), 0 0 0 2px rgba(255,255,255,0.10), 0 0 18px rgba(0,0,0,0.25)",
+            boxShadow: "0 18px 48px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.08), 0 0 18px rgba(0,0,0,0.25)",
             zIndex: 1,
             overflow: "hidden",
             borderRadius: "0px",

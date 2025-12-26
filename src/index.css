@@ -5,12 +5,13 @@
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-weight: 300;
-  --background-color: #040404;
+  --background-color: #010e18;
   --text-color: rgba(255, 255, 255, 0.87);
   --text-unhighlighted: #515765;
   color-scheme: light dark;
   color: var(--text-color);
-  background-color: var(--background-color);
+  background: linear-gradient(180deg, #000000 0%, #010e18 100%);
+  background-attachment: fixed;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,6 +22,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(180deg, #000000 0%, #010e18 100%);
+  background-attachment: fixed;
 }
 
 /* Custom utility classes for text handling */
