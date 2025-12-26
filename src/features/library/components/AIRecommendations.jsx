@@ -5,12 +5,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { aiRecommendationService } from '../../../services/aiRecommendationService';
 import { spotifyService } from '../../../services/spotifyServices';
+import { Skeleton, SkeletonText, CardSkeleton } from '../../../components/common/ui/Skeleton';
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center">
     <div className="relative w-12 h-12">
       <div className="absolute inset-0 bg-gradient-to-r from-accent to-accent/50 rounded-full animate-spin"></div>
-      <div className="absolute inset-1 bg-primary-light rounded-full"></div>
+      <div className="absolute inset-1 glass-light rounded-full"></div>
     </div>
   </div>
 );
@@ -70,13 +71,29 @@ export default function AIRecommendations({ mode = 'single' }) {
         <h2 className="text-3xl font-bold mb-4 text-start">For You</h2>
         
         {isLoading ? (
-          <div className="relative h-80 rounded-xl overflow-hidden shadow-lg bg-primary-light flex items-center justify-center">
-            <LoadingSpinner />
+          <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg glass-card p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64">
+                  <Skeleton className="w-full h-full rounded-lg" />
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col justify-end">
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-8 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-1" />
+                <Skeleton className="h-3 w-1/3 mb-4" />
+                <div className="flex gap-3">
+                  <Skeleton className="h-10 w-32 rounded-full" />
+                  <Skeleton className="h-10 w-28 rounded-full" />
+                </div>
+              </div>
+            </div>
           </div>
         ) : nextRecommendation ? (
           <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg group">
             <div className="absolute inset-0">
-              <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-primary/50">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/50">
                 {nextRecommendation.album?.images?.[0]?.url && (
                   <img 
                     src={nextRecommendation.album.images[0].url}
@@ -96,7 +113,7 @@ export default function AIRecommendations({ mode = 'single' }) {
                     className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 object-cover shadow-lg rounded-lg"
                   />
                 ) : (
-                  <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-primary-light flex items-center justify-center rounded-lg">
+                  <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 glass-light flex items-center justify-center rounded-lg">
                     <FontAwesomeIcon icon={faPlay} className="text-4xl text-muted" />
                   </div>
                 )}
@@ -149,7 +166,7 @@ export default function AIRecommendations({ mode = 'single' }) {
             </div>
           </div>
         ) : (
-          <div className="text-center p-8 bg-primary-light/30 rounded-lg">
+          <div className="text-center p-8 glass-light rounded-lg">
             <p className="text-lg text-muted">No recommendation available</p>
             <p className="text-sm mt-2">Play music on Spotify to get recommendations</p>
           </div>
@@ -188,9 +205,11 @@ export default function AIRecommendations({ mode = 'single' }) {
         >
           <div className="flex gap-4 pb-4 px-2">
             {isLoading ? (
-              <div className="w-full flex justify-center items-center py-12">
-                <LoadingSpinner />
-              </div>
+              <>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <CardSkeleton key={i} />
+                ))}
+              </>
             ) : recommendedTracks.length > 0 ? (
               recommendedTracks.map((track) => (
                 <div
@@ -206,7 +225,7 @@ export default function AIRecommendations({ mode = 'single' }) {
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-48 bg-primary-light flex items-center justify-center">
+                      <div className="w-full h-48 glass-light flex items-center justify-center">
                         <FontAwesomeIcon icon={faMusic} className="text-4xl text-muted" />
                       </div>
                     )}
@@ -223,7 +242,7 @@ export default function AIRecommendations({ mode = 'single' }) {
                       {track.artists?.map(a => a.name).join(', ')}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-1 bg-primary-light rounded-full overflow-hidden">
+                      <div className="flex-1 h-1 bg-muted/30 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-accent"
                           style={{ width: `${track.popularity}%` }}

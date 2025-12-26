@@ -6,7 +6,7 @@ import { ensureValidToken } from '../../../utils/refreshToken';
 import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
-import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
+import { TrackRowSkeleton, CardSkeleton, SongRowSkeleton } from "../../../components/common/ui/Skeleton";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 // Removed unused debounce import
 
@@ -326,8 +326,30 @@ export default function SearchPage() {
         </div>
       )}
 
-      {loading && songs.length === 0 && albums.length === 0 ? (
-        <LoadingSpinner message="Searching..." />
+      {loading ? (
+        <>
+          <div className="mb-8">
+            <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">Songs</h3>}>
+              <div className="flex space-x-2">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={idx} className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]">
+                    {Array.from({ length: 4 }).map((__, i) => (
+                      <SongRowSkeleton key={i} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </ScrollableSection>
+          </div>
+
+          <ScrollableSection title="Albums">
+            <div className="flex space-x-2 pb-1">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          </ScrollableSection>
+        </>
       ) : (
         <>
           {songs.length > 0 && Object.entries(groupedSongs).map(([groupName, groupSongs]) => (

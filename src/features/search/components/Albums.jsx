@@ -15,6 +15,7 @@ import {
   faUser
 } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
+import { Skeleton, SkeletonText, TrackRowSkeleton } from "../../../components/common/ui/Skeleton";
 
 // Vinyl record presentation for the album header
 const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
@@ -384,7 +385,31 @@ export default function Albums() {
   
   // If still loading, show spinner
   if (loading) {
-    return <LoadingSpinner message="Loading album..." />;
+    return (
+      <div className="my-6">
+        <div className="mb-8">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="flex items-center" style={{ maxWidth: "1200px", width: "100%" }}>
+              <div className="relative" style={{ width: 470, height: 470, transform: "translateX(70px)" }}>
+                <Skeleton className="w-full h-full rounded-full" />
+              </div>
+              <div className="relative ml-[-80px]" style={{ width: 480, height: 480 }}>
+                <Skeleton className="w-full h-full rounded-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-3xl font-semibold mb-4 text-start">Tracks</h3>
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <TrackRowSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
   
   // If there was an error, show error message
