@@ -217,7 +217,7 @@ export default function CurrentlyPlaying({ token }) {
     <div className="mb-12">
       <h2 className="text-3xl font-bold mb-4 text-start">Now Playing</h2>
     <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg group">
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/50">
           {(artistImage || currentTrack.album.images[0]?.url) && (
             <img 
@@ -229,7 +229,7 @@ export default function CurrentlyPlaying({ token }) {
         </div>
       </div>
       
-      <div className="relative p-4 sm:p-8 flex flex-col sm:flex-row">
+      <div className="relative z-10 p-4 sm:p-8 flex flex-col sm:flex-row">
         <div className="mx-auto sm:mx-0 mb-4 sm:mb-0 sm:mr-6 md:mr-8 flex-shrink-0">
           {currentTrack.album.images[0]?.url ? (
             <img 
@@ -268,13 +268,13 @@ export default function CurrentlyPlaying({ token }) {
           <div className="mt-4 sm:mt-6 flex flex-col gap-3">
             {/* Transport Controls */}
             <div className="flex items-center justify-center sm:justify-start gap-4">
-              <button onClick={handlePrev} className="p-2 rounded-full hover:bg-text/20 transition-colors">
+              <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();handlePrev();}} className="p-2 rounded-full hover:bg-text/20 transition-colors">
                 <FontAwesomeIcon icon={faStepBackward} className="text-white text-xl" />
               </button>
-              <button onClick={handleTogglePlay} className="p-3 rounded-full bg-accent hover:bg-accent/80 transition-colors">
+              <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();handleTogglePlay();}} className="p-3 rounded-full bg-accent hover:bg-accent/80 transition-colors">
                 <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="text-white text-xl" />
               </button>
-              <button onClick={handleNext} className="p-2 rounded-full hover:bg-text/20 transition-colors">
+              <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();handleNext();}} className="p-2 rounded-full hover:bg-text/20 transition-colors">
                 <FontAwesomeIcon icon={faStepForward} className="text-white text-xl" />
               </button>
             </div>
