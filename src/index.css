@@ -26,24 +26,6 @@ body {
   background-attachment: fixed;
 }
 
-@layer base {
-  button {
-    @apply bg-neutral-900 text-white border border-white/10 rounded-md px-4 py-2 transition-colors duration-200;
-  }
-
-  button:hover {
-    @apply bg-neutral-800 border-white/20;
-  }
-
-  button:active {
-    @apply bg-neutral-700 border-white/30;
-  }
-
-  button:disabled {
-    @apply opacity-60 cursor-not-allowed bg-neutral-900 border-white/10;
-  }
-}
-
 /* Custom utility classes for text handling */
 @layer utilities {
   /* Balances text for better readability */
