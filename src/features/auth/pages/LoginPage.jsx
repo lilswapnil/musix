@@ -19,6 +19,11 @@ export default function LoginPage() {
       setError(decodeURIComponent(errorParam));
     }
     
+    if (!youtubeService.isConfigured()) {
+      setError('YouTube login is not configured. Please use Spotify to continue.');
+      return;
+    }
+
     youtubeService.initClient().catch((error) => {
       console.error('Error initializing YouTube API client:', error);
       if (!errorParam) {
@@ -92,7 +97,7 @@ export default function LoginPage() {
           <button
             className="flex items-center justify-center rounded-lg bg-[#FF0000] p-3 text-white hover:bg-[#FF0000]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleYouTubeLogin}
-            disabled={isYouTubeLoading}
+            disabled={isYouTubeLoading || !youtubeService.isConfigured()}
           >
             {isYouTubeLoading ? (
               <>
@@ -104,7 +109,7 @@ export default function LoginPage() {
                 <svg className="mr-2 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M21.8 8.001a2.75 2.75 0 0 0-1.936-1.945C18.2 6 12 6 12 6s-6.2 0-7.864.056A2.75 2.75 0 0 0 2.2 8.001 28.8 28.8 0 0 0 2 12a28.8 28.8 0 0 0 .2 3.999 2.75 2.75 0 0 0 1.936 1.945C5.8 18 12 18 12 18s6.2 0 7.864-.056A2.75 2.75 0 0 0 21.8 16 28.8 28.8 0 0 0 22 12a28.8 28.8 0 0 0-.2-3.999zM9.75 15V9l5.25 3-5.25 3z" />
                 </svg>
-                Continue with YouTube
+                {youtubeService.isConfigured() ? 'Continue with YouTube' : 'YouTube login unavailable'}
               </>
             )}
           </button>
