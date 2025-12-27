@@ -66,23 +66,29 @@
       const error = urlParams.get('error');
       const errorDescription = urlParams.get('error_description');
 
-      const isLocalhost = window.location.hostname === 'localhost' ||
-                          window.location.hostname === '127.0.0.1';
-      const basePath = isLocalhost ? '' : '/musix';
+      const redirectToApp = (pathname, params = {}) => {
+        const target = new URL(pathname, window.location.origin);
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            target.searchParams.set(key, value);
+          }
+        });
+        window.location.replace(target.toString());
+      };
 
       if (error) {
         console.error('Spotify auth error:', error, errorDescription);
-        window.location.href = `${basePath}/#/login?error=${encodeURIComponent(errorDescription || error)}`;
+        redirectToApp('/login', { error: errorDescription || error });
         return;
       }
 
       if (code) {
-        window.location.href = `${basePath}/#/callback?code=${encodeURIComponent(code)}`;
+        redirectToApp('/callback', { code });
         return;
       }
 
       console.warn('No authorization code received');
-      window.location.href = `${basePath}/#/login?error=${encodeURIComponent('No authorization code received')}`;
+      redirectToApp('/login', { error: 'No authorization code received' });
     })();
   </script>
 </head>
