@@ -460,7 +460,7 @@ export default function SearchPage() {
 
           {artists.length > 0 && (
             <ScrollableSection title="Artists">
-              <div className="flex space-x-2 pb-1">
+              <div className="flex space-x-2 pb-1 scrollbar-hide">
                 {artists.map((artist) => (
                   <div 
                     key={artist.id} 
