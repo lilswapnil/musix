@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_SPOTIFY_CLIENT_ID": "@vite_spotify_client_id",
+    "VITE_REDIRECT_URI": "@vite_redirect_uri"
+  }
+}
