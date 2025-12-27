@@ -1,7 +1,6 @@
 import NavBar from "./NavBar";
 import { Outlet, useLocation, useNavigation } from "react-router-dom";
 import LoadingSpinner from "../common/ui/LoadingSpinner";
-import SpotifyPlayer from "../player/SpotifyPlayer";
 
 export default function Layout() {
   const location = useLocation();
@@ -23,7 +22,6 @@ export default function Layout() {
       
       {/* Add safe bottom padding for mobile */}
       <div className="h-safe-bottom md:hidden"></div>
-      <SpotifyPlayer />
     </div>
   );
 }

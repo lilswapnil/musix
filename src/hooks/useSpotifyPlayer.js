@@ -10,8 +10,6 @@ export function useSpotifyPlayer() {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playerError, setPlayerError] = useState(null);
-  const [volume, setVolume] = useState(50);
-  const [deviceId, setDeviceId] = useState(null);
   
   // Initialize player
   useEffect(() => {
@@ -47,11 +45,7 @@ export function useSpotifyPlayer() {
         
         if (mounted) {
           setIsReady(success);
-          if (!success) {
-            setPlayerError('Failed to initialize Spotify player');
-          } else {
-            setDeviceId(spotifyService.getDeviceId?.() || null);
-          }
+          if (!success) setPlayerError('Failed to initialize Spotify player');
         }
       } catch (error) {
         console.error('Error in player initialization:', error);
@@ -123,37 +117,6 @@ export function useSpotifyPlayer() {
       setPlayerError('Failed to seek: ' + error.message);
     }
   }, []);
-
-  const setPlayerVolume = useCallback(async (nextVolume) => {
-    try {
-      const clamped = Math.max(0, Math.min(100, Number(nextVolume)));
-      setVolume(clamped);
-      await spotifyService.setVolume(clamped);
-    } catch (error) {
-      console.error('Error updating volume:', error);
-      setPlayerError('Failed to set volume: ' + error.message);
-    }
-  }, []);
-
-  const skipNext = useCallback(async () => {
-    try {
-      setPlayerError(null);
-      await spotifyService.skipToNext();
-    } catch (error) {
-      console.error('Error skipping track:', error);
-      setPlayerError('Failed to skip: ' + error.message);
-    }
-  }, []);
-
-  const skipPrevious = useCallback(async () => {
-    try {
-      setPlayerError(null);
-      await spotifyService.skipToPrevious();
-    } catch (error) {
-      console.error('Error going to previous track:', error);
-      setPlayerError('Failed to go back: ' + error.message);
-    }
-  }, []);
   
   return {
     isReady,
@@ -161,15 +124,10 @@ export function useSpotifyPlayer() {
     isPlaying,
     currentTrack,
     playerError,
-    deviceId,
-    volume,
     playTrack,
     pause,
     resume,
     togglePlay,
-    seekToPosition,
-    setPlayerVolume,
-    skipNext,
-    skipPrevious
+    seekToPosition
   };
 }

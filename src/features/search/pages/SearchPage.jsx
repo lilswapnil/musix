@@ -8,7 +8,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import { TrackRowSkeleton, CardSkeleton, SongRowSkeleton } from "../../../components/common/ui/Skeleton";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
-import { useSpotifyPlayerContext } from "../../../context/SpotifyPlayerContext";
 // Removed unused debounce import
 
 export default function SearchPage() {
@@ -27,8 +26,6 @@ export default function SearchPage() {
   const query = new URLSearchParams(location.search).get("query") || "";
   const audioRef = useRef(null);
   const abortControllerRef = useRef(null);
-  const spotifyPlayer = useSpotifyPlayerContext();
-  const canStreamFullTrack = spotifyPlayer?.isPremium && spotifyPlayer?.isReady;
 
   useEffect(() => {
     try {
@@ -200,8 +197,7 @@ export default function SearchPage() {
                   previewUrl: track.preview_url,
                   externalUrl: track.external_urls?.spotify,
                   popularity: track.popularity || 0,
-                  source: 'spotify',
-                  uri: track.uri
+                  source: 'spotify'
                 }));
               }
 
@@ -253,31 +249,12 @@ export default function SearchPage() {
     }
   }
 
-  const handlePlayPause = async (song, event) => {
+  const handlePlayPause = (songId, previewUrl, event) => {
     if (event) {
       event.stopPropagation();
     }
 
-    if (!song) return;
-
-    const tryFullPlayback = canStreamFullTrack && song.source === 'spotify' && (song.uri || song.externalUrl);
-
-    if (tryFullPlayback && spotifyPlayer) {
-      try {
-        if (currentlyPlaying === song.id && spotifyPlayer.isPlaying) {
-          await spotifyPlayer.pause();
-          setCurrentlyPlaying(null);
-          return;
-        }
-        await spotifyPlayer.playTrack(song.uri || `spotify:track:${song.id}`);
-        setCurrentlyPlaying(song.id);
-        return;
-      } catch (error) {
-        console.warn('Full playback failed, falling back to preview', error);
-      }
-    }
-
-    if (currentlyPlaying === song.id && audioRef.current) {
+    if (currentlyPlaying === songId) {
       audioRef.current.pause();
       setCurrentlyPlaying(null);
       return;
@@ -287,12 +264,12 @@ export default function SearchPage() {
       audioRef.current.pause();
     }
 
-    if (song.previewUrl) {
-      const audio = new Audio(song.previewUrl);
+    if (previewUrl) {
+      const audio = new Audio(previewUrl);
       audio.addEventListener('ended', () => setCurrentlyPlaying(null));
       audioRef.current = audio;
       audio.play().catch(err => console.error("Error playing audio:", err));
-      setCurrentlyPlaying(song.id);
+      setCurrentlyPlaying(songId);
     }
   };
 
@@ -402,9 +379,9 @@ export default function SearchPage() {
                                   e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
                                 }}
                               />
-                              {(song.previewUrl || (canStreamFullTrack && song.source === 'spotify')) && (
+                              {song.previewUrl && (
                                 <button
-                                  onClick={(e) => handlePlayPause(song, e)}
+                                  onClick={(e) => handlePlayPause(song.id, song.previewUrl, e)}
                                   className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded"
                                 >
                                   <FontAwesomeIcon 

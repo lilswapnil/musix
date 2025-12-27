@@ -2,7 +2,6 @@ import React, { lazy, Suspense } from 'react';
 import './App.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { SpotifyPlayerProvider } from './context/SpotifyPlayerContext';
 import PageSkeleton from './components/common/ui/PageSkeleton';
 
 // Lazy-loaded routes for faster initial load
@@ -129,9 +128,7 @@ const router = createBrowserRouter(routes);
 function App() {
   return (
     <AuthProvider>
-      <SpotifyPlayerProvider>
-        <RouterProvider router={router} />
-      </SpotifyPlayerProvider>
+      <RouterProvider router={router} />
     </AuthProvider>
   )
 }
