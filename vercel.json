@@ -1,5 +1,9 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/callback", "destination": "/callback.html" },
+    { "source": "/callback/", "destination": "/callback.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
