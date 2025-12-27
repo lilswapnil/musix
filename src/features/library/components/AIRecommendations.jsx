@@ -5,6 +5,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { aiRecommendationService } from '../../../services/aiRecommendationService';
 import { spotifyService } from '../../../services/spotifyServices';
+import { useSpotifyPlayerContext } from '../../../context/SpotifyPlayerContext';
 import { Skeleton, SkeletonText, CardSkeleton } from '../../../components/common/ui/Skeleton';
 
 const LoadingSpinner = () => (
@@ -17,6 +18,8 @@ const LoadingSpinner = () => (
 );
 
 export default function AIRecommendations({ mode = 'single' }) {
+    const spotifyPlayer = useSpotifyPlayerContext();
+    const canStream = spotifyPlayer?.isPremium && spotifyPlayer?.isReady;
   const [nextRecommendation, setNextRecommendation] = useState(null);
   const [recommendedTracks, setRecommendedTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,10 +49,15 @@ export default function AIRecommendations({ mode = 'single' }) {
   }, [fetchRecommendations]);
 
   const handlePlayTrack = async (trackUri) => {
+    if (!trackUri) return;
     try {
-      await spotifyService.addToQueue(trackUri);
+      if (canStream) {
+        await spotifyPlayer.playTrack(trackUri);
+      } else {
+        await spotifyService.addToQueue(trackUri);
+      }
     } catch (error) {
-      console.error('Error adding track to queue:', error);
+      console.error('Error starting playback:', error);
     }
   };
 

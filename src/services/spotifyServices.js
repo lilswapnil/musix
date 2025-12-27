@@ -617,10 +617,15 @@ export const spotifyService = {
         }
       });
       
-      this._player.addListener('ready', ({ device_id: devId }) => {
+      this._player.addListener('ready', async ({ device_id: devId }) => {
         console.log('Spotify player ready with device ID:', devId);
         this._deviceId = devId;
         this._isPlayerReady = true;
+        try {
+          await this.transferPlayback(devId, false);
+        } catch (transferError) {
+          console.warn('Could not transfer playback automatically:', transferError);
+        }
       });
       
       this._player.addListener('not_ready', () => {
@@ -733,6 +738,44 @@ export const spotifyService = {
       console.error('Error seeking to position:', error);
       throw error;
     }
+  },
+
+  setVolume: async function(volumePercent) {
+    if (!this._isPlayerReady) throw new Error('Spotify player not ready');
+
+    try {
+      await this.apiRequest('/me/player/volume', {
+        method: 'PUT',
+        params: {
+          volume_percent: Math.max(0, Math.min(100, Math.round(volumePercent))),
+          device_id: this._deviceId
+        }
+      });
+    } catch (error) {
+      console.error('Error setting volume:', error);
+      throw error;
+    }
+  },
+
+  transferPlayback: async function(deviceId, shouldPlay = false) {
+    if (!deviceId) return;
+
+    try {
+      await this.apiRequest('/me/player', {
+        method: 'PUT',
+        body: {
+          device_ids: [deviceId],
+          play: shouldPlay
+        }
+      });
+    } catch (error) {
+      console.error('Error transferring playback:', error);
+      throw error;
+    }
+  },
+
+  getDeviceId: function() {
+    return this._deviceId;
   },
 
   getPlaybackState: async function() {

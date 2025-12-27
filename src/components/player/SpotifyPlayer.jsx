@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSpotifyPlayer } from '../../hooks/useSpotifyPlayer';
+import { useSpotifyPlayerContext } from '../../context/SpotifyPlayerContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlay, 
@@ -16,30 +16,15 @@ export default function SpotifyPlayer() {
     currentTrack, 
     playerError, 
     isPremium,
-    togglePlay
-  } = useSpotifyPlayer();
-  
-  // Only show if player is initialized and premium
+    togglePlay,
+    skipNext,
+    skipPrevious,
+    volume,
+    setPlayerVolume
+  } = useSpotifyPlayerContext() || {};
+
   if (!isPremium) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-primary-dark p-3 text-center">
-        <p className="text-sm text-muted mb-2">
-          Spotify Premium required for playback functionality
-        </p>
-        {/* Debug button to force premium mode - remove in production */}
-        <button 
-          className="px-3 py-1 bg-primary text-white text-xs rounded"
-          onClick={() => {
-            // This is a temporary workaround
-            console.log('Forcing premium mode for testing');
-            window.localStorage.setItem('spotify_force_premium', 'true');
-            window.location.reload();
-          }}
-        >
-          I have Premium (Force Enable)
-        </button>
-      </div>
-    );
+    return null;
   }
   
   if (!isReady) {
@@ -89,8 +74,9 @@ export default function SpotifyPlayer() {
         {/* Controls */}
         <div className="flex items-center justify-center space-x-4 w-1/3">
           <button 
-            className="text-muted hover:text-white transition-colors"
+            className="text-muted hover:text-white transition-colors disabled:opacity-40"
             disabled={!currentTrack}
+            onClick={skipPrevious}
           >
             <FontAwesomeIcon icon={faStepBackward} />
           </button>
@@ -104,8 +90,9 @@ export default function SpotifyPlayer() {
           </button>
           
           <button 
-            className="text-muted hover:text-white transition-colors"
+            className="text-muted hover:text-white transition-colors disabled:opacity-40"
             disabled={!currentTrack}
+            onClick={skipNext}
           >
             <FontAwesomeIcon icon={faStepForward} />
           </button>
@@ -119,7 +106,8 @@ export default function SpotifyPlayer() {
             min="0"
             max="100"
             className="w-24 accent-accent"
-            // Add volume control functionality here
+            value={volume}
+            onChange={(e) => setPlayerVolume?.(e.target.value)}
           />
         </div>
       </div>

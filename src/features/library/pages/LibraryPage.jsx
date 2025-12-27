@@ -6,7 +6,6 @@ import AIRecommendations from '../components/AIRecommendations';
 // import { useAuth } from '../../../context/AuthContext';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { useNavigate } from 'react-router-dom';
-import SpotifyPlayer from '../../../components/player/SpotifyPlayer';
 import { getAccessToken } from '../../../utils/tokenStorage';
 
 /**
@@ -104,7 +103,6 @@ export default function LibraryPage() {
   if (token) {
     return (
       <>
-        <SpotifyPlayer />
         <CurrentlyPlaying token={token} />
          <AIRecommendations mode="list" />
         <RecentPlayed token={token} />
