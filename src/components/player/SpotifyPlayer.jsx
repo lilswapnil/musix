@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSpotifyPlayer } from '../../hooks/useSpotifyPlayer';
+import { spotifyService } from '../../services/spotifyServices';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlay, 
@@ -18,6 +19,7 @@ export default function SpotifyPlayer() {
     isPremium,
     togglePlay
   } = useSpotifyPlayer();
+  const [volume, setVolume] = React.useState(50);
   
   // Only show if player is initialized and premium
   if (!isPremium) {
@@ -91,6 +93,7 @@ export default function SpotifyPlayer() {
           <button 
             className="text-muted hover:text-white transition-colors"
             disabled={!currentTrack}
+            onClick={async ()=>{try{await spotifyService.skipToPrevious();}catch(e){console.warn(e);}}}
           >
             <FontAwesomeIcon icon={faStepBackward} />
           </button>
@@ -106,6 +109,7 @@ export default function SpotifyPlayer() {
           <button 
             className="text-muted hover:text-white transition-colors"
             disabled={!currentTrack}
+            onClick={async ()=>{try{await spotifyService.skipToNext();}catch(e){console.warn(e);}}}
           >
             <FontAwesomeIcon icon={faStepForward} />
           </button>
@@ -118,8 +122,13 @@ export default function SpotifyPlayer() {
             type="range"
             min="0"
             max="100"
+            value={volume}
+            onChange={async (e)=>{
+              const val = Number(e.target.value);
+              setVolume(val);
+              try { await spotifyService.setVolume(val); } catch(err){ console.warn(err); }
+            }}
             className="w-24 accent-accent"
-            // Add volume control functionality here
           />
         </div>
       </div>
