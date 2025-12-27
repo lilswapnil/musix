@@ -99,7 +99,7 @@ export default function SpotifyPlayer() {
           </button>
           
           <button 
-            className="bg-accent hover:bg-accent/80 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+            className="bg-primary-dark hover:bg-primary/80 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-md"
             onClick={togglePlay}
             disabled={!currentTrack}
           >
