@@ -2,6 +2,21 @@ import { generatePKCEChallenge, storeCodeVerifier, getCodeVerifier, clearCodeVer
 import { setAccessToken, setRefreshToken, setUserProfile, getRefreshToken } from '../utils/tokenStorage';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+const persistRefreshTokenInAzure = async (refreshToken) => {
+  if (!refreshToken || !BACKEND_BASE_URL) return;
+
+  try {
+    await fetch(`${BACKEND_BASE_URL}/api/azure/spotify/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    });
+  } catch (error) {
+    console.warn('Failed to persist refresh token in Azure service:', error.message);
+  }
+};
 
 // Helper function to get consistent redirect URI
 const getRedirectUri = () => {
@@ -80,6 +95,7 @@ export const exchangeCodeForToken = async (code) => {
     if (response.ok) {
       setAccessToken(data.access_token, data.expires_in);
       setRefreshToken(data.refresh_token);
+      persistRefreshTokenInAzure(data.refresh_token);
       clearCodeVerifier();
       await fetchAndStoreUserProfile(data.access_token);
       return data.access_token;

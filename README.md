@@ -90,12 +90,24 @@ VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id
 VITE_SPOTIFY_REDIRECT_URI=http://localhost:5173/callback
 VITE_SPOTIFY_LOCAL_REDIRECT_URI=http://localhost:5173/callback
 
+# Backend secrets
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_REDIRECT_URI=http://localhost:5173/callback
+CLIENT_URL=http://localhost:5173
+
+# Azure token service (optional but recommended)
+AZURE_KEY_VAULT_URL=https://your-vault-name.vault.azure.net/
+AZURE_SPOTIFY_REFRESH_SECRET_NAME=SpotifyRefreshToken
+AZURE_SERVICE_API_KEY=generated_service_key
+PERSISTED_SPOTIFY_REFRESH_TOKEN= # optional local fallback
+
 # Optional APIs
 VITE_YOUTUBE_CLIENT_ID=your_youtube_client_id
 VITE_YOUTUBE_API_KEY=your_youtube_api_key
 
 # Backend
-VITE_BACKEND_URL=http://localhost:5000
+VITE_BACKEND_URL=http://localhost:5175
 \`\`\`
 
 ### 4. Spotify Setup
@@ -185,6 +197,12 @@ musix/
 - **Flow**: OAuth 2.0 with PKCE
 - **File**: \`src/services/spotifyAuthService.js\`
 - **Scope**: User data, library access, playback
+
+### Azure ML / Key Vault Token Service
+- **Key Vault**: Persist the long-lived Spotify refresh token securely using `AZURE_KEY_VAULT_URL` and `AZURE_SPOTIFY_REFRESH_SECRET_NAME`.
+- **Refresh capture**: After the PKCE login flow completes, the frontend calls `/api/azure/spotify/refresh-token` so the backend can store the new refresh token.
+- **Managed access**: Azure ML jobs (or any trusted service) call `/api/azure/spotify/access-token` with the `x-service-key: <AZURE_SERVICE_API_KEY>` header to obtain short-lived Spotify access tokens without re-authentication.
+- **Fallback**: If Key Vault is unavailable, the server keeps an in-memory copy (`PERSISTED_SPOTIFY_REFRESH_TOKEN`) so development environments still work.
 
 ### Available Endpoints
 - Search tracks, artists, albums
