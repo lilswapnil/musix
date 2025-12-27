@@ -177,6 +177,7 @@ const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
             <img
               src={albumImage}
               alt={albumTitle || "Album Cover"}
+              loading="lazy" decoding="async"
               style={{
                 width: "100%",
                 height: "100%",

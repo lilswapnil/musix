@@ -111,6 +111,7 @@ export default function AIRecommendations({ mode = 'single' }) {
                     src={nextRecommendation.album.images[0].url}
                     alt={nextRecommendation.album.name}
                     className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 object-cover shadow-lg rounded-lg"
+                    loading="lazy" decoding="async"
                   />
                 ) : (
                   <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 glass-light flex items-center justify-center rounded-lg">
@@ -223,6 +224,7 @@ export default function AIRecommendations({ mode = 'single' }) {
                         src={track.album.images[0].url}
                         alt={track.name}
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy" decoding="async"
                       />
                     ) : (
                       <div className="w-full h-48 glass-light flex items-center justify-center">

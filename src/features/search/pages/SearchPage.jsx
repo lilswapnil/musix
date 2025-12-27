@@ -330,7 +330,7 @@ export default function SearchPage() {
         <>
           <div className="mb-8">
             <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">Songs</h3>}>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 scrollbar-hide">
                 {Array.from({ length: 3 }).map((_, idx) => (
                   <div key={idx} className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]">
                     {Array.from({ length: 4 }).map((__, i) => (
@@ -343,7 +343,7 @@ export default function SearchPage() {
           </div>
 
           <ScrollableSection title="Albums">
-            <div className="flex space-x-2 pb-1">
+            <div className="flex space-x-2 pb-1 scrollbar-hide">
               {Array.from({ length: 8 }).map((_, i) => (
                 <CardSkeleton key={i} />
               ))}
@@ -421,7 +421,7 @@ export default function SearchPage() {
 
           {albums.length > 0 && (
             <ScrollableSection title="Albums">
-              <div className="flex space-x-2 pb-1">
+              <div className="flex space-x-2 pb-1 scrollbar-hide">
                 {albums.map((album) => (
                   <div 
                     key={album.id} 
@@ -433,6 +433,7 @@ export default function SearchPage() {
                         src={album.coverArt}
                         alt={album.name}
                         className="w-full h-32 sm:h-40 md:h-48 object-cover"
+                        loading="lazy" decoding="async"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
@@ -481,6 +482,7 @@ export default function SearchPage() {
                           src={artist.picture_medium || artist.picture_big || artist.picture}
                           alt={artist.name}
                           className="w-full h-full object-cover"
+                          loading="lazy" decoding="async"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = "https://via.placeholder.com/300x300?text=No+Artist+Image";
