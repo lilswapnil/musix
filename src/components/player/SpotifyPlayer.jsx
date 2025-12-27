@@ -20,6 +20,20 @@ export default function SpotifyPlayer() {
     togglePlay
   } = useSpotifyPlayer();
   const [volume, setVolume] = React.useState(50);
+
+  const handleTogglePlay = async () => {
+    try {
+      if (!currentTrack) return;
+      if (isPlaying) {
+        await togglePlay();
+      } else {
+        // Start full-track playback on the web player device
+        await spotifyService.play(`spotify:track:${currentTrack.id}`);
+      }
+    } catch (err) {
+      console.warn('Playback error:', err);
+    }
+  };
   
   // Only show if player is initialized and premium
   if (!isPremium) {
@@ -100,7 +114,7 @@ export default function SpotifyPlayer() {
           
           <button 
             className="bg-primary-dark hover:bg-primary/80 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-md"
-            onClick={togglePlay}
+            onClick={handleTogglePlay}
             disabled={!currentTrack}
           >
             <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
