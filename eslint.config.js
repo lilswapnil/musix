@@ -4,9 +4,9 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', 'web-dist', 'test'] },
+  { ignores: ['dist', 'web-dist', 'test', '.venv'] },
   {
-    files: ['**/*.config.js', 'tailwind.config.js', 'vite.config.js', 'backend/**/*.cjs'],
+    files: ['**/*.config.js', 'tailwind.config.js', 'vite.config.js', 'backend/**/*.{cjs,js}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.node,

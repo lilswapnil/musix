@@ -10,8 +10,6 @@ import {
   faArrowLeft, 
   faClock,
   faCompactDisc,
-  faCalendar,
-  faMusic,
   faUser
 } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";

@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-// import { musicService } from "../../../services/musicService";
 import axios from 'axios';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { deezerService } from "../../../services/deezerServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import { TrackRowSkeleton, CardSkeleton, SongRowSkeleton } from "../../../components/common/ui/Skeleton";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 // Removed unused debounce import
@@ -51,13 +50,13 @@ export default function SearchPage() {
         audioRef.current.pause();
       }
     };
-  }, [query]);
+  }, [query, search]);
 
   // Removed unused memoizedSearch
 
   // Removed unused debouncedSearch; search is triggered via effect on query
 
-  const fetchWithRetry = async (fetchFunc, maxRetries = 3, delay = 6000) => {
+  const fetchWithRetry = useCallback(async (fetchFunc, maxRetries = 3, delay = 6000) => {
     let retries = 0;
     while (retries < maxRetries) {
       try {
@@ -76,11 +75,11 @@ export default function SearchPage() {
         }
       }
     }
-  };
+  }, []);
 
   // Removed unused handleSearchInput to satisfy linter
 
-  async function search(searchQuery) {
+  const search = useCallback(async (searchQuery) => {
     if (!searchQuery || searchQuery.trim().length < 2) {
       return;
     }
@@ -247,7 +246,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [fetchWithRetry]);
 
   const handlePlayPause = (songId, previewUrl, event) => {
     if (event) {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { youtubeService } from '../../../services/youtubeService';
 import { redirectToSpotify } from '../../../services/spotifyAuthService';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/useAuth';
 import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {

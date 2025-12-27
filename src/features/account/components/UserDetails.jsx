@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { spotifyService } from '../../../services/spotifyServices';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/useAuth';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faMusic, faEnvelope } from "@fortawesome/free-solid-svg-icons";
-import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 import { getAccessToken, getUserProfile } from '../../../utils/tokenStorage';
 import ListeningHistoryChart from "../components/ListeningHistoryChart";
 
 export default function UserDetails() {
   const [user, setUser] = useState(null);
-  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -30,9 +28,8 @@ export default function UserDetails() {
         const cachedProfile = getUserProfile();
         if (cachedProfile) {
           setUser(cachedProfile);
-          fetchRecentlyPlayed(accessToken);
         } else {
-          await fetchFullProfileData(accessToken);
+          await fetchFullProfileData();
         }
       } catch (err) {
         console.error("Error loading user data:", err);
@@ -42,31 +39,9 @@ export default function UserDetails() {
       }
     };
 
-    const fetchRecentlyPlayed = async (token) => {
-      try {
-        const recentPlayed = await spotifyService.apiRequest('/me/player/recently-played', {
-          params: { limit: 10 }
-        });
-
-        if (recentPlayed?.items) {
-          setRecentlyPlayed(recentPlayed.items);
-        }
-      } catch (err) {
-        console.error("Error fetching recently played:", err);
-      }
-    };
-
-    const fetchFullProfileData = async (token) => {
+    const fetchFullProfileData = async () => {
       const userData = await spotifyService.getCurrentUser();
       setUser(userData);
-
-      const recentPlayed = await spotifyService.apiRequest('/me/player/recently-played', {
-        params: { limit: 10 }
-      });
-
-      if (recentPlayed?.items) {
-        setRecentlyPlayed(recentPlayed.items);
-      }
     };
 
     fetchUserData();

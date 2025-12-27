@@ -1,4 +1,5 @@
 import { spotifyService } from './spotifyServices';
+import { azureMlService } from './azureMlService';
 
 class AIRecommendationService {
   constructor() {
@@ -55,6 +56,86 @@ class AIRecommendationService {
     });
   }
 
+  _mapTrackSummary(track) {
+    if (!track) return null;
+
+    return {
+      id: track.id,
+      name: track.name,
+      artists: (track.artists || []).map(artist => ({ id: artist.id, name: artist.name })),
+      album: track.album
+        ? { id: track.album.id, name: track.album.name, images: track.album.images }
+        : null,
+      preview_url: track.preview_url,
+      external_urls: track.external_urls,
+      uri: track.uri,
+      duration_ms: track.duration_ms,
+      popularity: track.popularity
+    };
+  }
+
+  async _getAudioFeatures(trackId) {
+    if (!trackId) return null;
+    try {
+      return await spotifyService.getAudioFeatures(trackId);
+    } catch (error) {
+      console.warn('Could not fetch audio features:', error);
+      return null;
+    }
+  }
+
+  _buildSpotifyRecommendationOptions(track, audioFeatures, limit = 20) {
+    const options = {
+      seed_tracks: [track.id],
+      seed_artists: track.artists.slice(0, 2).map(artist => artist.id),
+      limit
+    };
+
+    if (audioFeatures) {
+      options.target_energy = audioFeatures.energy;
+      options.target_danceability = audioFeatures.danceability;
+      options.target_valence = audioFeatures.valence;
+    }
+
+    return options;
+  }
+
+  async _fetchAzureRecommendations(track, audioFeatures, limit = 20) {
+    if (!azureMlService.isEnabled()) {
+      return [];
+    }
+
+    try {
+      const azureResponse = await azureMlService.getTrackRecommendations({
+        track,
+        audioFeatures,
+        history: this.getHistory(10)
+      });
+
+      return (azureResponse?.tracks || []).slice(0, limit).filter(Boolean);
+    } catch (error) {
+      console.warn('Azure ML recommendation failed:', error);
+      this._notifyListeners({ type: 'azure_ml_error', error: error.message });
+      return [];
+    }
+  }
+
+  _filterAvailableTracks(tracks, currentTrackId) {
+    if (!Array.isArray(tracks)) {
+      return [];
+    }
+
+    return tracks.filter(track =>
+      track && track.id && !this.queuedTracks.has(track.id) && track.id !== currentTrackId
+    );
+  }
+
+  async _resolveTrack(track) {
+    if (track) return track;
+    const currentlyPlaying = await spotifyService.getCurrentlyPlaying();
+    return currentlyPlaying?.item || null;
+  }
+
   async _checkAndQueueRecommendation() {
     try {
       const currentlyPlaying = await spotifyService.getCurrentlyPlaying();
@@ -89,47 +170,38 @@ class AIRecommendationService {
 
   async _queueAIRecommendation(currentTrack) {
     try {
-      const seedTracks = [currentTrack.id];
-      const seedArtists = currentTrack.artists.slice(0, 2).map(artist => artist.id);
+      const audioFeatures = await this._getAudioFeatures(currentTrack.id);
+      const limit = 10;
+      const recommendationOptions = this._buildSpotifyRecommendationOptions(currentTrack, audioFeatures, limit);
 
-      let audioFeatures = null;
-      try {
-        audioFeatures = await spotifyService.getAudioFeatures(currentTrack.id);
-      } catch (error) {
-        console.warn('Could not fetch audio features:', error);
+      let candidateTracks = await this._fetchAzureRecommendations(currentTrack, audioFeatures, limit);
+      let recommendationSource = candidateTracks.length > 0 ? 'azure-ml' : 'spotify';
+
+      if (candidateTracks.length === 0) {
+        const recommendations = await spotifyService.getRecommendations(recommendationOptions);
+        candidateTracks = recommendations?.tracks || [];
       }
 
-      const recommendationOptions = {
-        seed_tracks: seedTracks,
-        seed_artists: seedArtists,
-        limit: 10
-      };
+      let availableTracks = this._filterAvailableTracks(candidateTracks, currentTrack.id);
 
-      if (audioFeatures) {
-        recommendationOptions.target_energy = audioFeatures.energy;
-        recommendationOptions.target_danceability = audioFeatures.danceability;
-        recommendationOptions.target_valence = audioFeatures.valence;
+      if (availableTracks.length === 0 && recommendationSource === 'azure-ml') {
+        const fallback = await spotifyService.getRecommendations(recommendationOptions);
+        candidateTracks = fallback?.tracks || [];
+        availableTracks = this._filterAvailableTracks(candidateTracks, currentTrack.id);
+        recommendationSource = 'spotify';
       }
-
-      const recommendations = await spotifyService.getRecommendations(recommendationOptions);
-
-      if (!recommendations || !recommendations.tracks || recommendations.tracks.length === 0) {
-        this._notifyListeners({ type: 'no_recommendations', currentTrack: currentTrack.name });
-        return;
-      }
-
-      const availableTracks = recommendations.tracks.filter(track =>
-        !this.queuedTracks.has(track.id) && track.id !== currentTrack.id
-      );
 
       if (availableTracks.length === 0) {
         this.queuedTracks.clear();
+        this._notifyListeners({ type: 'no_recommendations', currentTrack: currentTrack.name });
         return;
       }
 
       const recommendedTrack = availableTracks[0];
       await spotifyService.addToQueue(recommendedTrack.uri);
       this.queuedTracks.add(recommendedTrack.id);
+
+      const summary = this._mapTrackSummary(recommendedTrack);
 
       this._addToHistory({
         timestamp: new Date(),
@@ -138,26 +210,22 @@ class AIRecommendationService {
           name: currentTrack.name,
           artists: currentTrack.artists.map(a => a.name)
         },
-        recommendedTrack: {
-          id: recommendedTrack.id,
-          name: recommendedTrack.name,
-          artists: recommendedTrack.artists.map(a => a.name),
-          album: recommendedTrack.album.name,
-          uri: recommendedTrack.uri
-        },
-        audioFeatures
+        recommendedTrack: summary,
+        audioFeatures,
+        source: recommendationSource
       });
 
       this._notifyListeners({
         type: 'track_queued',
+        source: recommendationSource,
         currentTrack: { name: currentTrack.name, artists: currentTrack.artists.map(a => a.name) },
         recommendedTrack: {
-          id: recommendedTrack.id,
-          name: recommendedTrack.name,
-          artists: recommendedTrack.artists.map(a => a.name),
-          album: recommendedTrack.album.name,
-          preview_url: recommendedTrack.preview_url,
-          external_urls: recommendedTrack.external_urls
+          id: summary.id,
+          name: summary.name,
+          artists: summary.artists.map(a => a.name),
+          album: summary.album?.name,
+          preview_url: summary.preview_url,
+          external_urls: summary.external_urls
         }
       });
     } catch (error) {
@@ -195,53 +263,25 @@ class AIRecommendationService {
 
   async getRecommendationsList(options = {}) {
     try {
-      let currentTrack = options.track;
+      const limit = options.limit || 20;
+      const currentTrack = await this._resolveTrack(options.track);
+      if (!currentTrack) return [];
 
-      if (!currentTrack) {
-        const currentlyPlaying = await spotifyService.getCurrentlyPlaying();
-        if (!currentlyPlaying || !currentlyPlaying.item) return [];
-        currentTrack = currentlyPlaying.item;
-      }
+      const audioFeatures = await this._getAudioFeatures(currentTrack.id);
+      const recommendationOptions = this._buildSpotifyRecommendationOptions(currentTrack, audioFeatures, limit);
 
-      const seedTracks = [currentTrack.id];
-      const seedArtists = currentTrack.artists.slice(0, 2).map(artist => artist.id);
-
-      let audioFeatures = null;
-      try {
-        audioFeatures = await spotifyService.getAudioFeatures(currentTrack.id);
-      } catch (error) {
-        console.warn('Could not fetch audio features:', error);
-      }
-
-      const recommendationOptions = {
-        seed_tracks: seedTracks,
-        seed_artists: seedArtists,
-        limit: options.limit || 20
-      };
-
-      if (audioFeatures) {
-        recommendationOptions.target_energy = audioFeatures.energy;
-        recommendationOptions.target_danceability = audioFeatures.danceability;
-        recommendationOptions.target_valence = audioFeatures.valence;
+      const azureTracks = await this._fetchAzureRecommendations(currentTrack, audioFeatures, limit);
+      if (azureTracks.length > 0) {
+        return azureTracks.map(track => this._mapTrackSummary(track));
       }
 
       const recommendations = await spotifyService.getRecommendations(recommendationOptions);
 
-      if (!recommendations || !recommendations.tracks || recommendations.tracks.length === 0) {
+      if (!recommendations?.tracks?.length) {
         return [];
       }
 
-      return recommendations.tracks.map(track => ({
-        id: track.id,
-        name: track.name,
-        artists: track.artists.map(a => ({ id: a.id, name: a.name })),
-        album: { id: track.album.id, name: track.album.name, images: track.album.images },
-        preview_url: track.preview_url,
-        external_urls: track.external_urls,
-        uri: track.uri,
-        duration_ms: track.duration_ms,
-        popularity: track.popularity
-      }));
+      return recommendations.tracks.map(track => this._mapTrackSummary(track));
     } catch (error) {
       console.error('Error getting recommendations list:', error);
       throw error;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBrain, faPlay, faMusic, faSpinner, faChevronLeft, faChevronRight, faExternalLinkAlt
+  faBrain, faPlay, faMusic, faChevronLeft, faChevronRight, faExternalLinkAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { aiRecommendationService } from '../../../services/aiRecommendationService';
 import { spotifyService } from '../../../services/spotifyServices';

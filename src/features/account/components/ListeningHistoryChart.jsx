@@ -197,7 +197,7 @@ export default function ListeningHistoryChart() {
         {xLabels}
       </svg>
     );
-  }, [dataPoints]);
+  }, [dataPoints, selectedRangeDays]);
 
   if (loading) {
     return (

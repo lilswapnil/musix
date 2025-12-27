@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
@@ -16,7 +16,7 @@ export default function Genres() {
     const { genreName } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    const genreState = location.state || {};
+    const genreState = useMemo(() => location.state || {}, [location.state]);
     const [loading] = useState(false);
     const [spotifyAlbums, setSpotifyAlbums] = useState([]);
     const [deezerAlbums, setDeezerAlbums] = useState([]);

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 // import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { deezerService } from '../../../services/deezerServices';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 // Removed unused getAccessToken
 import { ensureValidToken } from '../../../utils/refreshToken';

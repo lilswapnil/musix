@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAccessToken, getUserProfile, getRefreshToken } from '../utils/tokenStorage';
 import { ensureValidToken } from '../utils/refreshToken';
-
-export const AuthContext = createContext();
+import { AuthContext } from './useAuth';
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -91,5 +90,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);
