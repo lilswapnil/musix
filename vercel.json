@@ -1,8 +1,4 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "env": {
-    "VITE_SPOTIFY_CLIENT_ID": "@vite_spotify_client_id",
-    "VITE_REDIRECT_URI": "https://musix.vercel.app/callback.html"
-  }
+  "outputDirectory": "dist"
 }
