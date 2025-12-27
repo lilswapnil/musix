@@ -1,6 +1,5 @@
 import React from 'react';
 import { useSpotifyPlayer } from '../../hooks/useSpotifyPlayer';
-import { spotifyService } from '../../services/spotifyServices';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlay, 
@@ -20,20 +19,7 @@ export default function SpotifyPlayer() {
     togglePlay
   } = useSpotifyPlayer();
   const [volume, setVolume] = React.useState(50);
-
-  const handleTogglePlay = async () => {
-    try {
-      if (!currentTrack) return;
-      if (isPlaying) {
-        await togglePlay();
-      } else {
-        // Start full-track playback on the web player device
-        await spotifyService.play(`spotify:track:${currentTrack.id}`);
-      }
-    } catch (err) {
-      console.warn('Playback error:', err);
-    }
-  };
+  // Controls are disabled; use the Spotify app to control playback.
   
   // Only show if player is initialized and premium
   if (!isPremium) {
@@ -106,24 +92,21 @@ export default function SpotifyPlayer() {
         <div className="flex items-center justify-center space-x-4 w-1/3">
           <button 
             className="text-muted hover:text-white transition-colors"
-            disabled={!currentTrack}
-            onClick={async ()=>{try{await spotifyService.skipToPrevious();}catch(e){console.warn(e);}}}
+            disabled
           >
             <FontAwesomeIcon icon={faStepBackward} />
           </button>
           
           <button 
             className="bg-primary-dark hover:bg-primary/80 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-md"
-            onClick={handleTogglePlay}
-            disabled={!currentTrack}
+            disabled
           >
             <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
           </button>
           
           <button 
             className="text-muted hover:text-white transition-colors"
-            disabled={!currentTrack}
-            onClick={async ()=>{try{await spotifyService.skipToNext();}catch(e){console.warn(e);}}}
+            disabled
           >
             <FontAwesomeIcon icon={faStepForward} />
           </button>
@@ -137,15 +120,12 @@ export default function SpotifyPlayer() {
             min="0"
             max="100"
             value={volume}
-            onChange={async (e)=>{
-              const val = Number(e.target.value);
-              setVolume(val);
-              try { await spotifyService.setVolume(val); } catch(err){ console.warn(err); }
-            }}
+            readOnly
             className="w-24 accent-accent"
           />
         </div>
       </div>
+      <div className="text-center text-xs text-muted mt-1">Use Spotify to control playback; this bar is display only.</div>
     </div>
   );
 }
