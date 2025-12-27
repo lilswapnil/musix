@@ -735,6 +735,26 @@ export const spotifyService = {
     }
   },
 
+  /**
+   * Set playback volume (0-100)
+   * @param {number} volumePercent
+   */
+  setVolume: async function(volumePercent, deviceId = null) {
+    try {
+      const params = { volume_percent: Math.max(0, Math.min(100, Math.round(volumePercent))) };
+      if (deviceId || this._deviceId) {
+        params.device_id = deviceId || this._deviceId;
+      }
+      await this.apiRequest('/me/player/volume', {
+        method: 'PUT',
+        params
+      });
+    } catch (error) {
+      console.error('Error setting volume:', error);
+      throw error;
+    }
+  },
+
   getPlaybackState: async function() {
     try {
       return await this.apiRequest('/me/player');

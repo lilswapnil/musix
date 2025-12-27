@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { removeAccessToken } from '../../../utils/tokenStorage';
+import { spotifyService } from '../../../services/spotifyServices';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faPlay, faPause, faStepBackward, faStepForward, faExternalLinkAlt, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 import { Skeleton } from '../../../components/common/ui/Skeleton';
 
 // Update the function signature to accept token prop
@@ -11,6 +12,10 @@ export default function CurrentlyPlaying({ token }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [liked, setLiked] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progressMs, setProgressMs] = useState(0);
+  const [durationMs, setDurationMs] = useState(0);
+  const [volume, setVolume] = useState(50);
 
   useEffect(() => {
     const fetchCurrentTrack = async () => {
@@ -45,6 +50,9 @@ export default function CurrentlyPlaying({ token }) {
         if (contentLength && parseInt(contentLength) > 0) {
           const data = await response.json();
           setCurrentTrack(data.item);
+          setIsPlaying(Boolean(data.is_playing));
+          setProgressMs(data.progress_ms || 0);
+          setDurationMs(data.item?.duration_ms || 0);
           
           // Fetch artist image
           if (data.item && data.item.artists && data.item.artists[0]) {
@@ -77,6 +85,78 @@ export default function CurrentlyPlaying({ token }) {
 
     fetchCurrentTrack();
   }, [token]);
+
+  // Progress ticker while playing
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setProgressMs(prev => {
+        const next = prev + 1000;
+        return durationMs && next > durationMs ? durationMs : next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPlaying, durationMs]);
+
+  // Controller handlers
+  const handleTogglePlay = async () => {
+    try {
+      if (isPlaying) {
+        await spotifyService.pause();
+        setIsPlaying(false);
+      } else {
+        await spotifyService.resume();
+        setIsPlaying(true);
+      }
+    } catch (e) {
+      setError(e.message || 'Playback control failed');
+    }
+  };
+
+  const handleNext = async () => {
+    try {
+      await spotifyService.skipToNext();
+      // Refresh state quickly
+      setTimeout(() => {
+        setLoading(true);
+        setError('');
+      }, 200);
+    } catch (e) {
+      setError(e.message || 'Failed to skip');
+    }
+  };
+
+  const handlePrev = async () => {
+    try {
+      await spotifyService.skipToPrevious();
+      setTimeout(() => {
+        setLoading(true);
+        setError('');
+      }, 200);
+    } catch (e) {
+      setError(e.message || 'Failed to go back');
+    }
+  };
+
+  const handleSeek = async (e) => {
+    const value = Number(e.target.value);
+    setProgressMs(value);
+    try {
+      await spotifyService.seekToPosition(value);
+    } catch (err) {
+      setError(err.message || 'Failed to seek');
+    }
+  };
+
+  const handleVolumeChange = async (e) => {
+    const value = Number(e.target.value);
+    setVolume(value);
+    try {
+      await spotifyService.setVolume(value);
+    } catch (err) {
+      setError(err.message || 'Failed to set volume');
+    }
+  };
 
   const handleLike = () => {
     setLiked(!liked);
@@ -185,7 +265,50 @@ export default function CurrentlyPlaying({ token }) {
             </div>
           </div>
           
-          <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start">
+          <div className="mt-4 sm:mt-6 flex flex-col gap-3">
+            {/* Transport Controls */}
+            <div className="flex items-center justify-center sm:justify-start gap-4">
+              <button onClick={handlePrev} className="p-2 rounded-full hover:bg-text/20 transition-colors">
+                <FontAwesomeIcon icon={faStepBackward} className="text-white text-xl" />
+              </button>
+              <button onClick={handleTogglePlay} className="p-3 rounded-full bg-accent hover:bg-accent/80 transition-colors">
+                <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="text-white text-xl" />
+              </button>
+              <button onClick={handleNext} className="p-2 rounded-full hover:bg-text/20 transition-colors">
+                <FontAwesomeIcon icon={faStepForward} className="text-white text-xl" />
+              </button>
+            </div>
+
+            {/* Seek Bar */}
+            {durationMs > 0 && (
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={durationMs}
+                  value={progressMs}
+                  onChange={handleSeek}
+                  className="w-full"
+                />
+                <span className="text-white/80 text-sm">
+                  {Math.floor(progressMs / 60000)}:{String(Math.floor((progressMs % 60000) / 1000)).padStart(2, '0')}
+                </span>
+              </div>
+            )}
+
+            {/* Volume */}
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={faVolumeHigh} className="text-white/80" />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-48"
+              />
+            </div>
+
             <a 
               href={currentTrack.external_urls.spotify} 
               target="_blank" 

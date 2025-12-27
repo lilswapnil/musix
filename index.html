@@ -2,6 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function(location) {
+        const params = new URLSearchParams(location.search);
+        const p = params.get('p');
+        const q = params.get('q');
+        if (p) {
+          const newUrl = location.pathname.replace(/\/$/, '') + '/' + p + (q ? ('?' + q) : '') + location.hash;
+          history.replaceState(null, '', newUrl);
+        }
+      })(window.location);
+    </script>
     <link rel="icon" type="image/svg+xml" href="/logo-light.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Musix - Unwind Yourself</title>
