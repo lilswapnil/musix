@@ -57,7 +57,7 @@ export const spotifyService = {
   /**
    * Generate authorization URL for Spotify OAuth
    */
-  createAuthUrl: async () => {
+  createAuthUrl: async (showDialog = true) => {
     try {
       const state = spotifyService._generateRandomString();
       const codeVerifier = spotifyService._generateRandomString(64);
@@ -74,7 +74,7 @@ export const spotifyService = {
         scope: spotifyService._scopes.join(' '),
         code_challenge_method: 'S256',
         code_challenge: codeChallenge,
-        show_dialog: 'false'
+        show_dialog: showDialog ? 'true' : 'false'
       });
       
       return {
@@ -556,9 +556,9 @@ export const spotifyService = {
   /**
    * Create a redirect to the Spotify login page
    */
-  redirectToSpotify: async () => {
+  redirectToSpotify: async (showDialog = true) => {
     try {
-      const { url } = await spotifyService.createAuthUrl();
+      const { url } = await spotifyService.createAuthUrl(showDialog);
       window.location.href = url;
     } catch (error) {
       console.error('Error redirecting to Spotify:', error);
@@ -593,6 +593,13 @@ export const spotifyService = {
       this._player.addListener('authentication_error', async ({ message }) => {
         console.error('Failed to authenticate player:', message);
         try {
+          if (String(message).toLowerCase().includes('invalid token scopes')) {
+            console.warn('Token missing required scopes. Redirecting to Spotify for re-auth...');
+            // Force re-auth to acquire streaming scope
+            this.logout();
+            await this.redirectToSpotify(true);
+            return;
+          }
           await this.refreshAccessToken();
           this._player.disconnect();
           await this.initializePlayer(onPlayerStateChanged);
@@ -621,6 +628,10 @@ export const spotifyService = {
         console.log('Spotify player ready with device ID:', devId);
         this._deviceId = devId;
         this._isPlayerReady = true;
+        // Transfer playback to this web player device (non-destructive)
+        this.transferPlayback(devId).catch(err => {
+          console.warn('Could not transfer playback to web player:', err);
+        });
       });
       
       this._player.addListener('not_ready', () => {
@@ -645,15 +656,27 @@ export const spotifyService = {
         resolve();
         return;
       }
-      
+
+      // Define readiness callback expected by the SDK
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        if (window.Spotify) {
+          resolve();
+        } else {
+          // Fallback resolve to avoid hanging
+          resolve();
+        }
+      };
+
       const script = document.createElement('script');
       script.src = 'https://sdk.scdn.co/spotify-player.js';
       script.async = true;
-      
-      script.onload = resolve;
       script.onerror = () => reject(new Error('Failed to load Spotify Web Playback SDK'));
-      
       document.body.appendChild(script);
+
+      // Fallback timeout in case callback isn’t fired
+      setTimeout(() => {
+        if (window.Spotify) resolve();
+      }, 5000);
     });
   },
 
@@ -731,6 +754,24 @@ export const spotifyService = {
       });
     } catch (error) {
       console.error('Error seeking to position:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Transfer playback to a specific device ID
+   */
+  transferPlayback: async function(deviceId, play = false) {
+    try {
+      await this.apiRequest('/me/player', {
+        method: 'PUT',
+        body: {
+          device_ids: [deviceId],
+          play
+        }
+      });
+    } catch (error) {
+      console.error('Error transferring playback:', error);
       throw error;
     }
   },
