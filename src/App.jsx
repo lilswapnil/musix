@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import './App.css'
-import { createHashRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PageSkeleton from './components/common/ui/PageSkeleton';
 
@@ -123,7 +123,7 @@ const routes = [
   }
 ];
 
-const router = createHashRouter(routes);
+const router = createBrowserRouter(routes);
 
 function App() {
   return (

@@ -53,15 +53,8 @@ const genreService = {
       if (spotifyService.isLoggedIn()) {
         try {
           // Fix the API request call to match existing pattern in the code
-          const topArtists = await fetch('https://api.spotify.com/v1/me/top/artists', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${await spotifyService.getAccessToken()}`
-            },
+          const topArtists = await spotifyService.apiRequest('/me/top/artists', {
             params: { limit: 50, time_range: 'medium_term' }
-          }).then(res => {
-            if (!res.ok) throw new Error(`API Error: ${res.status}`);
-            return res.json();
           });
           
           if (topArtists && topArtists.items && topArtists.items.length > 0) {
@@ -92,9 +85,9 @@ const genreService = {
       }
       
       // If we couldn't get user genres, try generic recommendations
-      if (!userGenres) {
+      if (!userGenres && spotifyService.isLoggedIn()) {
         try {
-          const availableGenres = await spotifyService.apiRequest('/recommendations/available-genre-seeds', {}, true);
+          const availableGenres = await spotifyService.apiRequest('/recommendations/available-genre-seeds');
           if (availableGenres && availableGenres.genres && availableGenres.genres.length > 0) {
             const randomGenres = availableGenres.genres
               .sort(() => 0.5 - Math.random())
@@ -166,7 +159,16 @@ const genreService = {
       const selectedGenres = DEFAULT_GENRES
         .sort(() => 0.5 - Math.random())
         .slice(0, 12);
-        
+      
+      if (!spotifyService.isLoggedIn()) {
+        return selectedGenres.map(genre => ({
+          id: `genre-${genre.replace(/\s+/g, '-')}`,
+          name: genre,
+          displayName: genre.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          imageUrl: `https://via.placeholder.com/300x300?text=${encodeURIComponent(genre.charAt(0).toUpperCase() + genre.slice(1))}`
+        }));
+      }
+
       return await genreService.fetchGenreImages(selectedGenres);
     } catch (error) {
       console.error('Error getting default genres:', error);
@@ -185,6 +187,15 @@ const genreService = {
    */
   fetchGenreImages: async (genreList) => {
     try {
+      if (!spotifyService.isLoggedIn()) {
+        return genreList.map(genre => ({
+          id: `genre-${genre.replace(/\s+/g, '-')}`,
+          name: genre,
+          displayName: genre.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          imageUrl: `https://via.placeholder.com/300x300?text=${encodeURIComponent(genre.charAt(0).toUpperCase() + genre.slice(1))}`
+        }));
+      }
+
       // Get Spotify categories (which have images)
       const categories = await spotifyService.getCategories(50);
       

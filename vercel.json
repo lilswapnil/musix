@@ -2,8 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/callback", "destination": "/callback.html" },
-    { "source": "/callback/", "destination": "/callback.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

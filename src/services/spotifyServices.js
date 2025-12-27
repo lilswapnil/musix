@@ -1,5 +1,5 @@
 import { enhancedApiRequest, throttle } from '../utils/requestUtils';
-import { getAccessToken, getRefreshToken, getTokenExpiry } from '../utils/tokenStorage';
+import { getAccessToken as getStoredAccessToken, getRefreshToken, getTokenExpiry } from '../utils/tokenStorage';
 import { refreshAccessToken as refreshToken } from './spotifyAuthService';
 
 /**
@@ -131,47 +131,9 @@ export const spotifyService = {
    */
   refreshAccessToken: async () => {
     try {
-      const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
-      const refreshToken = tokenData.refresh_token;
-      
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-      
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: spotifyService._clientId
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Refresh token error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Update stored token
-      const newTokenData = {
-        access_token: data.access_token,
-        expires: Date.now() + (data.expires_in * 1000),
-        refresh_token: data.refresh_token || refreshToken
-      };
-      
-      localStorage.setItem(spotifyService._tokenKey, JSON.stringify(newTokenData));
-      
-      // Refresh genres after token refresh
-      import('./genreService').then(m => m.default.generateUserGenresInBackground());
-      
-      return data.access_token;
+      return await refreshToken();
     } catch (error) {
       console.error('Error refreshing token:', error);
-      localStorage.removeItem(spotifyService._tokenKey);
       throw error;
     }
   },
@@ -181,19 +143,17 @@ export const spotifyService = {
    */
   getAccessToken: async () => {
     try {
-      const tokenData = JSON.parse(localStorage.getItem(spotifyService._tokenKey) || '{}');
-      
-      if (tokenData.access_token && tokenData.expires) {
-        if (tokenData.expires <= Date.now() + 60000) {
-          if (tokenData.refresh_token) {
-            return await spotifyService.refreshAccessToken();
-          }
-        } else {
-          return tokenData.access_token;
-        }
+      const token = getStoredAccessToken();
+      if (!token) {
+        throw new Error('No access token available and user not authenticated');
       }
-      
-      throw new Error('No access token available and user not authenticated');
+
+      const expiry = getTokenExpiry();
+      if (expiry && expiry <= Date.now() + 60000) {
+        return await spotifyService.refreshAccessToken();
+      }
+
+      return token;
     } catch (error) {
       console.error('Error getting access token:', error);
       throw error;
@@ -205,7 +165,7 @@ export const spotifyService = {
    */
   getUserToken: async function() {
     try {
-      const token = getAccessToken();
+      const token = getStoredAccessToken();
       const expiry = getTokenExpiry();
       const refreshTokenValue = getRefreshToken();
 
@@ -234,7 +194,7 @@ export const spotifyService = {
    */
   isLoggedIn: () => {
     try {
-      const token = getAccessToken();
+      const token = getStoredAccessToken();
       const refreshTokenValue = getRefreshToken();
       return !!(token && refreshTokenValue);
     } catch {

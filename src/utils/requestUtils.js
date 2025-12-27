@@ -196,6 +196,17 @@ export async function enhancedApiRequest(url, options = {}, controls = {}) {
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
         }
+
+        // Handle empty responses (e.g., 204 No Content)
+        if (response.status === 204 || response.status === 205 || response.headers.get('content-length') === '0') {
+          if (cacheKey) {
+            apiCache.set(cacheKey, {
+              data: null,
+              expiry: Date.now() + cacheTime
+            });
+          }
+          return null;
+        }
         
         const data = await response.json();
         
