@@ -33,7 +33,7 @@ export default function AIRecommendations({ mode = 'single' }) {
         setNextRecommendation(track);
       }
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
+      // Silently ignore errors; don't log token validation issues
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +49,7 @@ export default function AIRecommendations({ mode = 'single' }) {
     try {
       await spotifyService.addToQueue(trackUri);
     } catch (error) {
-      console.error('Error adding track to queue:', error);
+      // Silently ignore errors
     }
   };
 

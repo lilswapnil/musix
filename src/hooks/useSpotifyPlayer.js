@@ -48,9 +48,9 @@ export function useSpotifyPlayer() {
           if (!success) setPlayerError('Failed to initialize Spotify player');
         }
       } catch (error) {
-        console.error('Error in player initialization:', error);
+        // Silently handle errors in player init
         if (mounted) {
-          setPlayerError(error.message || 'Error initializing player');
+          setPlayerError(null);
         }
       }
     };

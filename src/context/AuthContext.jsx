@@ -30,26 +30,34 @@ export const AuthProvider = ({ children }) => {
           const profile = getUserProfile();
           
           if (token && profile) {
-            // Validate token is actually working
-            const validateRes = await fetch('https://api.spotify.com/v1/me', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (validateRes.status === 403 || validateRes.status === 401) {
-              // Token is invalid; clear and redirect to login
+            try {
+              // Validate token is actually working
+              const validateRes = await fetch('https://api.spotify.com/v1/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              if (validateRes.status === 403 || validateRes.status === 401) {
+                // Token is invalid; clear silently and redirect to login
+                removeAccessToken();
+                setIsAuthenticated(false);
+                setUserProfile(null);
+                window.location.href = '/login';
+                return;
+              }
+              
+              if (validateRes.ok) {
+                setIsAuthenticated(true);
+                setUserProfile(profile);
+              } else {
+                setIsAuthenticated(false);
+                setUserProfile(null);
+              }
+            } catch (validateError) {
+              // Network error during validation; clear and redirect
               removeAccessToken();
               setIsAuthenticated(false);
               setUserProfile(null);
               window.location.href = '/login';
-              return;
-            }
-            
-            if (validateRes.ok) {
-              setIsAuthenticated(true);
-              setUserProfile(profile);
-            } else {
-              setIsAuthenticated(false);
-              setUserProfile(null);
             }
           } else {
             setIsAuthenticated(false);
@@ -61,7 +69,7 @@ export const AuthProvider = ({ children }) => {
           setUserProfile(null);
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        // Silently handle errors; don't show console errors
         setIsAuthenticated(false);
         setUserProfile(null);
       } finally {
