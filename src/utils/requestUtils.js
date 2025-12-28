@@ -194,7 +194,13 @@ export async function enhancedApiRequest(url, options = {}, controls = {}) {
         const response = await fetch(url, options);
         
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          const err = new Error(`API error: ${response.status}`);
+          err.status = response.status;
+          // Stop retries for auth-related errors
+          if (err.status === 401 || err.status === 403) {
+            throw err; // Bubble up immediately; handled by callers
+          }
+          throw err;
         }
 
         // Handle empty responses (e.g., 204 No Content)
@@ -220,8 +226,18 @@ export async function enhancedApiRequest(url, options = {}, controls = {}) {
         
         return data;
       } catch (error) {
-        console.error(`Attempt ${attempt + 1} failed for ${url}:`, error);
+        // Reduce noise for auth errors; no retries for 401/403
+        const isAuthError = (error?.status === 401 || error?.status === 403) ||
+                            (typeof error?.message === 'string' &&
+                             (error.message.includes('401') || error.message.includes('403')));
+        if (!isAuthError) {
+          console.error(`Attempt ${attempt + 1} failed for ${url}:`, error);
+        }
         lastError = error;
+        
+        if (isAuthError) {
+          break; // stop retrying on auth errors
+        }
         
         if (attempt < retries) {
           // Exponential backoff with jitter for retries

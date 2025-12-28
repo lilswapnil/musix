@@ -106,7 +106,13 @@ export default function ListeningHistoryChart() {
 
         setDataPoints(days);
       } catch (e) {
-        setError(e?.message || 'Failed to load listening history');
+        // Hide auth-related errors (403/401); show friendly fallback
+        const msg = String(e?.message || '');
+        if (msg.includes('403') || msg.includes('401')) {
+          setError(null);
+        } else {
+          setError('Failed to load listening history');
+        }
       } finally {
         setLoading(false);
       }

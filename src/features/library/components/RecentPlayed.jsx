@@ -63,8 +63,14 @@ export default function RecentPlayed({ token }) {
       
       if (!response.ok) {
         if (response.status === 401) {
-          removeAccessToken(); // Changed from removeToken
+          removeAccessToken();
           throw new Error('Session expired. Please log in again.');
+        }
+        if (response.status === 403) {
+          // Missing scope; degrade gracefully
+          setRecentlyPlayed([]);
+          setError('');
+          return;
         }
         throw new Error(`Error ${response.status}: Failed to fetch recently played tracks`);
       }

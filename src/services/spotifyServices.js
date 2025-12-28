@@ -19,7 +19,8 @@ export const spotifyService = {
     'streaming',
     'user-read-playback-state',
     'user-modify-playback-state',
-    'user-read-currently-playing'
+    'user-read-currently-playing',
+    'user-read-recently-played'
   ],
   _apiBase: 'https://api.spotify.com/v1',
   _authBase: 'https://accounts.spotify.com/api',
@@ -281,7 +282,20 @@ export const spotifyService = {
             cacheTime
           });
       
-      return await requestFn();
+      try {
+        return await requestFn();
+      } catch (err) {
+        // Gracefully handle 403 Forbidden for missing scopes on specific endpoints
+        const isForbidden = (err?.status === 403) || (String(err?.message || '').includes('403'));
+        if (isForbidden) {
+          if (endpoint.startsWith('/me/player/recently-played')) {
+            console.warn('Missing scope for recently played; returning empty result');
+            return { items: [] };
+          }
+          // For other user endpoints, bubble up
+        }
+        throw err;
+      }
     } catch (error) {
       // Handle 401 unauthorized errors
       if (error.message?.includes('401')) {
@@ -294,7 +308,10 @@ export const spotifyService = {
         }
       }
       
-      console.error(`Error in Spotify API request to ${endpoint}:`, error);
+      // Reduce noisy logging for 403
+      if (!(error?.status === 403 || String(error?.message || '').includes('403'))) {
+        console.error(`Error in Spotify API request to ${endpoint}:`, error);
+      }
       throw error;
     }
   },
