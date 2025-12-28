@@ -463,7 +463,7 @@ export default function SearchPage() {
                     <div className="absolute inset-0 overflow-hidden">
                       <div 
                         className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
-                        style={{ backgroundImage: `url(${artist.picture_medium || artist.picture_big || artist.picture})` }}
+                        style={{ backgroundImage: `url(${artist.picture})` }}
                       ></div>
                       <div className="absolute inset-0 bg-black bg-opacity-40"></div>
                     </div>
@@ -471,7 +471,7 @@ export default function SearchPage() {
                     <div className="relative h-full flex flex-col items-center justify-center p-4">
                       <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 relative mb-3 border-2 border-white overflow-hidden rounded-full">
                         <img 
-                          src={artist.picture_medium || artist.picture_big || artist.picture}
+                          src={artist.picture}
                           alt={artist.name}
                           className="w-full h-full object-cover"
                           loading="lazy" decoding="async"

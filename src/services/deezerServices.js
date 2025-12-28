@@ -456,7 +456,11 @@ export const deezerService = {
       if (tracks.data) {
         tracks.data.forEach(track => {
           if (track.album && !albumsMap.has(track.album.id)) {
-            albumsMap.set(track.album.id, track.album);
+            // Include artist info with the album since Deezer's album object doesn't have it
+            albumsMap.set(track.album.id, {
+              ...track.album,
+              artist: track.artist  // Add artist from the track
+            });
           }
           
           if (track.artist && !artistsMap.has(track.artist.id)) {
