@@ -16,10 +16,18 @@ export default function SpotifyPlayer() {
     currentTrack, 
     playerError, 
     isPremium,
-    togglePlay
+    togglePlay,
+    skipToNext,
+    skipToPrevious,
+    setVolume
   } = useSpotifyPlayer();
-  const [volume, setVolume] = React.useState(50);
-  // Controls are disabled; use the Spotify app to control playback.
+  const [volume, setLocalVolume] = React.useState(50);
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseInt(e.target.value, 10);
+    setLocalVolume(newVolume);
+    setVolume(newVolume);
+  };
   
   return (
     <div className="fixed bottom-0 left-0 right-0 glass-dark border-t border-white/20 backdrop-blur-lg p-3 shadow-lg">
@@ -53,21 +61,21 @@ export default function SpotifyPlayer() {
         <div className="flex items-center justify-center space-x-4 w-1/3">
           <button 
             className="text-muted hover:text-white transition-colors"
-            disabled
+            onClick={skipToPrevious}
           >
             <FontAwesomeIcon icon={faStepBackward} />
           </button>
           
           <button 
             className="bg-primary-dark hover:bg-primary/80 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-md"
-            disabled
+            onClick={togglePlay}
           >
             <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
           </button>
           
           <button 
             className="text-muted hover:text-white transition-colors"
-            disabled
+            onClick={skipToNext}
           >
             <FontAwesomeIcon icon={faStepForward} />
           </button>
@@ -81,8 +89,8 @@ export default function SpotifyPlayer() {
             min="0"
             max="100"
             value={volume}
-            readOnly
-            className="w-24 accent-accent"
+            onChange={handleVolumeChange}
+            className="w-24 accent-accent cursor-pointer"
           />
         </div>
       </div>

@@ -117,6 +117,33 @@ export function useSpotifyPlayer() {
       setPlayerError('Failed to seek: ' + error.message);
     }
   }, []);
+
+  const skipToNext = useCallback(async () => {
+    try {
+      setPlayerError(null);
+      await spotifyService.skipToNext();
+    } catch (error) {
+      // Silently ignore errors
+    }
+  }, []);
+
+  const skipToPrevious = useCallback(async () => {
+    try {
+      setPlayerError(null);
+      await spotifyService.skipToPrevious();
+    } catch (error) {
+      // Silently ignore errors
+    }
+  }, []);
+
+  const setVolume = useCallback(async (volumePercent) => {
+    try {
+      setPlayerError(null);
+      await spotifyService.setVolume(volumePercent);
+    } catch (error) {
+      // Silently ignore errors
+    }
+  }, []);
   
   return {
     isReady,
@@ -128,6 +155,9 @@ export function useSpotifyPlayer() {
     pause,
     resume,
     togglePlay,
-    seekToPosition
+    seekToPosition,
+    skipToNext,
+    skipToPrevious,
+    setVolume
   };
 }
