@@ -331,12 +331,18 @@ export default function Artist() {
       
       {/* Artist header with circular image and background */}
       <div className="flex flex-col mb-6 glass rounded-lg p-4 relative overflow-hidden shadow-lg" style={{ aspectRatio: '2/1' }}>
-        {/* Blurred background image - uses artist's large picture */}
+        {/* Blurred background image - now uses newest album art */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
             className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-80"
             style={{ 
-              backgroundImage: `url(${artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture})`
+              backgroundImage: `url(${
+                // First try newest album art if available
+                (albums.length > 0 && 
+                 albums.sort((a, b) => new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01"))[0]?.coverArt)
+                // Fall back to artist image if no albums
+                || artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture
+              })`
             }}
           ></div>
           <div className="absolute inset-0 bg-black bg-opacity-70"></div>
