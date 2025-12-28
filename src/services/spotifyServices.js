@@ -997,7 +997,11 @@ export const spotifyService = {
     try {
       return await this.apiRequest(`/audio-features/${trackId}`);
     } catch (error) {
-      console.error('Error getting audio features:', error);
+      // Gracefully handle 403 (missing scope)
+      const isForbidden = (error?.status === 403) || String(error?.message || '').includes('403');
+      if (isForbidden) {
+        return null;
+      }
       throw error;
     }
   },
@@ -1013,7 +1017,11 @@ export const spotifyService = {
         params: { ids: trackIds.join(',') }
       });
     } catch (error) {
-      console.error('Error getting multiple audio features:', error);
+      // Gracefully handle 403 (missing scope) by returning empty features
+      const isForbidden = (error?.status === 403) || String(error?.message || '').includes('403');
+      if (isForbidden) {
+        return { audio_features: [] };
+      }
       throw error;
     }
   }

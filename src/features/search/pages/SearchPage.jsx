@@ -26,36 +26,6 @@ export default function SearchPage() {
   const audioRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  useEffect(() => {
-    try {
-      const savedLikes = localStorage.getItem('likedSongs');
-      if (savedLikes) {
-        setLikedSongs(JSON.parse(savedLikes));
-      }
-    } catch (error) {
-      console.error('Error loading liked songs:', error);
-    }
-
-    // setSearchInput(query); // This line was removed as per the edit hint
-
-    if (query) {
-      search(query);
-    }
-
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, [query, search]);
-
-  // Removed unused memoizedSearch
-
-  // Removed unused debouncedSearch; search is triggered via effect on query
-
   const fetchWithRetry = useCallback(async (fetchFunc, maxRetries = 3, delay = 6000) => {
     let retries = 0;
     while (retries < maxRetries) {
@@ -76,8 +46,6 @@ export default function SearchPage() {
       }
     }
   }, []);
-
-  // Removed unused handleSearchInput to satisfy linter
 
   const search = useCallback(async (searchQuery) => {
     if (!searchQuery || searchQuery.trim().length < 2) {
@@ -247,6 +215,31 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, [fetchWithRetry]);
+
+  // Load liked songs and trigger search when query changes
+  useEffect(() => {
+    try {
+      const savedLikes = localStorage.getItem('likedSongs');
+      if (savedLikes) {
+        setLikedSongs(JSON.parse(savedLikes));
+      }
+    } catch (err) {
+      // Ignore
+    }
+
+    if (query) {
+      search(query);
+    }
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [query, search]);
 
   const handlePlayPause = (songId, previewUrl, event) => {
     if (event) {
