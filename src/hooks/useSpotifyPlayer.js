@@ -121,27 +121,36 @@ export function useSpotifyPlayer() {
   const skipToNext = useCallback(async () => {
     try {
       setPlayerError(null);
+      console.log('Attempting to skip to next track...');
       await spotifyService.skipToNext();
+      console.log('Skip to next successful');
     } catch (error) {
-      // Silently ignore errors
+      console.error('Skip to next failed:', error);
+      setPlayerError('Failed to skip: ' + (error.message || 'No active device'));
     }
   }, []);
 
   const skipToPrevious = useCallback(async () => {
     try {
       setPlayerError(null);
+      console.log('Attempting to skip to previous track...');
       await spotifyService.skipToPrevious();
+      console.log('Skip to previous successful');
     } catch (error) {
-      // Silently ignore errors
+      console.error('Skip to previous failed:', error);
+      setPlayerError('Failed to skip: ' + (error.message || 'No active device'));
     }
   }, []);
 
   const setVolume = useCallback(async (volumePercent) => {
     try {
       setPlayerError(null);
+      console.log('Setting volume to:', volumePercent);
       await spotifyService.setVolume(volumePercent);
+      console.log('Volume set successfully');
     } catch (error) {
-      // Silently ignore errors
+      console.error('Set volume failed:', error);
+      setPlayerError('Failed to set volume: ' + (error.message || 'No active device'));
     }
   }, []);
   

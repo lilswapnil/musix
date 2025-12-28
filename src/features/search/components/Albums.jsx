@@ -446,7 +446,7 @@ export default function Albums() {
   }
 
   return (
-    <div className="my-6">
+    <div className="mt-1">
       {/* Back button */}
       <button 
         onClick={handleGoBack} 
