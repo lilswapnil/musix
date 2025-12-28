@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAccessToken, getUserProfile, getRefreshToken } from '../utils/tokenStorage';
+import { getAccessToken, getUserProfile, getRefreshToken, removeAccessToken } from '../utils/tokenStorage';
 import { ensureValidToken } from '../utils/refreshToken';
 import { AuthContext } from './useAuth';
 
@@ -30,8 +30,27 @@ export const AuthProvider = ({ children }) => {
           const profile = getUserProfile();
           
           if (token && profile) {
-            setIsAuthenticated(true);
-            setUserProfile(profile);
+            // Validate token is actually working
+            const validateRes = await fetch('https://api.spotify.com/v1/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (validateRes.status === 403 || validateRes.status === 401) {
+              // Token is invalid; clear and redirect to login
+              removeAccessToken();
+              setIsAuthenticated(false);
+              setUserProfile(null);
+              window.location.href = '/login';
+              return;
+            }
+            
+            if (validateRes.ok) {
+              setIsAuthenticated(true);
+              setUserProfile(profile);
+            } else {
+              setIsAuthenticated(false);
+              setUserProfile(null);
+            }
           } else {
             setIsAuthenticated(false);
             setUserProfile(null);

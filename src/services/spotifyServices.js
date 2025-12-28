@@ -592,25 +592,13 @@ export const spotifyService = {
       
       this._player.addListener('authentication_error', async ({ message }) => {
         console.error('Failed to authenticate player:', message);
-        try {
-          if (String(message).toLowerCase().includes('invalid token scopes')) {
-            console.warn('Token missing required scopes. Redirecting to Spotify for re-auth...');
-            // Force re-auth to acquire streaming scope
-            this.logout();
-            await this.redirectToSpotify(true);
-            return;
-          }
-          await this.refreshAccessToken();
-          this._player.disconnect();
-          await this.initializePlayer(onPlayerStateChanged);
-        } catch (err) {
-          console.error('Could not recover from authentication error:', err);
-        }
+        // Non-fatal error; player bar shows display-only mode
+        console.warn('Player auth failed; display mode only. User can control via Spotify app.');
       });
       
       this._player.addListener('account_error', ({ message }) => {
-        console.error('Account error:', message);
-        alert('Spotify Premium is required for playback functionality');
+        // Non-fatal; show as display-only
+        console.warn('Account error:', message);
       });
       
       this._player.addListener('playback_error', ({ message }) => {
@@ -628,10 +616,7 @@ export const spotifyService = {
         console.log('Spotify player ready with device ID:', devId);
         this._deviceId = devId;
         this._isPlayerReady = true;
-        // Transfer playback to this web player device (non-destructive)
-        this.transferPlayback(devId).catch(err => {
-          console.warn('Could not transfer playback to web player:', err);
-        });
+        // Skip playback transfer; display-only mode
       });
       
       this._player.addListener('not_ready', () => {
@@ -827,6 +812,11 @@ export const spotifyService = {
       const product = userData.product || '';
       return product.toLowerCase() === 'premium';
     } catch (error) {
+      // On token errors, silently return false 
+      if (error.message?.includes('401') || error.message?.includes('403')) {
+        console.warn('Token invalid; premium check skipped, showing player as display-only');
+        return true; // Return true to show player despite auth errors (display mode)
+      }
       console.error('Error checking premium status:', error);
       return false;
     }

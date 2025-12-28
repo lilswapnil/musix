@@ -21,45 +21,6 @@ export default function SpotifyPlayer() {
   const [volume, setVolume] = React.useState(50);
   // Controls are disabled; use the Spotify app to control playback.
   
-  // Only show if player is initialized and premium
-  if (!isPremium) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-primary-dark p-3 text-center">
-        <p className="text-sm text-muted mb-2">
-          Spotify Premium required for playback functionality
-        </p>
-        {/* Debug button to force premium mode - remove in production */}
-        <button 
-          className="px-3 py-1 bg-primary text-white text-xs rounded"
-          onClick={() => {
-            // This is a temporary workaround
-            console.log('Forcing premium mode for testing');
-            window.localStorage.setItem('spotify_force_premium', 'true');
-            window.location.reload();
-          }}
-        >
-          I have Premium (Force Enable)
-        </button>
-      </div>
-    );
-  }
-  
-  if (!isReady) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-primary-dark p-3 flex justify-center">
-        <div className="animate-pulse text-accent">Connecting to Spotify...</div>
-      </div>
-    );
-  }
-  
-  if (playerError) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-primary-dark p-3 text-center">
-        <p className="text-sm text-error">{playerError}</p>
-      </div>
-    );
-  }
-  
   return (
     <div className="fixed bottom-0 left-0 right-0 glass-dark border-t border-white/20 backdrop-blur-lg p-3 shadow-lg">
       <div className="flex items-center justify-between max-w-screen-xl mx-auto">
@@ -125,7 +86,7 @@ export default function SpotifyPlayer() {
           />
         </div>
       </div>
-      <div className="text-center text-xs text-muted mt-1">Use Spotify to control playback; this bar is display only.</div>
+      {playerError && <div className="text-center text-xs text-error mt-1">{playerError}</div>}
     </div>
   );
 }
