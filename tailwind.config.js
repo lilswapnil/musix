@@ -43,6 +43,7 @@ export default {
       
       spacing: {
         '18': '4.5rem', // 72px
+        '42': '10.5rem', // 168px - for tablet cards (4 cards fit in viewport)
         '68': '17rem',  // 272px
         '100': '25rem', // 400px
         'safe-top': 'env(safe-area-inset-top)',
