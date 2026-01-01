@@ -112,7 +112,7 @@ export default function ScrollableSection({ title, children }) {
       {/* Scrollable content - with enhanced scrollbar hiding */}
       <div
         ref={scrollContainerRef}
-        className="flex overflow-x-auto scrollbar-none"
+        className="flex overflow-x-auto scrollbar-none -mx-4 px-4"
         style={{
           scrollBehavior: 'smooth',
           msOverflowStyle: 'none', // IE and Edge
@@ -120,7 +120,7 @@ export default function ScrollableSection({ title, children }) {
         }}
       >
         <div
-          className="grid gap-4"
+          className="grid gap-4 pr-4"
           style={{
             gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
           }}
