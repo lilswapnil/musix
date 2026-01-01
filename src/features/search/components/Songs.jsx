@@ -460,7 +460,7 @@ export default function Songs() {
                 return (
                   <div 
                     key={groupIndex} 
-                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[340px] lg:w-[390px]"
+                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[350px] lg:w-[390px]"
                   >
                     {groupTracks.map((track) => (
                       <div 
