@@ -451,7 +451,7 @@ export default function Artist() {
                 return (
                   <div 
                     key={groupIndex} 
-                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[400px] lg:w-[390px]"
+                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[340px] lg:w-[390px]"
                   >
                     {groupTracks.map((track) => (
                       <div 
@@ -523,14 +523,14 @@ export default function Artist() {
             {albums.map((album) => (
               <div 
                 key={album.id} 
-                className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
+                className="flex-shrink-0 w-32 sm:w-40 md:w-42 lg:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
                 onClick={() => handleAlbumClick(album.id)}
               >
                 <div className="relative">
                   <img 
                     src={album.coverArt}
                     alt={album.name}
-                    className="w-full h-32 sm:h-40 md:h-48 object-cover"
+                    className="w-full h-32 sm:h-40 md:h-42 lg:h-48 object-cover"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
@@ -568,7 +568,7 @@ export default function Artist() {
                 return (
                   <div 
                     key={groupIndex} 
-                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[400px] lg:w-[390px]"
+                    className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[340px] lg:w-[390px]"
                   >
                     {groupTracks.map((track) => (
                       <div 
