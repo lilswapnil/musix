@@ -223,9 +223,9 @@ export default function Songs() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-auto">
-      {/* Full page album art background */}
-      <div className="fixed inset-0 -z-10">
+    <div className="mt-1 relative">
+      {/* Full page album art background - positioned to cover the entire viewport */}
+      <div className="fixed inset-0 z-0">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{ 
@@ -241,19 +241,19 @@ export default function Songs() {
         />
       </div>
 
-      {/* Content */}
-      <div className="relative min-h-screen flex flex-col px-4 sm:px-6 lg:px-8 pt-4 pb-16">
+      {/* Content wrapper with higher z-index */}
+      <div className="relative z-10">
         {/* Back button */}
         <button 
           onClick={handleGoBack} 
-          className="flex items-center text-white/70 hover:text-white mb-4 transition-colors self-start"
+          className="flex items-center text-muted hover:text-white mb-6 transition-colors"
         >
           <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
           Back
         </button>
 
         {/* Main content - centered banner */}
-        <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
+        <div className="flex flex-col items-center justify-center max-w-2xl mx-auto w-full min-h-[70vh]">
           {/* Album art */}
           <div className="relative mb-6 group">
             <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-lg overflow-hidden shadow-2xl">

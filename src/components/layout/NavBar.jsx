@@ -41,8 +41,8 @@ export default function NavBar() {
   const isSearchPage = location.pathname === '/search';
 
   return (
-    <nav className="glass-dark border-b border-white/20 sticky top-0 z-50 shadow-lg">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 relative">
+    <nav className="glass-dark border border-white/20 sticky top-2 z-50 shadow-lg rounded-full mx-2 sm:mx-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
         <div className="flex items-center justify-between h-16">
           {/* Logo - made bigger on mobile */}
           <div className="flex-shrink-0 z-10">
