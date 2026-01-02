@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
@@ -11,6 +12,7 @@ export default function TrendingSongs() {
   const [error, setError] = useState('');
   const [trendingSongs, setTrendingSongs] = useState([]);
   const audioRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTrending = async () => {
@@ -63,24 +65,55 @@ export default function TrendingSongs() {
     
     // If clicked on currently playing song, pause it
     if (currentlyPlaying === songId) {
-      audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       setCurrentlyPlaying(null);
       return;
     }
     
-    // If there's currently a song playing, pause it
+    // If there's currently a song playing, pause and cleanup
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
     }
     
     // Play the new song
     if (previewUrl) {
       // Create a new audio element
       const audio = new Audio(previewUrl);
-      audio.addEventListener('ended', () => setCurrentlyPlaying(null));
+      audio.addEventListener('ended', () => {
+        setCurrentlyPlaying(null);
+        audioRef.current = null;
+      });
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        setCurrentlyPlaying(null);
+        audioRef.current = null;
+      });
+      
       audioRef.current = audio;
-      audio.play();
-      setCurrentlyPlaying(songId);
+      
+      // Use play() with promise handling to avoid interruption errors
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setCurrentlyPlaying(songId);
+          })
+          .catch((error) => {
+            // Only log if not an abort error (user clicked pause quickly)
+            if (error.name !== 'AbortError') {
+              console.error('Error playing audio:', error);
+            }
+            setCurrentlyPlaying(null);
+            audioRef.current = null;
+          });
+      } else {
+        setCurrentlyPlaying(songId);
+      }
     }
   };
 
@@ -183,7 +216,7 @@ export default function TrendingSongs() {
                       <div 
                         key={`${song.id}-${index}`} 
                         className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer"
-                        onClick={() => window.open(song.externalUrl, '_blank')}
+                        onClick={() => navigate(`/song/${song.id}`)}
                       >
                         <div className="w-12 h-12 flex-shrink-0 relative group">
                           <img 

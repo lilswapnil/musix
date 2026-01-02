@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
@@ -11,6 +12,7 @@ export default function RecentPlayed({ token }) {
   const [likedSongs, setLikedSongs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   // Load liked songs from localStorage on component mount
   useEffect(() => {
@@ -184,7 +186,7 @@ export default function RecentPlayed({ token }) {
                       <div 
                         key={`${item.track.id}-${index}`} 
                         className="flex items-center mb-2 last:mb-0 border-muted border p-2 rounded hover:bg-opacity-90 transition-colors cursor-pointer"
-                        onClick={() => window.open(item.track.external_urls.spotify, '_blank')}
+                        onClick={() => navigate(`/song/${item.track.id}`)}
                       >
                         <div className="w-12 h-12 flex-shrink-0">
                           <img 

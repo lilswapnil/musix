@@ -452,7 +452,7 @@ export default function Artist() {
                       <div 
                         key={track.id} 
                         className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded hover:glass transition-all cursor-pointer"
-                        onClick={() => window.open(track.externalUrl, '_blank')}
+                        onClick={() => navigate(`/song/${track.id}`)}
                       >
                         <div className="w-12 h-12 flex-shrink-0 relative group">
                           <img 

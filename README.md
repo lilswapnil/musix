@@ -146,116 +146,20 @@ A modern music streaming web application that integrates with Spotify API to dis
 
 ### Genius API
 **Base URL:** `https://api.genius.com`
-**Web Scraping URL:** `https://genius.com`
-**Authentication:** Bearer token (OAuth access token)
+**Authentication:** Bearer token
 **CORS Proxy:** `https://corsproxy.io/`
-
-#### API Endpoints
 
 | Endpoint | Purpose |
 |----------|---------|
-| `/search` | Search for songs by title, artist, or lyrics |
-| `/songs/{id}` | Get detailed song information including lyrics URL |
-| `/artists/{id}` | Get artist details and social links |
-| `/artists/{id}/songs` | Get paginated list of artist's songs |
+| `/search` | Search for songs by title/artist |
+| `/songs/{id}` | Get song details and lyrics URL |
+| `/artists/{id}` | Get artist information |
+| `/artists/{id}/songs` | Get artist's songs |
 
-#### Setup Instructions
-1. Go to [Genius API Clients](https://genius.com/api-clients)
-2. Create a new API client application
-3. Generate an access token (Client Access Token)
-4. Add to your `.env` file: `VITE_GENIUS_ACCESS_TOKEN=your_token_here`
-
-#### Features Implemented
-- **Song Search** - Find songs by title, artist, or lyrics content
-- **Lyrics Display** - Scrapes and displays full lyrics from Genius pages
-- **Lyrics Modal** - Popup modal for viewing lyrics without leaving the current page
-- **Charts/Trending** - Shows popular songs on Genius with lyrics access
-- **Artist Lookup** - Get artist information and their song catalog
-- **Song Details** - Full metadata including featured artists, album info, and release dates
-
-#### Components Using Genius
-| Component | Location | Features |
-|-----------|----------|----------|
-| `GeniusCharts` | Home Page | Displays trending songs with lyrics access |
-| `LyricsModal` | Common UI | Modal popup for viewing lyrics |
-| `LyricsDisplay` | Song Page | Inline collapsible lyrics section |
-
-#### Service Methods
-```javascript
-import { geniusService } from './services/geniusService';
-
-// Check if API is configured
-geniusService.isConfigured();
-
-// Search for songs
-const results = await geniusService.searchSongs('bohemian rhapsody');
-
-// Get song details
-const song = await geniusService.getSong(songId);
-
-// Get artist info
-const artist = await geniusService.getArtist(artistId);
-
-// Get artist's songs
-const songs = await geniusService.getArtistSongs(artistId, page, perPage);
-
-// Find song by title and artist (best match)
-const match = await geniusService.findSong('Shape of You', 'Ed Sheeran');
-
-// Get trending/hot songs
-const hotSongs = await geniusService.getHotSongs(20);
-
-// Get full lyrics for a song
-const { song, lyrics } = await geniusService.getSongLyrics(songId);
-
-// Search and get lyrics in one call
-const lyricsData = await geniusService.searchLyrics('Hello', 'Adele');
-```
-
-#### Response Format (Song)
-```javascript
-{
-  id: 123456,
-  title: "Song Title",
-  titleWithFeatured: "Song Title (feat. Artist)",
-  fullTitle: "Song Title by Artist",
-  artist: "Primary Artist",
-  artistId: 789,
-  artistImage: "https://...",
-  featuredArtists: [{ id, name, image }],
-  album: { id, name, coverArt, url },
-  albumArt: "https://...",
-  url: "https://genius.com/...",
-  lyricsPath: "/Artist-song-name-lyrics",
-  releaseDate: "2024-01-15",
-  releaseDateDisplay: "January 15, 2024",
-  description: "Song description...",
-  media: [], // Related media (YouTube, Spotify, etc.)
-  appleMusicId: "...",
-  spotifyUuid: "..."
-}
-```
-
-#### Response Format (Lyrics)
-```javascript
-{
-  found: true,
-  lyricsUrl: "https://genius.com/Artist-song-lyrics",
-  plainText: "Full lyrics as plain text...",
-  sections: [
-    { type: "header", text: "[Verse 1]" },
-    { type: "lyrics", text: "First verse lyrics..." },
-    { type: "header", text: "[Chorus]" },
-    { type: "lyrics", text: "Chorus lyrics..." }
-  ]
-}
-```
-
-#### Caching
-The service implements in-memory caching with a 5-minute TTL to reduce API calls:
-- Search results are cached by query
-- Song details are cached by ID
-- Scraped lyrics are cached by path
+**Use Cases:**
+- Lyrics search and display
+- Song metadata enrichment
+- Artist information
 
 ---
 
@@ -350,9 +254,6 @@ VITE_AZURE_ML_RECS_LIMIT=20
 # Optional APIs
 VITE_YOUTUBE_CLIENT_ID=your_youtube_client_id
 VITE_YOUTUBE_API_KEY=your_youtube_api_key
-
-# Genius API (for lyrics and charts)
-VITE_GENIUS_ACCESS_TOKEN=your_genius_access_token
 
 # Backend
 VITE_BACKEND_URL=http://localhost:5175

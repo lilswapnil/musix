@@ -5,7 +5,6 @@ import TopAlbums from '../components/TopAlbums';
 import TrendingSongs from '../components/TrendingSongs';
 import TopArtists from '../components/TopArtists';
 import NewReleases from '../components/NewReleases';
-import GeniusCharts from '../components/GeniusCharts';
 import AIRecommendations from '../../library/components/AIRecommendations';
 // import { spotifyService } from '../../../services/spotifyServices';
 import { getAccessToken } from '../../../utils/tokenStorage';
@@ -42,9 +41,6 @@ export default function HomePage() {
       <TrendingSongs />
       <TopAlbums />
       <TopArtists />
-      
-      {/* Genius Charts - trending songs with lyrics */}
-      <GeniusCharts />
 
       {/* Only show Spotify-dependent components when authenticated */}
       {isSpotifyAuthenticated && (

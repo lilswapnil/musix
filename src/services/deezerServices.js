@@ -114,38 +114,14 @@ export const deezerService = {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/track/${trackId}`;
-      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      // Check cache first
-      if (!deezerService._memoryCache) {
-        deezerService._memoryCache = new Map();
+      // cachedFetch returns data directly, not a response object
+      const data = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
+      
+      // Check if data contains an error from Deezer API
+      if (data && data.error) {
+        throw new Error(`Deezer API error: ${data.error.message || data.error.code}`);
       }
-      
-      const cacheKey = `track_${trackId}`;
-      const cachedItem = deezerService._memoryCache.get(cacheKey);
-      
-      if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
-        return cachedItem.data;
-      }
-      
-      const response = await fetch(fullUrl);
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Check for Deezer API error response
-      if (data.error) {
-        throw new Error(`Deezer API error: ${data.error.message || data.error.type || 'Unknown error'}`);
-      }
-      
-      // Cache the result
-      deezerService._memoryCache.set(cacheKey, {
-        data,
-        timestamp: Date.now()
-      });
       
       return data;
     } catch (error) {
@@ -319,14 +295,13 @@ export const deezerService = {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=${limit}`;
-      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      // cachedFetch returns data directly, not a Response object
-      const data = await cachedFetch(fullUrl);
+      // cachedFetch returns data directly, not a response object
+      const data = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
-      // Check for Deezer API error response
+      // Check if data contains an error from Deezer API
       if (data && data.error) {
-        throw new Error(`Deezer API error: ${data.error.message || data.error.type || 'Unknown error'}`);
+        throw new Error(`Deezer API error: ${data.error.message || data.error.code}`);
       }
       
       return data;
@@ -385,18 +360,18 @@ export const deezerService = {
    * @param {number} playlistId - Deezer playlist ID
    * @returns {Promise} - Promise containing playlist data
    */
+
   getPlaylist: async (playlistId) => {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/playlist/${playlistId}`;
-      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      // cachedFetch returns data directly, not a Response object
-      const data = await cachedFetch(fullUrl);
+      // cachedFetch returns data directly, not a response object
+      const data = await cachedFetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
-      // Check for Deezer API error response
+      // Check if data contains an error from Deezer API
       if (data && data.error) {
-        throw new Error(`Deezer API error: ${data.error.message || data.error.type || 'Unknown error'}`);
+        throw new Error(`Deezer API error: ${data.error.message || data.error.code}`);
       }
       
       return data;
