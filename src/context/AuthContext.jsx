@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }) => {
             setUserProfile(null);
           }
         } else {
-          console.log('No valid session data found');
           setIsAuthenticated(false);
           setUserProfile(null);
         }

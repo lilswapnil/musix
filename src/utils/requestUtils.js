@@ -180,7 +180,6 @@ export async function enhancedApiRequest(url, options = {}, controls = {}) {
   if (cacheKey) {
     const cachedResponse = apiCache.get(cacheKey);
     if (cachedResponse && Date.now() < cachedResponse.expiry) {
-      console.log(`Using cached response for: ${url}`);
       return cachedResponse.data;
     }
   }

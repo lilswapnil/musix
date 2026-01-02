@@ -18,9 +18,7 @@ export function useSpotifyPlayer() {
     const initPlayer = async () => {
       try {
         // Check if user has premium
-        console.log('Checking Spotify premium status...');
         const hasPremium = await spotifyService.isPremiumAccount();
-        console.log('Premium status result:', hasPremium);
         
         if (mounted) setIsPremium(hasPremium);
         

@@ -61,20 +61,17 @@ export default function SearchPage() {
     setError("");
 
     try {
-      console.log(`Searching for "${searchQuery}"...`);
       let deezerResults = null;
       let spotifyResults = null;
       let preferSpotify = false;
 
       // Try Deezer first as primary source
       try {
-        console.log('Searching with Deezer API as primary source');
         deezerResults = await fetchWithRetry(
           () => deezerService.searchAll(searchQuery)
         );
 
         if (deezerResults) {
-          console.log('Received search results from Deezer');
           setSource('deezer');
 
           // Process Deezer tracks
@@ -135,7 +132,6 @@ export default function SearchPage() {
           const token = await ensureValidToken();
 
           if (token) {
-            console.log('Valid Spotify token available, searching with Spotify API');
             spotifyResults = await axios.get('https://api.spotify.com/v1/search', {
               params: {
                 q: searchQuery,
@@ -150,7 +146,6 @@ export default function SearchPage() {
 
             if (spotifyResults.data) {
               setSource('spotify');
-              console.log('Received search results from Spotify');
 
               // Process Spotify tracks
               let spotifyTracks = [];

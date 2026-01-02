@@ -36,7 +36,6 @@ export default function NewReleases() {
     const fetchNewReleases = async () => {
       try {
         setLoading(true);
-        console.log('Attempting to fetch new releases...');
         let newReleases = [];
 
         // Try Spotify first if possible
@@ -45,8 +44,6 @@ export default function NewReleases() {
           const token = await ensureValidToken();
 
           if (token) {
-            console.log('Valid Spotify token available, fetching from Spotify API');
-
             // Use axios instead of fetch
             const response = await axios.get('https://api.spotify.com/v1/browse/new-releases', {
               params: {
@@ -59,8 +56,6 @@ export default function NewReleases() {
             });
 
             if (response.data && response.data.albums && response.data.albums.items) {
-              console.log(`Successfully fetched ${response.data.albums.items.length} new releases from Spotify`);
-
               // Map Spotify data to our format
               newReleases = response.data.albums.items.map((item) => ({
                 id: item.id,
@@ -72,8 +67,6 @@ export default function NewReleases() {
               }));
               setSource('spotify');
             }
-          } else {
-            console.log('No valid Spotify token, will fall back to Deezer');
           }
         } catch (spotifyErr) {
           console.warn('Failed to fetch from Spotify:', spotifyErr);
@@ -81,7 +74,6 @@ export default function NewReleases() {
 
         // If Spotify didn't work or didn't return results, use Deezer with retry
         if (newReleases.length === 0) {
-          console.log('Falling back to Deezer for new releases');
           try {
             // Use the retry mechanism for Deezer calls
             const deezerResponse = await fetchWithRetry(
@@ -89,8 +81,6 @@ export default function NewReleases() {
             );
 
             if (deezerResponse && deezerResponse.data && deezerResponse.data.length > 0) {
-              console.log(`Successfully fetched ${deezerResponse.data.length} new releases from Deezer`);
-
               // Map Deezer data to our format
               newReleases = deezerResponse.data.map(album => ({
                 id: album.id,

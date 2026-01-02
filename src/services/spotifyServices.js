@@ -820,7 +820,6 @@ export const spotifyService = {
     
     try {
       const userData = await this.getCurrentUser();
-      console.log('Spotify user data for premium check:', userData);
       
       // More robust check
       if (!userData) return false;
