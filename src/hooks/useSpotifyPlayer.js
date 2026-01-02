@@ -22,6 +22,13 @@ export function useSpotifyPlayer() {
         
         if (mounted) setIsPremium(hasPremium);
         
+        // Only initialize the player SDK for premium users
+        // Non-premium users get display-only mode without SDK overhead
+        if (!hasPremium) {
+          if (mounted) setIsReady(false);
+          return;
+        }
+        
         // Initialize the player with state change callback
         const success = await spotifyService.initializePlayer((state) => {
           if (!mounted) return;
@@ -119,9 +126,7 @@ export function useSpotifyPlayer() {
   const skipToNext = useCallback(async () => {
     try {
       setPlayerError(null);
-      console.log('Attempting to skip to next track...');
       await spotifyService.skipToNext();
-      console.log('Skip to next successful');
     } catch (error) {
       console.error('Skip to next failed:', error);
       setPlayerError('Failed to skip: ' + (error.message || 'No active device'));
@@ -131,9 +136,7 @@ export function useSpotifyPlayer() {
   const skipToPrevious = useCallback(async () => {
     try {
       setPlayerError(null);
-      console.log('Attempting to skip to previous track...');
       await spotifyService.skipToPrevious();
-      console.log('Skip to previous successful');
     } catch (error) {
       console.error('Skip to previous failed:', error);
       setPlayerError('Failed to skip: ' + (error.message || 'No active device'));
@@ -143,9 +146,7 @@ export function useSpotifyPlayer() {
   const setVolume = useCallback(async (volumePercent) => {
     try {
       setPlayerError(null);
-      console.log('Setting volume to:', volumePercent);
       await spotifyService.setVolume(volumePercent);
-      console.log('Volume set successfully');
     } catch (error) {
       console.error('Set volume failed:', error);
       setPlayerError('Failed to set volume: ' + (error.message || 'No active device'));

@@ -24,11 +24,9 @@ export const ensureValidToken = async () => {
       
       if (response.status === 401) {
         // Token is expired, try to refresh
-        console.log('Token expired, attempting to refresh');
         return await refreshAccessToken();
       }
       
-      console.log(`Unexpected status checking token: ${response.status}`);
       return null;
     } catch (validationError) {
       console.error("Error validating token:", validationError);

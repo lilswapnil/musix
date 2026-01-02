@@ -177,7 +177,6 @@ export const spotifyService = {
       // Check if token is expired or about to expire (within 1 minute)
       if (expiry && expiry <= Date.now() + 60000) {
         if (refreshTokenValue) {
-          console.log('Token expired, refreshing...');
           return await refreshToken();
         }
         throw new Error('Token expired and no refresh token available');
@@ -585,8 +584,15 @@ export const spotifyService = {
 
   /**
    * Initialize Spotify Web Playback SDK
+   * Only works for Premium users - non-premium users should skip this
    */
   initializePlayer: async function(onPlayerStateChanged = null) {
+    // Check premium status first to avoid unnecessary SDK errors
+    const hasPremium = await this.isPremiumAccount();
+    if (!hasPremium) {
+      return false; // Skip SDK initialization for non-premium users
+    }
+    
     if (!window.Spotify) {
       await this._loadSpotifyScript();
     }
@@ -810,7 +816,6 @@ export const spotifyService = {
   isPremiumAccount: async function() {
     // Check for debug override
     if (window.localStorage.getItem('spotify_force_premium') === 'true') {
-      console.log('Using forced premium mode from localStorage');
       return true;
     }
     
@@ -927,8 +932,6 @@ export const spotifyService = {
         method: 'POST',
         params
       });
-
-      console.log(`Added track to queue: ${trackUri}`);
     } catch (error) {
       console.error('Error adding track to queue:', error);
       throw error;
@@ -951,8 +954,6 @@ export const spotifyService = {
         method: 'POST',
         params
       });
-
-      console.log('Skipped to next track');
     } catch (error) {
       console.error('Error skipping to next track:', error);
       throw error;
@@ -975,8 +976,6 @@ export const spotifyService = {
         method: 'POST',
         params
       });
-
-      console.log('Skipped to previous track');
     } catch (error) {
       console.error('Error skipping to previous track:', error);
       throw error;

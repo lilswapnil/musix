@@ -34,7 +34,6 @@ export default function LoginPage() {
       setError(null);
 
       const { accessToken, userProfile } = await youtubeService.signIn();
-      console.log('YouTube Access Token:', accessToken);
 
       // Update auth context with user profile
       setIsAuthenticated(true);

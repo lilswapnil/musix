@@ -41,6 +41,9 @@ const SCOPES = [
   'user-library-read',
   'user-library-modify',
   'user-top-read',
+  'playlist-read-private',
+  'playlist-read-collaborative',
+  'streaming',
 ].join('%20');
 
 export const redirectToSpotify = async () => {

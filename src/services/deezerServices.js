@@ -153,7 +153,6 @@ export const deezerService = {
       }
       
       const data = await response.json();
-      console.log(`Fetched artist data:`, data);
       
       // Cache the result
       if (deezerService._memoryCache) {
@@ -329,7 +328,6 @@ export const deezerService = {
       }
       
       const data = await response.json();
-      console.log(`Fetched album data:`, data);
       // Cache the result
       if (deezerService._memoryCache) {
         deezerService._memoryCache.set(`album_${albumId}`, {
@@ -375,8 +373,6 @@ export const deezerService = {
       // The URL was malformed in previous attempts - fix it
       const deezerUrl = 'https://api.deezer.com/genre';
       
-      console.log(`Fetching genres from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      
       // Use regular fetch like your other working methods
       const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
@@ -399,8 +395,6 @@ export const deezerService = {
     try {
       const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = 'https://api.deezer.com/editorial';
-      
-      console.log(`Fetching music categories from: ${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
       const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
       
@@ -525,8 +519,6 @@ export const deezerService = {
       const deezerUrl = `https://api.deezer.com/artist/${artistId}/top?limit=${limit}&index=${(page-1)*limit}`;
       const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
-      console.log(`Fetching artist tracks from: ${fullUrl}`);
-      
       // Cache key based on artist ID, page and limit
       const cacheKey = `artist_tracks_${artistId}_${page}_${limit}`;
       
@@ -535,7 +527,6 @@ export const deezerService = {
         const cachedItem = deezerService._memoryCache.get(cacheKey);
         
         if (cachedItem && Date.now() - cachedItem.timestamp < 3600000) { // 1 hour cache
-          console.log(`Returning cached artist tracks for artistId: ${artistId}, page: ${page}`);
           return cachedItem.data;
         }
       }
@@ -548,7 +539,6 @@ export const deezerService = {
       }
       
       const data = await response.json();
-      console.log(`Fetched ${data.data?.length || 0} tracks for artist ${artistId}`);
       
       // Cache the result
       if (deezerService._memoryCache) {
