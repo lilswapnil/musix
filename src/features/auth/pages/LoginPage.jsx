@@ -19,17 +19,13 @@ export default function LoginPage() {
       setError(decodeURIComponent(errorParam));
     }
     
-    if (!youtubeService.isConfigured()) {
-      setError('YouTube login is not configured. Please use Spotify to continue.');
-      return;
+    // Only try to initialize YouTube if it's configured
+    if (youtubeService.isConfigured()) {
+      youtubeService.initClient().catch((error) => {
+        console.error('Error initializing YouTube API client:', error);
+        // Don't show error to user - they can still use Spotify
+      });
     }
-
-    youtubeService.initClient().catch((error) => {
-      console.error('Error initializing YouTube API client:', error);
-      if (!errorParam) {
-        setError('Failed to initialize YouTube login. Please try Spotify instead.');
-      }
-    });
   }, [searchParams]);
 
   const handleYouTubeLogin = async () => {

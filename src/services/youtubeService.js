@@ -8,7 +8,9 @@ const SCOPES = [
 
 const IS_CONFIGURED = Boolean(
   CLIENT_ID &&
-  !String(CLIENT_ID).includes('your_youtube_client_id_here')
+  CLIENT_ID.length > 10 &&
+  !String(CLIENT_ID).includes('your_youtube_client_id_here') &&
+  !String(CLIENT_ID).includes('placeholder')
 );
 
 let googleScriptPromise = null;
@@ -31,7 +33,17 @@ const loadGoogleScript = () => {
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      // Wait a bit for google.accounts to be available
+      const checkGoogle = () => {
+        if (window.google?.accounts?.oauth2) {
+          resolve();
+        } else {
+          setTimeout(checkGoogle, 100);
+        }
+      };
+      checkGoogle();
+    };
     script.onerror = () => reject(new Error('Failed to load Google OAuth script.'));
     document.head.appendChild(script);
   });
@@ -41,21 +53,29 @@ const loadGoogleScript = () => {
 
 const ensureTokenClient = async () => {
   if (!IS_CONFIGURED) {
-    throw new Error('YouTube login is not configured.');
+    throw new Error('YouTube login is not configured. Please add VITE_YOUTUBE_CLIENT_ID to your environment.');
   }
 
   await loadGoogleScript();
 
   if (!window.google?.accounts?.oauth2) {
-    throw new Error('Google OAuth client is unavailable.');
+    throw new Error('Google OAuth client failed to load. Please check your internet connection and try again.');
   }
 
   if (!tokenClient) {
-    tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: () => {}
-    });
+    try {
+      tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: () => {},
+        error_callback: (error) => {
+          console.error('Google OAuth error:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to initialize token client:', error);
+      throw new Error('Failed to initialize Google authentication. Please try again.');
+    }
   }
 
   return tokenClient;
@@ -124,19 +144,26 @@ export const youtubeService = {
 
   signIn: async () => {
     if (!IS_CONFIGURED) {
-      throw new Error('YouTube login is not configured.');
+      throw new Error('YouTube login is not configured. Please add your Google OAuth credentials.');
     }
 
     const client = await ensureTokenClient();
 
     return new Promise((resolve, reject) => {
+      // Set up the callback before requesting access token
       client.callback = async (response) => {
         if (response.error) {
-          reject(new Error(response.error));
+          console.error('Google OAuth error response:', response);
+          reject(new Error(response.error_description || response.error || 'Authentication failed'));
           return;
         }
 
         const accessToken = response.access_token;
+        if (!accessToken) {
+          reject(new Error('No access token received from Google'));
+          return;
+        }
+        
         localStorage.setItem('youtube_access_token', accessToken);
 
         try {
@@ -144,11 +171,17 @@ export const youtubeService = {
           localStorage.setItem('youtube_user_profile', JSON.stringify(userProfile));
           resolve({ accessToken, userProfile });
         } catch (error) {
-          reject(error);
+          console.error('Failed to fetch user profile:', error);
+          reject(new Error('Failed to fetch your Google profile. Please try again.'));
         }
       };
 
-      client.requestAccessToken({ prompt: 'consent' });
+      try {
+        client.requestAccessToken({ prompt: 'select_account' });
+      } catch (error) {
+        console.error('Failed to request access token:', error);
+        reject(new Error('Failed to open Google sign-in. Please check if popups are blocked.'));
+      }
     });
   },
 
