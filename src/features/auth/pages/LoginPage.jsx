@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { youtubeService } from '../../../services/youtubeService';
 import { redirectToSpotify } from '../../../services/spotifyAuthService';
-import { geniusService } from '../../../services/geniusService';
 import { useAuth } from '../../../context/useAuth';
 import logo from '../../../assets/logo-light.svg';
 
@@ -109,23 +108,6 @@ export default function LoginPage() {
                 {youtubeService.isConfigured() ? 'Continue with YouTube' : 'YouTube login unavailable'}
               </>
             )}
-          </button>
-
-          <button
-            className="flex items-center justify-center rounded-lg bg-[#FFFF64] p-3 text-black hover:bg-[#FFFF64]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => {
-              if (geniusService.isConfigured()) {
-                localStorage.setItem('geniusConnected', 'true');
-                setIsAuthenticated(true);
-                navigate('/home');
-              }
-            }}
-            disabled={!geniusService.isConfigured()}
-          >
-            <svg className="mr-2 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm3.6 16.8H8.4V7.2h2.4v7.2h4.8v2.4z" />
-            </svg>
-            {geniusService.isConfigured() ? 'Continue with Genius' : 'Genius not configured'}
           </button>
 
           <button

@@ -5,7 +5,6 @@ import TopAlbums from '../components/TopAlbums';
 import TrendingSongs from '../components/TrendingSongs';
 import TopArtists from '../components/TopArtists';
 import NewReleases from '../components/NewReleases';
-import GeniusCharts from '../components/GeniusCharts';
 import AIRecommendations from '../../library/components/AIRecommendations';
 // import { spotifyService } from '../../../services/spotifyServices';
 import { getAccessToken } from '../../../utils/tokenStorage';
@@ -40,10 +39,6 @@ export default function HomePage() {
 
       {/* These components use Deezer API and don't require Spotify auth */}
       <TrendingSongs />
-      
-      {/* Genius Top Charts - shows when Genius is configured */}
-      <GeniusCharts />
-      
       <TopAlbums />
       <TopArtists />
 

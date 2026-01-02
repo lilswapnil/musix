@@ -236,99 +236,13 @@ async function findSong(title, artist) {
   return bestMatch || results[0];
 }
 
-/**
- * Get top/chart songs from Genius
- * Uses popular search terms to get trending songs
- * @param {number} limit - Number of songs to return
- * @returns {Promise<Array>} - Array of trending songs
- */
-async function getTopCharts(limit = 50) {
-  if (!IS_CONFIGURED) {
-    throw new Error('Genius API is not configured');
-  }
-
-  try {
-    // Genius doesn't have a direct charts endpoint, so we fetch popular songs
-    // by searching for trending terms or using leaderboards
-    const response = await geniusRequest('/search', { q: 'top hits 2026' });
-    
-    if (!response?.hits) {
-      return [];
-    }
-
-    const songs = response.hits
-      .filter(hit => hit.type === 'song')
-      .slice(0, limit)
-      .map((hit, index) => ({
-        id: hit.result.id,
-        title: hit.result.title,
-        titleWithFeatured: hit.result.title_with_featured,
-        artist: hit.result.primary_artist?.name || 'Unknown Artist',
-        artistId: hit.result.primary_artist?.id,
-        artistImage: hit.result.primary_artist?.image_url,
-        albumArt: hit.result.song_art_image_url || hit.result.header_image_url,
-        thumbnail: hit.result.song_art_image_thumbnail_url,
-        url: hit.result.url,
-        lyricsState: hit.result.lyrics_state,
-        releaseDateDisplay: hit.result.release_date_for_display,
-        pyongsCount: hit.result.pyongs_count || 0,
-        annotationCount: hit.result.annotation_count || 0,
-        position: index + 1
-      }));
-
-    return songs;
-  } catch (error) {
-    console.error('Failed to fetch top charts:', error);
-    throw error;
-  }
-}
-
-/**
- * Search for songs by lyrics
- * @param {string} lyrics - Lyrics snippet to search for
- * @returns {Promise<Array>} - Array of matching songs
- */
-async function searchByLyrics(lyrics) {
-  if (!lyrics || lyrics.trim().length < 3) {
-    return [];
-  }
-
-  // Genius search works well with lyrics snippets
-  const response = await geniusRequest('/search', { q: lyrics });
-  
-  if (!response?.hits) {
-    return [];
-  }
-
-  return response.hits
-    .filter(hit => hit.type === 'song')
-    .map(hit => ({
-      id: hit.result.id,
-      title: hit.result.title,
-      titleWithFeatured: hit.result.title_with_featured,
-      artist: hit.result.primary_artist?.name || 'Unknown Artist',
-      artistId: hit.result.primary_artist?.id,
-      artistImage: hit.result.primary_artist?.image_url,
-      albumArt: hit.result.song_art_image_url || hit.result.header_image_url,
-      thumbnail: hit.result.song_art_image_thumbnail_url,
-      url: hit.result.url,
-      lyricsState: hit.result.lyrics_state,
-      releaseDateDisplay: hit.result.release_date_for_display,
-      pyongsCount: hit.result.pyongs_count,
-      annotationCount: hit.result.annotation_count,
-      source: 'genius'
-    }));
-}
-
 export const geniusService = {
   isConfigured: () => IS_CONFIGURED,
   searchSongs,
   getSong,
   getArtist,
   getArtistSongs,
-  findSong,
-  getTopCharts,
-  searchByLyrics
+  findSong
 };
 
 export default geniusService;

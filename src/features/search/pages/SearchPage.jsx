@@ -3,9 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { deezerService } from "../../../services/deezerServices";
-import { geniusService } from "../../../services/geniusService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faPause, faMusic, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import { TrackRowSkeleton, CardSkeleton, SongRowSkeleton } from "../../../components/common/ui/Skeleton";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 // Removed unused debounce import
@@ -14,9 +13,7 @@ export default function SearchPage() {
   const [albums, setAlbums] = useState([]);
   const [artists, setArtists] = useState([]);
   const [songs, setSongs] = useState([]);
-  const [lyricsResults, setLyricsResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [lyricsLoading, setLyricsLoading] = useState(false);
   const [error, setError] = useState("");
   const [source, setSource] = useState('deezer');
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
@@ -219,29 +216,6 @@ export default function SearchPage() {
     }
   }, [fetchWithRetry]);
 
-  // Search for lyrics using Genius API
-  const searchLyrics = useCallback(async (searchQuery) => {
-    if (!searchQuery || searchQuery.trim().length < 3) {
-      setLyricsResults([]);
-      return;
-    }
-
-    if (!geniusService.isConfigured()) {
-      return;
-    }
-
-    try {
-      setLyricsLoading(true);
-      const results = await geniusService.searchByLyrics(searchQuery);
-      setLyricsResults(results);
-    } catch (err) {
-      console.error('Lyrics search error:', err);
-      // Don't show error to user, just log it - lyrics search is supplementary
-    } finally {
-      setLyricsLoading(false);
-    }
-  }, []);
-
   // Load liked songs and trigger search when query changes
   useEffect(() => {
     try {
@@ -255,7 +229,6 @@ export default function SearchPage() {
 
     if (query) {
       search(query);
-      searchLyrics(query); // Also search lyrics with Genius
     }
 
     return () => {
@@ -266,7 +239,7 @@ export default function SearchPage() {
         audioRef.current.pause();
       }
     };
-  }, [query, search, searchLyrics]);
+  }, [query, search]);
 
   const handlePlayPause = (songId, previewUrl, event) => {
     if (event) {
@@ -523,93 +496,6 @@ export default function SearchPage() {
                 ))}
               </div>
             </ScrollableSection>
-          )}
-
-          {/* Lyrics Search Results from Genius */}
-          {lyricsResults.length > 0 && (
-            <div className="mb-8">
-              <ScrollableSection 
-                title={
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-2xl font-semibold text-start">Lyrics Match</h3>
-                    <span className="text-xs text-[#FFFF64] bg-[#FFFF64]/10 px-2 py-1 rounded">via Genius</span>
-                  </div>
-                }
-              >
-                <div className="flex space-x-2">
-                  {Array.from({ length: Math.ceil(lyricsResults.length / 4) }).map((_, groupIndex) => {
-                    const groupTracks = lyricsResults.slice(groupIndex * 4, groupIndex * 4 + 4);
-                    return (
-                      <div 
-                        key={groupIndex} 
-                        className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]"
-                      >
-                        {groupTracks.map((song) => (
-                          <a 
-                            key={song.id}
-                            href={song.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer group"
-                          >
-                            <div className="w-12 h-12 flex-shrink-0 relative">
-                              {song.albumArt ? (
-                                <img 
-                                  src={song.albumArt} 
-                                  alt={song.title}
-                                  className="w-full h-full object-cover rounded"
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = "https://via.placeholder.com/300x300?text=No+Cover";
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-[#FFFF64]/20 rounded flex items-center justify-center">
-                                  <FontAwesomeIcon icon={faMusic} className="text-[#FFFF64]" />
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="ml-3 flex-grow min-w-0 text-start">
-                              <div className="font-semibold text-white truncate group-hover:text-[#FFFF64] transition-colors">
-                                {song.title}
-                              </div>
-                              <div className="text-xs text-muted truncate">{song.artist}</div>
-                              {song.lyricsState === 'complete' && (
-                                <div className="text-[10px] text-[#FFFF64]">Lyrics available</div>
-                              )}
-                            </div>
-                            
-                            <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <FontAwesomeIcon 
-                                icon={faExternalLinkAlt} 
-                                className="text-[#FFFF64] text-sm"
-                              />
-                            </div>
-                          </a>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollableSection>
-            </div>
-          )}
-
-          {/* Loading state for lyrics search */}
-          {lyricsLoading && geniusService.isConfigured() && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-2xl font-semibold text-start">Lyrics Match</h3>
-                <span className="text-xs text-[#FFFF64] bg-[#FFFF64]/10 px-2 py-1 rounded">via Genius</span>
-              </div>
-              <div className="flex justify-center items-center h-24">
-                <div className="animate-pulse flex items-center gap-2">
-                  <div className="w-6 h-6 border-2 border-[#FFFF64] border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-[#FFFF64] text-sm">Searching lyrics...</span>
-                </div>
-              </div>
-            </div>
           )}
 
           {!loading && songs.length === 0 && albums.length === 0 && query && (
