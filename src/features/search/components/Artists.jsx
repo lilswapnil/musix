@@ -355,10 +355,15 @@ export default function Artist() {
         <div className="flex-grow"></div>
         
         {/* Card content - positioned at bottom */}
-        <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
+        <div className="relative flex flex-col ml-6 md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
           {/* Artist info */}
           <div className="text-center md:text-left z-10 flex-1">
-            <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-2 drop-shadow-lg">{artist.name}</h1>
+            <h1 
+              className="text-7xl md:text-8xl lg:text-9xl font-black text-white mb-2"
+              style={{ textShadow: '2px 2px 8px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.4)' }}
+            >
+              {artist.name}
+            </h1>
             
             {/* Artist metadata - new layout with latest album */}
             <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6 justify-center md:justify-start">

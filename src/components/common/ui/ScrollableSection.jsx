@@ -2,10 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faPlus } from '@fortawesome/free-solid-svg-icons';
 
-export default function ScrollableSection({ title, children, onLoadMore, loadingMore }) {
+export default function ScrollableSection({ 
+  title, 
+  children, 
+  onLoadMore, 
+  loadingMore,
+  maxVisiblePages = 4,  // Default to showing 4 pages at a time
+  pageIncrement = 4     // Load 4 more pages when clicking Load More
+}) {
   const scrollContainerRef = React.useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [visiblePageLimit, setVisiblePageLimit] = useState(maxVisiblePages);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [isAtEnd, setIsAtEnd] = useState(false);
 
@@ -46,6 +54,20 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
     return () => window.removeEventListener('resize', calculatePages);
   }, [children]);
 
+  // Determine actual visible pages (limited by visiblePageLimit)
+  const effectiveVisiblePages = Math.min(visiblePageLimit, totalPages);
+  const hasMorePagesToShow = totalPages > visiblePageLimit;
+  
+  // Check if we're at the last visible page (not just at the end of scroll)
+  const isAtLastVisiblePage = currentPage >= effectiveVisiblePages - 1;
+
+  // Handle loading more pages internally
+  const handleLoadMorePages = () => {
+    setVisiblePageLimit(prev => prev + pageIncrement);
+    // Reset isAtEnd so the button changes back to next arrow
+    setIsAtEnd(false);
+  };
+
   // Update current page on scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -64,10 +86,12 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
         
         // Calculate page based on scroll position
         const newPage = Math.round(scrollPosition / scrollPerPage);
-        setCurrentPage(Math.min(newPage, totalPages - 1));
+        setCurrentPage(Math.min(newPage, effectiveVisiblePages - 1));
         
-        // Check if we're at the end (within 10px tolerance)
-        setIsAtEnd(scrollPosition >= maxScrollLeft - 10);
+        // Check if we're at the visible page limit (within 10px tolerance)
+        const visibleMaxScroll = scrollPerPage * (effectiveVisiblePages - 1);
+        const atVisibleEnd = scrollPosition >= Math.min(visibleMaxScroll, maxScrollLeft) - 10;
+        setIsAtEnd(atVisibleEnd);
       }
     };
 
@@ -76,7 +100,7 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
       container.addEventListener('scroll', handleScroll);
       return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, [totalPages]);
+  }, [totalPages, effectiveVisiblePages]);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -92,19 +116,22 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
       // Calculate how many items fit in view and scroll by that amount
       const itemsInView = Math.max(1, Math.floor(container.clientWidth / itemWidth));
       const scrollAmount = itemWidth * itemsInView;
+      
+      // Calculate max scroll based on visible page limit
+      const visibleMaxScroll = scrollAmount * (effectiveVisiblePages - 1);
 
       if (direction === 'left') {
         container.scrollLeft = Math.max(0, container.scrollLeft - scrollAmount);
       } else {
-        // Clamp to max scroll position to prevent over-scrolling
+        // Clamp to visible page limit or max scroll position
         const newScrollLeft = container.scrollLeft + scrollAmount;
-        container.scrollLeft = Math.min(maxScrollLeft, newScrollLeft);
+        container.scrollLeft = Math.min(Math.min(visibleMaxScroll, maxScrollLeft), newScrollLeft);
       }
     }
   };
 
   const scrollToPage = (pageIndex) => {
-    if (scrollContainerRef.current) {
+    if (scrollContainerRef.current && pageIndex < effectiveVisiblePages) {
       const container = scrollContainerRef.current;
       const maxScrollLeft = container.scrollWidth - container.clientWidth;
       
@@ -140,10 +167,10 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
               <FontAwesomeIcon icon={faChevronLeft} className={currentPage === 0 ? 'text-muted/40' : ''} />
             </button>
             
-            {/* Show Load More button when at the end and onLoadMore is provided */}
-            {isAtEnd && onLoadMore ? (
+            {/* Show Load More button only when at the last visible page AND there are more pages */}
+            {isAtEnd && isAtLastVisiblePage && (hasMorePagesToShow || onLoadMore) ? (
               <button
-                onClick={onLoadMore}
+                onClick={hasMorePagesToShow ? handleLoadMorePages : onLoadMore}
                 disabled={loadingMore}
                 className="px-3 py-1.5 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors text-sm flex items-center gap-1.5 disabled:opacity-50"
                 aria-label="Load more"
@@ -156,9 +183,9 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
                 onClick={() => scroll('right')}
                 className="p-2 rounded-full hover:bg-muted/20 transition-colors"
                 aria-label="Scroll right"
-                disabled={isAtEnd}
+                disabled={isAtEnd && !hasMorePagesToShow && !onLoadMore}
               >
-                <FontAwesomeIcon icon={faChevronRight} className={isAtEnd ? 'text-muted/40' : ''} />
+                <FontAwesomeIcon icon={faChevronRight} className={isAtEnd && !hasMorePagesToShow && !onLoadMore ? 'text-muted/40' : ''} />
               </button>
             )}
           </div>
@@ -178,10 +205,10 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
         {children}
       </div>
 
-      {/* Pagination indicators */}
-      {isOverflowing && totalPages > 1 && (
+      {/* Pagination indicators - only show for visible pages */}
+      {isOverflowing && effectiveVisiblePages > 1 && (
         <div className="flex justify-center mt-4 space-x-1">
-          {[...Array(totalPages)].map((_, index) => (
+          {[...Array(effectiveVisiblePages)].map((_, index) => (
             <button
               key={index}
               onClick={() => scrollToPage(index)}
@@ -191,6 +218,10 @@ export default function ScrollableSection({ title, children, onLoadMore, loading
               }`}
             />
           ))}
+          {/* Show indicator that more pages are available */}
+          {hasMorePagesToShow && (
+            <span className="text-muted/40 text-xs ml-1">+{totalPages - visiblePageLimit}</span>
+          )}
         </div>
       )}
     </div>
