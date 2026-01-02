@@ -329,46 +329,36 @@ export default function Artist() {
         Back
       </button>
       
-      {/* Artist header with circular image and background */}
-      <div className="flex flex-col mb-6 glass rounded-lg p-4 relative overflow-hidden shadow-lg" style={{ aspectRatio: '2/1' }}>
-        {/* Blurred background image - now uses newest album art */}
+      {/* Artist header with banner */}
+      <div className="flex flex-col mb-6 rounded-lg p-4 relative overflow-hidden shadow-lg" style={{ aspectRatio: '2/1' }}>
+        {/* Artist image as banner background */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-80"
+            className="absolute inset-0 bg-cover bg-center"
             style={{ 
-              backgroundImage: `url(${
-                // First try newest album art if available
-                (albums.length > 0 && 
-                 albums.sort((a, b) => new Date(b.releaseDate || "1900-01-01") - new Date(a.releaseDate || "1900-01-01"))[0]?.coverArt)
-                // Fall back to artist image if no albums
-                || artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture
-              })`
+              backgroundImage: `url(${artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture})`
             }}
           ></div>
-          <div className="absolute inset-0 bg-black bg-opacity-70"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          {/* Grainy noise texture overlay */}
+          <div 
+            className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '128px 128px'
+            }}
+          ></div>
         </div>
         
-        {/* Rest of the header remains the same... */}
+        {/* Spacer to push content to bottom */}
         <div className="flex-grow"></div>
         
-        {/* Card content with circular image - positioned at bottom now */}
+        {/* Card content - positioned at bottom */}
         <div className="relative flex flex-col md:flex-row items-start md:items-start justify-center py-4 md:py-6 mt-auto">
-          {/* Circular artist image with better fallback and error handling */}
-          <div className="w-24 h-24 md:w-28 md:h-28 relative mb-4 md:mb-0 md:mr-6 border-2 border-white overflow-hidden rounded-full shadow-xl">
-            <img 
-              src={artist.picture_xl || artist.picture_big || artist.picture_medium || artist.picture}
-              alt={artist.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/300x300?text=No+Artist+Image";
-              }}
-            />
-          </div>
-          
-          {/* Rest of the artist info continues... */}
+          {/* Artist info */}
           <div className="text-center md:text-left z-10 flex-1">
-            <h1 className="text-6xl md:text-5xl lg:text-7xl font-bold text-white mb-2 drop-shadow">{artist.name}</h1>
+            <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-2 drop-shadow-lg">{artist.name}</h1>
             
             {/* Artist metadata - new layout with latest album */}
             <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6 justify-center md:justify-start">
@@ -560,7 +550,11 @@ export default function Artist() {
       {/* All Songs Section - Similar to TrendingSongs */}
       {allSongs.length > 0 && (
         <div className="mb-8">
-          <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">Songs</h3>}>
+          <ScrollableSection 
+            title={<h3 className="text-2xl font-semibold text-start">Songs</h3>}
+            onLoadMore={hasMoreSongs ? loadMoreSongs : null}
+            loadingMore={loadingMoreSongs}
+          >
             <div className="flex space-x-2">
               {/* Split tracks into groups of 4 for horizontal scrolling */}
               {Array.from({ length: Math.ceil(allSongs.length / 4) }).map((_, groupIndex) => {
@@ -628,18 +622,7 @@ export default function Artist() {
               })}
             </div>
           </ScrollableSection>
-          
-          {hasMoreSongs && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={loadMoreSongs}
-                disabled={loadingMoreSongs}
-                className="bg-primary-light/50 hover:bg-primary/80 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50"
-              >
-                {loadingMoreSongs ? 'Loading...' : 'Load More Songs'}
-              </button>
-            </div>
-          )}
+
         </div>
       )}
       

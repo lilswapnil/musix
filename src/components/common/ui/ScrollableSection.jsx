@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faPlus } from '@fortawesome/free-solid-svg-icons';
 
-export default function ScrollableSection({ title, children }) {
+export default function ScrollableSection({ title, children, onLoadMore, loadingMore }) {
   const scrollContainerRef = React.useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [isOverflowing, setIsOverflowing] = useState(false);
+  const [isAtEnd, setIsAtEnd] = useState(false);
 
   // Calculate total pages when content changes
   useEffect(() => {
@@ -21,8 +22,16 @@ export default function ScrollableSection({ title, children }) {
         setIsOverflowing(hasOverflow);
 
         if (hasOverflow) {
-          // Calculate how many pages we need
-          const pages = Math.ceil(scrollWidth / clientWidth);
+          // Get the width of the first scrollable item (direct child or nested flex item)
+          const firstChild = container.querySelector(':scope > *:first-child > *:first-child') 
+            || container.querySelector(':scope > *:first-child')
+            || container.firstElementChild;
+          const itemWidth = firstChild ? firstChild.offsetWidth + 8 : clientWidth;
+          const itemsInView = Math.max(1, Math.floor(clientWidth / itemWidth));
+          const scrollPerPage = itemWidth * itemsInView;
+          
+          const maxScrollLeft = scrollWidth - clientWidth;
+          const pages = Math.max(1, Math.ceil(maxScrollLeft / scrollPerPage) + 1);
           setTotalPages(pages);
         } else {
           setTotalPages(1);
@@ -43,10 +52,22 @@ export default function ScrollableSection({ title, children }) {
       if (scrollContainerRef.current) {
         const container = scrollContainerRef.current;
         const scrollPosition = container.scrollLeft;
-        const pageWidth = container.clientWidth;
-        const newPage = Math.round(scrollPosition / pageWidth);
-
-        setCurrentPage(newPage);
+        const maxScrollLeft = container.scrollWidth - container.clientWidth;
+        
+        // Get the width of the first scrollable item
+        const firstChild = container.querySelector(':scope > *:first-child > *:first-child') 
+          || container.querySelector(':scope > *:first-child')
+          || container.firstElementChild;
+        const itemWidth = firstChild ? firstChild.offsetWidth + 8 : container.clientWidth;
+        const itemsInView = Math.max(1, Math.floor(container.clientWidth / itemWidth));
+        const scrollPerPage = itemWidth * itemsInView;
+        
+        // Calculate page based on scroll position
+        const newPage = Math.round(scrollPosition / scrollPerPage);
+        setCurrentPage(Math.min(newPage, totalPages - 1));
+        
+        // Check if we're at the end (within 10px tolerance)
+        setIsAtEnd(scrollPosition >= maxScrollLeft - 10);
       }
     };
 
@@ -55,17 +76,29 @@ export default function ScrollableSection({ title, children }) {
       container.addEventListener('scroll', handleScroll);
       return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, []);
+  }, [totalPages]);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      const scrollAmount = container.clientWidth;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      
+      // Get the width of the first scrollable item
+      const firstChild = container.querySelector(':scope > *:first-child > *:first-child') 
+        || container.querySelector(':scope > *:first-child')
+        || container.firstElementChild;
+      const itemWidth = firstChild ? firstChild.offsetWidth + 8 : container.clientWidth; // 8px for gap
+      
+      // Calculate how many items fit in view and scroll by that amount
+      const itemsInView = Math.max(1, Math.floor(container.clientWidth / itemWidth));
+      const scrollAmount = itemWidth * itemsInView;
 
       if (direction === 'left') {
-        container.scrollLeft -= scrollAmount;
+        container.scrollLeft = Math.max(0, container.scrollLeft - scrollAmount);
       } else {
-        container.scrollLeft += scrollAmount;
+        // Clamp to max scroll position to prevent over-scrolling
+        const newScrollLeft = container.scrollLeft + scrollAmount;
+        container.scrollLeft = Math.min(maxScrollLeft, newScrollLeft);
       }
     }
   };
@@ -73,8 +106,17 @@ export default function ScrollableSection({ title, children }) {
   const scrollToPage = (pageIndex) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      const scrollAmount = container.clientWidth * pageIndex;
-      container.scrollLeft = scrollAmount;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      
+      // Get the width of the first scrollable item
+      const firstChild = container.querySelector(':scope > *:first-child > *:first-child') 
+        || container.querySelector(':scope > *:first-child')
+        || container.firstElementChild;
+      const itemWidth = firstChild ? firstChild.offsetWidth + 8 : container.clientWidth;
+      const itemsInView = Math.max(1, Math.floor(container.clientWidth / itemWidth));
+      const scrollAmount = itemWidth * itemsInView * pageIndex;
+      
+      container.scrollLeft = Math.min(scrollAmount, maxScrollLeft);
     }
   };
 
@@ -86,9 +128,9 @@ export default function ScrollableSection({ title, children }) {
           {typeof title === 'string' ? <h2 className="text-3xl font-bold text-start">{title}</h2> : title}
         </div>
 
-        {/* Remove arrows from here if you want to rely only on dots */}
+        {/* Navigation arrows and Load More button */}
         {isOverflowing && (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
             <button
               onClick={() => scroll('left')}
               className="p-2 rounded-full hover:bg-muted/20 transition-colors"
@@ -97,14 +139,28 @@ export default function ScrollableSection({ title, children }) {
             >
               <FontAwesomeIcon icon={faChevronLeft} className={currentPage === 0 ? 'text-muted/40' : ''} />
             </button>
-            <button
-              onClick={() => scroll('right')}
-              className="p-2 rounded-full hover:bg-muted/20 transition-colors"
-              aria-label="Scroll right"
-              disabled={currentPage === totalPages - 1}
-            >
-              <FontAwesomeIcon icon={faChevronRight} className={currentPage === totalPages - 1 ? 'text-muted/40' : ''} />
-            </button>
+            
+            {/* Show Load More button when at the end and onLoadMore is provided */}
+            {isAtEnd && onLoadMore ? (
+              <button
+                onClick={onLoadMore}
+                disabled={loadingMore}
+                className="px-3 py-1.5 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors text-sm flex items-center gap-1.5 disabled:opacity-50"
+                aria-label="Load more"
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                {loadingMore ? 'Loading...' : 'Load More'}
+              </button>
+            ) : (
+              <button
+                onClick={() => scroll('right')}
+                className="p-2 rounded-full hover:bg-muted/20 transition-colors"
+                aria-label="Scroll right"
+                disabled={isAtEnd}
+              >
+                <FontAwesomeIcon icon={faChevronRight} className={isAtEnd ? 'text-muted/40' : ''} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -119,14 +175,7 @@ export default function ScrollableSection({ title, children }) {
           scrollbarWidth: 'none', // Firefox
         }}
       >
-        <div
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
-          }}
-        >
-          {children}
-        </div>
+        {children}
       </div>
 
       {/* Pagination indicators */}
