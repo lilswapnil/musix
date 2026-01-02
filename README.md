@@ -54,12 +54,240 @@ A modern music streaming web application that integrates with Spotify API to dis
 | **CORS** | Cross-origin requests |
 | **dotenv** | Environment variables |
 
-### Third-party Services
-| Service | Purpose |
-|---------|---------|
-| **Spotify Web API** | Music data & streaming |
-| **Deezer API** | Additional music sources |
-| **YouTube API** | Video content |
+### Third-party APIs
+| API | Purpose |
+|-----|---------|
+| **Spotify Web API** | Primary music data, user authentication, library management, playback control |
+| **Deezer API** | Fallback music data source, trending content, genre browsing |
+| **YouTube Data API** | Alternative authentication, video content integration |
+| **Genius API** | Lyrics search and song information |
+| **Azure Key Vault** | Secure token storage for server-side operations |
+| **Azure ML** | AI-powered music recommendations (optional) |
+
+## 🔌 API Integration Details
+
+### Spotify Web API
+**Base URL:** `https://api.spotify.com/v1`
+**Authentication:** OAuth 2.0 with PKCE flow
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/me` | Get current user profile |
+| `/me/top/tracks`, `/me/top/artists` | User's top items |
+| `/me/player/recently-played` | Recently played tracks |
+| `/me/tracks`, `/me/albums` | User's saved library |
+| `/me/player` | Playback state and control |
+| `/me/player/queue` | Add tracks to queue |
+| `/me/player/next`, `/me/player/previous` | Skip controls |
+| `/browse/new-releases` | New album releases |
+| `/browse/featured-playlists` | Curated playlists |
+| `/search` | Search tracks, artists, albums |
+| `/audio-features` | Track audio analysis (energy, danceability, etc.) |
+| `/recommendations` | Spotify's recommendation engine |
+| `/artists/{id}`, `/albums/{id}`, `/tracks/{id}` | Get specific items |
+
+**Required Scopes:**
+- `user-read-private`, `user-read-email` - Profile access
+- `user-read-currently-playing`, `user-read-playback-state` - Playback info
+- `user-modify-playback-state` - Control playback
+- `user-read-recently-played` - Listening history
+- `user-library-read`, `user-library-modify` - Library access
+- `user-top-read` - Top items
+- `playlist-read-private`, `playlist-read-collaborative` - Playlist access
+- `streaming` - Web Playback SDK (Premium only)
+
+---
+
+### Deezer API
+**Base URL:** `https://api.deezer.com`
+**Authentication:** None required (public endpoints)
+**CORS Proxy:** `https://corsproxy.io/`
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/chart/0/tracks` | Trending songs |
+| `/chart/0/albums` | Trending albums |
+| `/chart/0/artists` | Trending artists |
+| `/chart/0/playlists` | Featured playlists |
+| `/genre` | Browse music genres |
+| `/editorial` | Editorial content and categories |
+| `/search`, `/search/track`, `/search/artist`, `/search/album` | Search functionality |
+| `/artist/{id}` | Artist details |
+| `/artist/{id}/top` | Artist's top tracks |
+| `/artist/{id}/albums` | Artist's albums |
+| `/album/{id}` | Album details and tracks |
+| `/track/{id}` | Track details with 30s preview |
+| `/playlist/{id}` | Playlist details |
+
+**Use Cases:**
+- Fallback when Spotify token unavailable
+- 30-second track previews for non-Premium users
+- Genre browsing and discovery
+- Trending content without authentication
+
+---
+
+### YouTube Data API v3
+**Authentication:** OAuth 2.0 via Google Identity Services
+**Library:** `https://accounts.google.com/gsi/client`
+
+| Scope | Purpose |
+|-------|---------|
+| `youtube.readonly` | Access YouTube data |
+| `userinfo.profile` | User profile information |
+| `userinfo.email` | User email address |
+
+**Use Cases:**
+- Alternative login method
+- User profile retrieval
+- Potential video content integration
+
+---
+
+### Genius API
+**Base URL:** `https://api.genius.com`
+**Web Scraping URL:** `https://genius.com`
+**Authentication:** Bearer token (OAuth access token)
+**CORS Proxy:** `https://corsproxy.io/`
+
+#### API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/search` | Search for songs by title, artist, or lyrics |
+| `/songs/{id}` | Get detailed song information including lyrics URL |
+| `/artists/{id}` | Get artist details and social links |
+| `/artists/{id}/songs` | Get paginated list of artist's songs |
+
+#### Setup Instructions
+1. Go to [Genius API Clients](https://genius.com/api-clients)
+2. Create a new API client application
+3. Generate an access token (Client Access Token)
+4. Add to your `.env` file: `VITE_GENIUS_ACCESS_TOKEN=your_token_here`
+
+#### Features Implemented
+- **Song Search** - Find songs by title, artist, or lyrics content
+- **Lyrics Display** - Scrapes and displays full lyrics from Genius pages
+- **Lyrics Modal** - Popup modal for viewing lyrics without leaving the current page
+- **Charts/Trending** - Shows popular songs on Genius with lyrics access
+- **Artist Lookup** - Get artist information and their song catalog
+- **Song Details** - Full metadata including featured artists, album info, and release dates
+
+#### Components Using Genius
+| Component | Location | Features |
+|-----------|----------|----------|
+| `GeniusCharts` | Home Page | Displays trending songs with lyrics access |
+| `LyricsModal` | Common UI | Modal popup for viewing lyrics |
+| `LyricsDisplay` | Song Page | Inline collapsible lyrics section |
+
+#### Service Methods
+```javascript
+import { geniusService } from './services/geniusService';
+
+// Check if API is configured
+geniusService.isConfigured();
+
+// Search for songs
+const results = await geniusService.searchSongs('bohemian rhapsody');
+
+// Get song details
+const song = await geniusService.getSong(songId);
+
+// Get artist info
+const artist = await geniusService.getArtist(artistId);
+
+// Get artist's songs
+const songs = await geniusService.getArtistSongs(artistId, page, perPage);
+
+// Find song by title and artist (best match)
+const match = await geniusService.findSong('Shape of You', 'Ed Sheeran');
+
+// Get trending/hot songs
+const hotSongs = await geniusService.getHotSongs(20);
+
+// Get full lyrics for a song
+const { song, lyrics } = await geniusService.getSongLyrics(songId);
+
+// Search and get lyrics in one call
+const lyricsData = await geniusService.searchLyrics('Hello', 'Adele');
+```
+
+#### Response Format (Song)
+```javascript
+{
+  id: 123456,
+  title: "Song Title",
+  titleWithFeatured: "Song Title (feat. Artist)",
+  fullTitle: "Song Title by Artist",
+  artist: "Primary Artist",
+  artistId: 789,
+  artistImage: "https://...",
+  featuredArtists: [{ id, name, image }],
+  album: { id, name, coverArt, url },
+  albumArt: "https://...",
+  url: "https://genius.com/...",
+  lyricsPath: "/Artist-song-name-lyrics",
+  releaseDate: "2024-01-15",
+  releaseDateDisplay: "January 15, 2024",
+  description: "Song description...",
+  media: [], // Related media (YouTube, Spotify, etc.)
+  appleMusicId: "...",
+  spotifyUuid: "..."
+}
+```
+
+#### Response Format (Lyrics)
+```javascript
+{
+  found: true,
+  lyricsUrl: "https://genius.com/Artist-song-lyrics",
+  plainText: "Full lyrics as plain text...",
+  sections: [
+    { type: "header", text: "[Verse 1]" },
+    { type: "lyrics", text: "First verse lyrics..." },
+    { type: "header", text: "[Chorus]" },
+    { type: "lyrics", text: "Chorus lyrics..." }
+  ]
+}
+```
+
+#### Caching
+The service implements in-memory caching with a 5-minute TTL to reduce API calls:
+- Search results are cached by query
+- Song details are cached by ID
+- Scraped lyrics are cached by path
+
+---
+
+### Azure Key Vault (Backend)
+**Purpose:** Secure storage for Spotify refresh tokens
+
+| Operation | Purpose |
+|-----------|---------|
+| `getSecret` | Retrieve stored refresh token |
+| `setSecret` | Store new refresh token |
+
+**Endpoints Exposed:**
+- `POST /api/azure/spotify/refresh-token` - Store refresh token after OAuth
+- `GET /api/azure/spotify/access-token` - Get fresh access token (requires `x-service-key`)
+
+---
+
+### Azure ML (Backend, Optional)
+**Purpose:** AI-powered music recommendations
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/azure/ml/recommendations` | Get ML-based track recommendations |
+
+**Request Format:**
+```json
+{
+  "track": { "id": "spotify_track_id", "name": "Track Name" },
+  "audioFeatures": { "energy": 0.9, "danceability": 0.8 },
+  "history": [{ "currentTrackId": "...", "recommendedTrackId": "..." }]
+}
+```
 
 ## 📦 Prerequisites
 
@@ -122,6 +350,9 @@ VITE_AZURE_ML_RECS_LIMIT=20
 # Optional APIs
 VITE_YOUTUBE_CLIENT_ID=your_youtube_client_id
 VITE_YOUTUBE_API_KEY=your_youtube_api_key
+
+# Genius API (for lyrics and charts)
+VITE_GENIUS_ACCESS_TOKEN=your_genius_access_token
 
 # Backend
 VITE_BACKEND_URL=http://localhost:5175
@@ -207,12 +438,13 @@ musix/
 └── README.md
 \`\`\`
 
-## 🔗 API Integration
+## 🔗 Authentication Flows
 
 ### Spotify Authentication
-- **Flow**: OAuth 2.0 with PKCE
-- **File**: \`src/services/spotifyAuthService.js\`
-- **Scope**: User data, library access, playback
+- **Flow**: OAuth 2.0 with PKCE (Proof Key for Code Exchange)
+- **File**: `src/services/spotifyAuthService.js`
+- **Token Storage**: localStorage with automatic refresh
+- **Premium Detection**: Automatic fallback to display-only mode for free users
 
 ### Azure ML / Key Vault Token Service
 - **Key Vault**: Persist the long-lived Spotify refresh token securely using `AZURE_KEY_VAULT_URL` and `AZURE_SPOTIFY_REFRESH_SECRET_NAME`.
@@ -241,12 +473,26 @@ musix/
 - **Security**: Set `AZURE_ML_REQUIRE_SERVICE_KEY=true` if you need the `x-service-key` header for this route as well. Without it, access is limited to authenticated frontend clients but secrets stay on the server because Azure is invoked from backend code only.
 - **Security**: `AZURE_ML_REQUIRE_SERVICE_KEY` defaults to `true`, so callers must supply the same `x-service-key` token that protects `/api/azure/spotify/access-token`. Set it to `false` only for trusted private networks.
 
-### Available Endpoints
-- Search tracks, artists, albums
-- Get user's top items
-- Fetch user library
-- Get recommendations
-- Browse featured playlists
+### YouTube Authentication
+- **Flow**: OAuth 2.0 via Google Identity Services
+- **File**: `src/services/youtubeService.js`
+- **Library**: Dynamically loads `https://accounts.google.com/gsi/client`
+
+### Genius Integration
+- **Authentication**: Bearer token (API access token)
+- **File**: `src/services/geniusService.js`
+- **Setup**: Create client at https://genius.com/api-clients
+
+### Available Service Files
+| File | Purpose |
+|------|---------|
+| `spotifyServices.js` | Spotify API wrapper with caching and rate limiting |
+| `spotifyAuthService.js` | OAuth PKCE flow and token management |
+| `deezerServices.js` | Deezer API wrapper with fallback support |
+| `youtubeService.js` | Google OAuth and YouTube integration |
+| `geniusService.js` | Genius lyrics and song info |
+| `genreService.js` | Genre mapping and categorization |
+| `azureMlService.js` | Azure ML recommendations client |
 
 ## 🤝 Contributing
 

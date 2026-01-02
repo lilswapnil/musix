@@ -10,10 +10,13 @@ import {
   faCompactDisc,
   faUsers,
   faExternalLinkAlt,
-  faMusic
+  faMusic,
+  faFileAlt
 } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
+import LyricsDisplay from "../../../components/common/ui/LyricsDisplay";
+import LyricsModal from "../../../components/common/ui/LyricsModal";
 
 export default function Songs() {
   const { songId } = useParams();
@@ -26,6 +29,7 @@ export default function Songs() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [likedSongs, setLikedSongs] = useState({});
+  const [showLyricsModal, setShowLyricsModal] = useState(false);
   const audioRef = useRef(null);
   const navigate = useNavigate();
   
@@ -435,6 +439,15 @@ export default function Songs() {
                 <FontAwesomeIcon icon={faExternalLinkAlt} className="ml-2" />
               </a>
               
+              {/* Lyrics button */}
+              <button
+                onClick={() => setShowLyricsModal(true)}
+                className="bg-yellow-600/80 hover:bg-yellow-600 border border-white/30 text-white px-3 py-2 text-sm rounded-md inline-flex items-center transition-colors shadow-md"
+              >
+                <FontAwesomeIcon icon={faFileAlt} className="mr-2" />
+                Lyrics
+              </button>
+              
               {/* Spotify link */}
               <a 
                 href={`https://open.spotify.com/search/${encodeURIComponent(song.name + ' ' + song.artist)}`}
@@ -448,6 +461,16 @@ export default function Songs() {
           </div>
         </div>
       </div>
+      
+      {/* Lyrics Section */}
+      {song && (
+        <LyricsDisplay 
+          songTitle={song.name}
+          artistName={song.artist}
+          collapsible={true}
+          initiallyExpanded={false}
+        />
+      )}
       
       {/* Related Tracks Section - Using same styling as Artists.jsx top tracks */}
       {relatedTracks.length > 0 && (
@@ -551,6 +574,15 @@ export default function Songs() {
           </div>
         </div>
       )}
+
+      {/* Lyrics Modal */}
+      <LyricsModal
+        isOpen={showLyricsModal}
+        onClose={() => setShowLyricsModal(false)}
+        songTitle={song?.name}
+        artistName={song?.artist}
+        albumArt={song?.albumArt}
+      />
     </div>
   );
 }
