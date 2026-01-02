@@ -45,7 +45,6 @@ export default function LibraryPage() {
         try {
           const validToken = await ensureValidToken();
           if (validToken) {
-            console.log("Valid token obtained for library");
             setToken(validToken);
             setError(null);
           } else {

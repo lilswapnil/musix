@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
       try {
         // Quick check for valid session data
         if (hasValidSession()) {
-          console.log("Session data found, validating token");
           // Try to get a valid token and refresh if needed
           const token = await ensureValidToken();
           const profile = getUserProfile();

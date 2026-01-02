@@ -608,14 +608,12 @@ export const spotifyService = {
       });
       
       this._player.addListener('authentication_error', async ({ message }) => {
-        console.error('Failed to authenticate player:', message);
         // Non-fatal error; player bar shows display-only mode
-        console.warn('Player auth failed; display mode only. User can control via Spotify app.');
+        // User can still control playback via Spotify app
       });
       
       this._player.addListener('account_error', ({ message }) => {
         // Non-fatal; show as display-only
-        console.warn('Account error:', message);
       });
       
       this._player.addListener('playback_error', ({ message }) => {
@@ -630,14 +628,12 @@ export const spotifyService = {
       });
       
       this._player.addListener('ready', ({ device_id: devId }) => {
-        console.log('Spotify player ready with device ID:', devId);
         this._deviceId = devId;
         this._isPlayerReady = true;
         // Skip playback transfer; display-only mode
       });
       
       this._player.addListener('not_ready', () => {
-        console.log('Spotify player disconnected');
         this._isPlayerReady = false;
       });
       
