@@ -1,18 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 import { deezerService } from "../../../services/deezerServices";
 
+import useAudioPlayer from '../../../hooks/useAudioPlayer';
+
 export default function TrendingSongs() {
   const [likedSongs, setLikedSongs] = useState({});
-  const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [trendingSongs, setTrendingSongs] = useState([]);
-  const audioRef = useRef(null);
   const navigate = useNavigate();
+  const {
+    audioRef,
+    currentlyPlaying,
+    handlePlayPause
+  } = useAudioPlayer();
 
   useEffect(() => {
     const fetchTrending = async () => {
@@ -59,63 +64,7 @@ export default function TrendingSongs() {
     }
   }, []);
 
-  // Handle song playback
-  const handlePlayPause = (songId, previewUrl, event) => {
-    event.stopPropagation();
-    
-    // If clicked on currently playing song, pause it
-    if (currentlyPlaying === songId) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      setCurrentlyPlaying(null);
-      return;
-    }
-    
-    // If there's currently a song playing, pause and cleanup
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current = null;
-    }
-    
-    // Play the new song
-    if (previewUrl) {
-      // Create a new audio element
-      const audio = new Audio(previewUrl);
-      audio.addEventListener('ended', () => {
-        setCurrentlyPlaying(null);
-        audioRef.current = null;
-      });
-      audio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
-        setCurrentlyPlaying(null);
-        audioRef.current = null;
-      });
-      
-      audioRef.current = audio;
-      
-      // Use play() with promise handling to avoid interruption errors
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setCurrentlyPlaying(songId);
-          })
-          .catch((error) => {
-            // Only log if not an abort error (user clicked pause quickly)
-            if (error.name !== 'AbortError') {
-              console.error('Error playing audio:', error);
-            }
-            setCurrentlyPlaying(null);
-            audioRef.current = null;
-          });
-      } else {
-        setCurrentlyPlaying(songId);
-      }
-    }
-  };
+  // ...existing code...
 
   // Handle like button click
   const handleLike = (songId, event) => {

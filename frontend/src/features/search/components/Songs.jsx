@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import useAudioPlayer from '../../../hooks/useAudioPlayer';
 import { useParams, useNavigate } from "react-router-dom";
 import { deezerService } from "../../../services/deezerServices";
 import { geniusService } from "../../../services/geniusService";
@@ -21,10 +22,14 @@ export default function Songs() {
   const [geniusSong, setGeniusSong] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isPlaying, setIsPlaying] = useState(false);
   const [liked, setLiked] = useState(false);
-  const audioRef = useRef(null);
   const navigate = useNavigate();
+  const {
+    audioRef,
+    isPlaying,
+    handlePlayPause,
+    setIsPlaying
+  } = useAudioPlayer();
   
   // Load song data and liked songs on mount
   useEffect(() => {
@@ -110,29 +115,13 @@ export default function Songs() {
     
     fetchSong();
     
-    // Cleanup audio on unmount
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
+    // Cleanup handled by useAudioPlayer
   }, [songId]);
   
-  // Handle song playback
-  const handlePlayPause = () => {
+  // Wrapper for useAudioPlayer to play/pause this song
+  const handleSongPlayPause = () => {
     if (!song || !song.previewUrl) return;
-    
-    if (isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-    } else {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(song.previewUrl);
-        audioRef.current.addEventListener('ended', () => setIsPlaying(false));
-      }
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
+    handlePlayPause(song.id, song.previewUrl);
   };
 
   // Handle like button click
@@ -271,7 +260,7 @@ export default function Songs() {
             {/* Play overlay on album art */}
             {song.previewUrl && (
               <button
-                onClick={handlePlayPause}
+                onClick={handleSongPlayPause}
                 className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
               >
                 <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
@@ -319,7 +308,7 @@ export default function Songs() {
             {/* Play button */}
             {song.previewUrl && (
               <button
-                onClick={handlePlayPause}
+                onClick={handleSongPlayPause}
                 className="bg-accent hover:bg-accent/80 text-white px-5 py-2 text-sm rounded-full inline-flex items-center gap-2 transition-all shadow-lg hover:scale-105"
               >
                 <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
