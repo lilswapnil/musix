@@ -46,86 +46,6 @@ export const spotifyService = {
   _isPlayerReady: false,
   _onPlayerStateChanged: null,
 
-  /**
-   * Generate random string for state parameter
-   */
-  _generateRandomString: (length = 32) => {
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from({ length }, () => 
-      possible.charAt(Math.floor(Math.random() * possible.length))).join('');
-  },
-
-  /**
-   * Generate authorization URL for Spotify OAuth
-   */
-  createAuthUrl: async (showDialog = true) => {
-    try {
-      const state = spotifyService._generateRandomString();
-      const codeVerifier = spotifyService._generateRandomString(64);
-      const codeChallenge = await spotifyService._generateCodeChallenge(codeVerifier);
-      
-      localStorage.setItem('spotify_auth_state', state);
-      localStorage.setItem('spotify_code_verifier', codeVerifier);
-      
-      const params = new URLSearchParams({
-        client_id: spotifyService._clientId,
-        response_type: 'code',
-        redirect_uri: spotifyService._redirectUri,
-        state,
-        scope: spotifyService._scopes.join(' '),
-        code_challenge_method: 'S256',
-        code_challenge: codeChallenge,
-        show_dialog: showDialog ? 'true' : 'false'
-      });
-      
-      return {
-        url: `https://accounts.spotify.com/authorize?${params}`,
-        verifier: codeVerifier
-      };
-    } catch (error) {
-      console.error('Error creating auth URL:', error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Exchange authorization code for access token
-   */
-  getTokenFromCode: async (code, verifier) => {
-    try {
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          client_id: spotifyService._clientId,
-          grant_type: 'authorization_code',
-          code,
-          redirect_uri: spotifyService._redirectUri,
-          code_verifier: verifier
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Spotify auth error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Save token with expiration
-      localStorage.setItem(spotifyService._tokenKey, JSON.stringify({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires: Date.now() + (data.expires_in * 1000)
-      }));
-      
-      return data;
-    } catch (error) {
-      console.error('Error exchanging code for token:', error);
-      throw error;
-    }
-  },
   
   /**
    * Refresh access token using refresh token
@@ -569,18 +489,6 @@ export const spotifyService = {
     }
   },
   
-  /**
-   * Create a redirect to the Spotify login page
-   */
-  redirectToSpotify: async (showDialog = true) => {
-    try {
-      const { url } = await spotifyService.createAuthUrl(showDialog);
-      window.location.href = url;
-    } catch (error) {
-      console.error('Error redirecting to Spotify:', error);
-      throw error;
-    }
-  },
 
   /**
    * Initialize Spotify Web Playback SDK
