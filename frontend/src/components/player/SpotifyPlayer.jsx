@@ -11,11 +11,9 @@ import {
 
 export default function SpotifyPlayer() {
   const { 
-    isReady, 
     isPlaying, 
     currentTrack, 
     playerError, 
-    isPremium,
     togglePlay,
     skipToNext,
     skipToPrevious,

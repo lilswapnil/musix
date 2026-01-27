@@ -52,7 +52,7 @@ export function useSpotifyPlayer() {
           setIsReady(success);
           if (!success) setPlayerError('Failed to initialize Spotify player');
         }
-      } catch (error) {
+      } catch {
         // Silently handle errors in player init
         if (mounted) {
           setPlayerError(null);

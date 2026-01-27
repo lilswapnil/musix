@@ -32,7 +32,7 @@ export default function AIRecommendations({ mode = 'single' }) {
         const track = await aiRecommendationService.getNextRecommendation();
         setNextRecommendation(track);
       }
-    } catch (error) {
+    } catch {
       // Silently ignore errors; don't log token validation issues
     } finally {
       setIsLoading(false);
@@ -48,7 +48,7 @@ export default function AIRecommendations({ mode = 'single' }) {
   const handlePlayTrack = async (trackUri) => {
     try {
       await spotifyService.addToQueue(trackUri);
-    } catch (error) {
+    } catch {
       // Silently ignore errors
     }
   };

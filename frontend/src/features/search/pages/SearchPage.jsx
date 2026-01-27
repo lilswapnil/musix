@@ -218,7 +218,7 @@ export default function SearchPage() {
       if (savedLikes) {
         setLikedSongs(JSON.parse(savedLikes));
       }
-    } catch (err) {
+    } catch {
       // Ignore
     }
 

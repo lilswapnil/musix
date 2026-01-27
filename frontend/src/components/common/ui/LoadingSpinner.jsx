@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LoadingSpinner({ message = "Loading..." }) {
+const LoadingSpinner = ({ message = "Loading..." }) => {
   return (
     <div className="flex justify-center items-center h-64">
       <div className="animate-pulse flex flex-col items-center">
@@ -9,4 +9,6 @@ export default function LoadingSpinner({ message = "Loading..." }) {
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(LoadingSpinner);

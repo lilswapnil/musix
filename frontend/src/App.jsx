@@ -1,8 +1,9 @@
 import React, { lazy, Suspense } from 'react';
-import './App.css'
+import './App.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PageSkeleton from './components/common/ui/PageSkeleton';
+import { musicRoutes } from './routes/musicRoutes';
 
 // Lazy-loaded routes for faster initial load
 const AuthCallback = lazy(() => import('./features/auth/components/AuthCallback'));
@@ -13,10 +14,6 @@ const HomePage = lazy(() => import('./features/home/pages/HomePage'));
 const LibraryPage = lazy(() => import('./features/library/pages/LibraryPage'));
 const Account = lazy(() => import('./features/account/pages/AccountPage'));
 const SearchPage = lazy(() => import('./features/search/pages/SearchPage'));
-const Albums = lazy(() => import('./features/search/components/Albums'));
-const Artist = lazy(() => import('./features/search/components/Artists'));
-const Songs = lazy(() => import('./features/search/components/Songs'));
-const Genres = lazy(() => import('./features/search/components/Genres'));
 
 const routes = [
   // Auth pages without navbar/layout
@@ -87,38 +84,8 @@ const routes = [
           </Suspense>
         )
       },
-      {
-        path: "album/:albumId",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Albums />
-          </Suspense>
-        )
-      },
-      {
-        path: "artist/:artistId",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Artist />
-          </Suspense>
-        )
-      },
-      {
-        path: "song/:songId",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Songs />
-          </Suspense>
-        )
-      },
-      {
-        path: "genre/:genreName",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Genres />
-          </Suspense>
-        )
-      }
+      // ...existing code...
+      ...musicRoutes
     ]
   }
 ];

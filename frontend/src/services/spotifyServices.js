@@ -517,21 +517,21 @@ export const spotifyService = {
       });
       
       // Setup player event listeners
-      this._player.addListener('initialization_error', ({ message }) => {
-        console.error('Failed to initialize player:', message);
+      this._player.addListener('initialization_error', () => {
+        console.error('Failed to initialize player');
       });
       
-      this._player.addListener('authentication_error', async ({ message }) => {
+      this._player.addListener('authentication_error', async () => {
         // Non-fatal error; player bar shows display-only mode
         // User can still control playback via Spotify app
       });
       
-      this._player.addListener('account_error', ({ message }) => {
+      this._player.addListener('account_error', () => {
         // Non-fatal; show as display-only
       });
       
-      this._player.addListener('playback_error', ({ message }) => {
-        console.error('Playback error:', message);
+      this._player.addListener('playback_error', () => {
+        console.error('Playback error');
       });
       
       this._player.addListener('player_state_changed', state => {

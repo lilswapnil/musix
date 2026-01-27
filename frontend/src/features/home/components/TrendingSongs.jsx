@@ -14,7 +14,7 @@ export default function TrendingSongs() {
   const [trendingSongs, setTrendingSongs] = useState([]);
   const navigate = useNavigate();
   const {
-    audioRef,
+    // audioRef,
     currentlyPlaying,
     handlePlayPause
   } = useAudioPlayer();

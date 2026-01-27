@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getAccessToken, getUserProfile, getRefreshToken, removeAccessToken } from '../utils/tokenStorage';
 import { ensureValidToken } from '../utils/refreshToken';
 import { AuthContext } from './useAuth';
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
                 setIsAuthenticated(false);
                 setUserProfile(null);
               }
-            } catch (validateError) {
+              } catch {
               // Network error during validation; clear and redirect
               removeAccessToken();
               setIsAuthenticated(false);
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(false);
           setUserProfile(null);
         }
-      } catch (error) {
+      } catch {
         // Silently handle errors; don't show console errors
         setIsAuthenticated(false);
         setUserProfile(null);
@@ -102,15 +102,17 @@ export const AuthProvider = ({ children }) => {
     console.log('User successfully logged out');
   };
 
+  const contextValue = useMemo(() => ({
+    isAuthenticated,
+    isLoading,
+    userProfile,
+    setUserProfile,
+    setIsAuthenticated,
+    logout
+  }), [isAuthenticated, isLoading, userProfile]);
+
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      isLoading,
-      userProfile, 
-      setUserProfile,
-      setIsAuthenticated,
-      logout
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

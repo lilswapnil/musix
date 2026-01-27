@@ -1,5 +1,6 @@
 import { generatePKCEChallenge, storeCodeVerifier, getCodeVerifier, clearCodeVerifier } from '../utils/pkceUtils';
 import { setAccessToken, setRefreshToken, setUserProfile, getRefreshToken } from '../utils/tokenStorage';
+import { fetchWithHandling } from './requestUtils';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
@@ -8,7 +9,7 @@ const persistRefreshTokenInAzure = async (refreshToken) => {
   if (!refreshToken || !BACKEND_BASE_URL) return;
 
   try {
-    await fetch(`${BACKEND_BASE_URL}/api/azure/spotify/refresh-token`, {
+    await fetchWithHandling(`${BACKEND_BASE_URL}/api/azure/spotify/refresh-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken })
@@ -81,7 +82,7 @@ export const exchangeCodeForToken = async (code) => {
   const redirectUri = getRedirectUri();
 
   try {
-    const response = await fetch('https://accounts.spotify.com/api/token', {
+    const data = await fetchWithHandling('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -92,21 +93,12 @@ export const exchangeCodeForToken = async (code) => {
         code_verifier: codeVerifier,
       }).toString(),
     });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      setAccessToken(data.access_token, data.expires_in);
-      setRefreshToken(data.refresh_token);
-      persistRefreshTokenInAzure(data.refresh_token);
-      clearCodeVerifier();
-      await fetchAndStoreUserProfile(data.access_token);
-      return data.access_token;
-    } else {
-      console.error('Token exchange failed:', data);
-      const errorMsg = data.error_description || data.error || 'Token exchange failed';
-      throw new Error(errorMsg);
-    }
+    setAccessToken(data.access_token, data.expires_in);
+    setRefreshToken(data.refresh_token);
+    persistRefreshTokenInAzure(data.refresh_token);
+    clearCodeVerifier();
+    await fetchAndStoreUserProfile(data.access_token);
+    return data.access_token;
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     clearCodeVerifier();
@@ -117,21 +109,13 @@ export const exchangeCodeForToken = async (code) => {
 // Add new function to fetch user profile
 export const fetchAndStoreUserProfile = async (accessToken) => {
   try {
-    const response = await fetch('https://api.spotify.com/v1/me', {
+    const userProfile = await fetchWithHandling('https://api.spotify.com/v1/me', {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
     });
-
-    if (response.ok) {
-      const userProfile = await response.json();
-      setUserProfile(userProfile);
-      return userProfile;
-    } else {
-      const errorData = await response.json();
-      console.error('Failed to fetch user profile:', errorData);
-      return null;
-    }
+    setUserProfile(userProfile);
+    return userProfile;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return null;
@@ -143,7 +127,7 @@ export const refreshAccessToken = async () => {
   if (!refreshToken) throw new Error('Refresh token is missing.');
 
   try {
-    const response = await fetch('https://accounts.spotify.com/api/token', {
+    const data = await fetchWithHandling('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -152,15 +136,9 @@ export const refreshAccessToken = async () => {
         client_id: CLIENT_ID,
       }).toString(),
     });
-
-    const data = await response.json();
-    if (response.ok) {
-      setAccessToken(data.access_token, data.expires_in);
-      if (data.refresh_token) setRefreshToken(data.refresh_token);
-      return data.access_token;
-    } else {
-      throw new Error(data.error || 'Token refresh failed.');
-    }
+    setAccessToken(data.access_token, data.expires_in);
+    if (data.refresh_token) setRefreshToken(data.refresh_token);
+    return data.access_token;
   } catch (error) {
     console.error('Error refreshing access token:', error);
     throw error;

@@ -33,7 +33,7 @@ export default function LoginPage() {
       setIsYouTubeLoading(true);
       setError(null);
 
-      const { accessToken, userProfile } = await youtubeService.signIn();
+        const { userProfile } = await youtubeService.signIn();
 
       // Update auth context with user profile
       setIsAuthenticated(true);

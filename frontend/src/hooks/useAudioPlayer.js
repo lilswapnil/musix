@@ -36,7 +36,7 @@ export default function useAudioPlayer() {
       setIsPlaying(false);
       audioRef.current = null;
     });
-    audio.addEventListener('error', (e) => {
+    audio.addEventListener('error', () => {
       setCurrentlyPlaying(null);
       setIsPlaying(false);
       audioRef.current = null;

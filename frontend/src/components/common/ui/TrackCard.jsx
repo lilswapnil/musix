@@ -5,7 +5,7 @@ import { faHeart, faPlay, faPause, faExternalLinkAlt } from "@fortawesome/free-s
 /**
  * Reusable track card component used across the application
  */
-export default function TrackCard({
+const TrackCard = ({
   id,
   title,
   artist,
@@ -17,7 +17,7 @@ export default function TrackCard({
   onPlay,
   onLike,
   size = "normal" // "small", "normal", or "large"
-}) {
+}) => {
   // Handle card click - either play the song or open external URL
   const handleCardClick = () => {
     if (onPlay && previewUrl) {
@@ -82,4 +82,6 @@ export default function TrackCard({
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(TrackCard);

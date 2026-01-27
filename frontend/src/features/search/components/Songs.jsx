@@ -18,17 +18,16 @@ import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 export default function Songs() {
   const { songId } = useParams();
   const [song, setSong] = useState(null);
-  const [artist, setArtist] = useState(null);
   const [geniusSong, setGeniusSong] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [liked, setLiked] = useState(false);
   const navigate = useNavigate();
   const {
-    audioRef,
+    // audioRef,
     isPlaying,
     handlePlayPause,
-    setIsPlaying
+    // setIsPlaying
   } = useAudioPlayer();
   
   // Load song data and liked songs on mount
@@ -72,8 +71,8 @@ export default function Songs() {
         // Get artist details if available
         if (songData.artist && songData.artist.id) {
           try {
-            const artistData = await deezerService.getArtist(songData.artist.id);
-            setArtist(artistData);
+            await deezerService.getArtist(songData.artist.id);
+            // setArtist removed (artist state not used)
           } catch (artistErr) {
             console.warn('Could not fetch artist details:', artistErr);
           }
@@ -309,7 +308,7 @@ export default function Songs() {
             {song.previewUrl && (
               <button
                 onClick={handleSongPlayPause}
-                className="bg-accent hover:bg-accent/80 text-white px-5 py-2 text-sm rounded-full inline-flex items-center gap-2 transition-all shadow-lg hover:scale-105"
+                className="bg-accent hover:bg-accent/80 text-black px-5 py-2 text-sm rounded-full inline-flex items-center gap-2 transition-all shadow-lg hover:scale-105"
               >
                 <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
                 {isPlaying ? "Pause" : "Play Preview"}
