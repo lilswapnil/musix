@@ -14,6 +14,16 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuth = async () => {
       try {
+        // GUARD: Detect infinite ?p= &q= parameter loop and break it
+        const hasPQParams = searchParams.has('p') && searchParams.has('q') && !searchParams.get('code');
+        if (hasPQParams) {
+          clearCodeVerifier();
+          clearAuthData();
+          setError('Invalid callback URL. Please try logging in again.');
+          setTimeout(() => navigate('/login', { replace: true }), 2000);
+          return;
+        }
+
         // Check if we already have a token
         const existingToken = getAccessToken();
         if (existingToken) {
