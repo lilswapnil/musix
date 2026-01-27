@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { exchangeCodeForToken } from '../../../services/spotifyAuthService';
-import { getAccessToken, clearCodeVerifier, removeAccessToken, removeRefreshToken } from '../../../utils/tokenStorage';
+import { getAccessToken, removeAccessToken, removeRefreshToken } from '../../../utils/tokenStorage';
+import { clearCodeVerifier } from '../../../utils/pkceUtils';
 import genreService from '../../../services/genreService';
 
 export default function AuthCallback() {
