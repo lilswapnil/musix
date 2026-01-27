@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { exchangeCodeForToken } from '../../../services/spotifyAuthService';
-import { getAccessToken } from '../../../utils/tokenStorage';
+import { getAccessToken, clearCodeVerifier, removeAccessToken, removeRefreshToken } from '../../../utils/tokenStorage';
 import genreService from '../../../services/genreService';
 
 export default function AuthCallback() {
@@ -25,10 +25,15 @@ export default function AuthCallback() {
         const code = searchParams.get('code');
 
         if (!code) {
+          // Clear any PKCE or token storage to avoid accidental reuse
+          clearCodeVerifier && clearCodeVerifier();
+          removeAccessToken && removeAccessToken();
+          removeRefreshToken && removeRefreshToken();
           const errorMsg = searchParams.get('error') || 'No authorization code found';
           console.error('Auth error:', errorMsg);
           setError(errorMsg);
-          setTimeout(() => navigate('/login'), 2000);
+          // Redirect to login without query params
+          setTimeout(() => navigate('/login', { replace: true }), 2000);
           return;
         }
 
@@ -44,10 +49,15 @@ export default function AuthCallback() {
         setStatus('Success! Opening app...');
         setTimeout(() => navigate('/home'), 500);
       } catch (error) {
+        // Clear any PKCE or token storage to avoid accidental reuse
+        clearCodeVerifier && clearCodeVerifier();
+        removeAccessToken && removeAccessToken();
+        removeRefreshToken && removeRefreshToken();
         console.error('Authentication failed:', error);
         const errorMsg = error.message || 'Authentication failed. Please try again.';
         setError(errorMsg);
-        setTimeout(() => navigate('/login'), 3000);
+        // Redirect to login without query params
+        setTimeout(() => navigate('/login', { replace: true }), 3000);
       }
     };
 
