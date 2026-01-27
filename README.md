@@ -434,5 +434,5 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 <div align="center">
   <strong>Made with ❤️ by Scott</strong>
   <br/>
-  <sub>Happy streaming! 🎧</sub>
+  <sub>Happy Discovering! 🎧</sub>
 </div>
