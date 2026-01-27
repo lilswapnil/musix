@@ -59,38 +59,7 @@
       font-weight: 500;
     }
   </style>
-  <script>
-    (function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const error = urlParams.get('error');
-      const errorDescription = urlParams.get('error_description');
-
-      const redirectToApp = (pathname, params = {}) => {
-        const target = new URL(pathname, window.location.origin);
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            target.searchParams.set(key, value);
-          }
-        });
-        window.location.replace(target.toString());
-      };
-
-      if (error) {
-        console.error('Spotify auth error:', error, errorDescription);
-        redirectToApp('/login', { error: errorDescription || error });
-        return;
-      }
-
-      if (code) {
-        redirectToApp('/callback', { code });
-        return;
-      }
-
-      console.warn('No authorization code received');
-      redirectToApp('/login', { error: 'No authorization code received' });
-    })();
-  </script>
+  <!-- No redirect logic. This is a static fallback page. -->
 </head>
 <body>
   <div class="container">
