@@ -53,7 +53,7 @@ export default function NavBar() {
 
           {/* Navigation links - hidden on mobile, absolute center on larger screens */}
           <div className="hidden md:flex absolute left-0 right-0 justify-center">
-            <div className="flex items-center space-x-4 lg:space-x-8">
+            <div className="flex items-center space-x-4">
               <NavLink 
                 to="/home" 
                 className={({isActive}) => 

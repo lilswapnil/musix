@@ -498,64 +498,92 @@ export const spotifyService = {
     // Check premium status first to avoid unnecessary SDK errors
     const hasPremium = await this.isPremiumAccount();
     if (!hasPremium) {
-      return false; // Skip SDK initialization for non-premium users
+      this._player = null;
+      this._deviceId = null;
+      this._isPlayerReady = false;
+      throw new Error('Spotify Premium required for playback');
     }
-    
-    if (!window.Spotify) {
-      await this._loadSpotifyScript();
+
+    // Robust SDK loading with error handling
+    try {
+      if (!window.Spotify) {
+        await this._loadSpotifyScript();
+      }
+    } catch (sdkErr) {
+      this._player = null;
+      this._deviceId = null;
+      this._isPlayerReady = false;
+      throw new Error('Failed to load Spotify Web Playback SDK');
     }
-    
+
     this._onPlayerStateChanged = onPlayerStateChanged;
-    
+
     try {
       const token = await this.getAccessToken();
-      
+
       this._player = new window.Spotify.Player({
         name: 'Musix Web Player',
         getOAuthToken: cb => { cb(token); },
         volume: 0.5
       });
-      
+
       // Setup player event listeners
-      this._player.addListener('initialization_error', () => {
-        console.error('Failed to initialize player');
+      this._player.addListener('initialization_error', e => {
+        console.error('Failed to initialize player', e);
       });
-      
-      this._player.addListener('authentication_error', async () => {
-        // Non-fatal error; player bar shows display-only mode
-        // User can still control playback via Spotify app
+
+      this._player.addListener('authentication_error', async e => {
+        console.error('Spotify authentication error', e);
       });
-      
-      this._player.addListener('account_error', () => {
-        // Non-fatal; show as display-only
+
+      this._player.addListener('account_error', e => {
+        console.error('Spotify account error', e);
       });
-      
-      this._player.addListener('playback_error', () => {
-        console.error('Playback error');
+
+      this._player.addListener('playback_error', e => {
+        console.error('Playback error', e);
       });
-      
+
       this._player.addListener('player_state_changed', state => {
         if (!state) return;
         if (this._onPlayerStateChanged) {
           this._onPlayerStateChanged(state);
         }
       });
-      
-      this._player.addListener('ready', ({ device_id: devId }) => {
-        this._deviceId = devId;
-        this._isPlayerReady = true;
-        // Skip playback transfer; display-only mode
+
+      // Wait for player to be ready and transfer playback
+      const readyPromise = new Promise((resolve, reject) => {
+        this._player.addListener('ready', async ({ device_id: devId }) => {
+          this._deviceId = devId;
+          this._isPlayerReady = true;
+          // Attempt to transfer playback to this device for reliable playback
+          try {
+            await this.transferPlayback(devId, false);
+          } catch (err) {
+            console.warn('Could not transfer playback:', err);
+          }
+          resolve(true);
+        });
+        this._player.addListener('not_ready', () => {
+          this._isPlayerReady = false;
+        });
+        // Fallback: timeout if not ready in 10s
+        setTimeout(() => {
+          if (!this._isPlayerReady) {
+            reject(new Error('Spotify player did not become ready'));
+          }
+        }, 10000);
       });
-      
-      this._player.addListener('not_ready', () => {
-        this._isPlayerReady = false;
-      });
-      
+
       await this._player.connect();
+      await readyPromise;
       return true;
     } catch (error) {
+      this._player = null;
+      this._deviceId = null;
+      this._isPlayerReady = false;
       console.error('Error initializing Spotify player:', error);
-      return false;
+      throw new Error('Failed to initialize Spotify player: ' + (error?.message || error));
     }
   },
 

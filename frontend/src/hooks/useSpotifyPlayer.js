@@ -14,25 +14,23 @@ export function useSpotifyPlayer() {
   // Initialize player
   useEffect(() => {
     let mounted = true;
-    
+
     const initPlayer = async () => {
       try {
-        // Check if user has premium
+        // Check if user has premium and initialize player
         const hasPremium = await spotifyService.isPremiumAccount();
-        
         if (mounted) setIsPremium(hasPremium);
-        
-        // Only initialize the player SDK for premium users
-        // Non-premium users get display-only mode without SDK overhead
         if (!hasPremium) {
-          if (mounted) setIsReady(false);
+          if (mounted) {
+            setIsReady(false);
+            setPlayerError('Spotify Premium required for playback');
+          }
           return;
         }
-        
+
         // Initialize the player with state change callback
-        const success = await spotifyService.initializePlayer((state) => {
+        await spotifyService.initializePlayer((state) => {
           if (!mounted) return;
-          
           // Update track info
           if (state.track_window?.current_track) {
             setCurrentTrack({
@@ -44,28 +42,26 @@ export function useSpotifyPlayer() {
               durationMs: state.duration
             });
           }
-          
           setIsPlaying(!state.paused);
         });
-        
         if (mounted) {
-          setIsReady(success);
-          if (!success) setPlayerError('Failed to initialize Spotify player');
-        }
-      } catch {
-        // Silently handle errors in player init
-        if (mounted) {
+          setIsReady(true);
           setPlayerError(null);
+        }
+      } catch (err) {
+        if (mounted) {
+          setIsReady(false);
+          setPlayerError(err?.message || 'Failed to initialize Spotify player');
         }
       }
     };
-    
+
     if (spotifyService.isLoggedIn()) {
       initPlayer();
     } else {
       setPlayerError('Login required for playback');
     }
-    
+
     return () => {
       mounted = false;
       spotifyService.disconnectPlayer();
