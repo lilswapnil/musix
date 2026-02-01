@@ -1,7 +1,19 @@
 import React, { lazy, Suspense } from 'react';
 import PageSkeleton from '../components/common/ui/PageSkeleton';
 
+import { deezerService } from '../services/deezerServices';
 const Albums = lazy(() => import('../features/search/components/Albums'));
+
+// Loader for preloading album data before rendering Albums page
+export async function albumLoader({ params }) {
+  if (!params.albumId) throw new Response('Album ID required', { status: 400 });
+  try {
+    const albumData = await deezerService.getAlbum(params.albumId);
+    return { albumData };
+  } catch (err) {
+    throw new Response('Album not found', { status: 404 });
+  }
+}
 const Artists = lazy(() => import('../features/search/components/Artists'));
 const Songs = lazy(() => import('../features/search/components/Songs'));
 const Genres = lazy(() => import('../features/search/components/Genres'));
@@ -29,6 +41,7 @@ export const musicRoutes = [
           },
           {
             path: 'album/:albumId',
+            loader: albumLoader,
             element: (
               <Suspense fallback={<PageSkeleton />}>
                 <Albums />
@@ -47,6 +60,7 @@ export const musicRoutes = [
       },
       {
         path: 'album/:albumId',
+        loader: albumLoader,
         element: (
           <Suspense fallback={<PageSkeleton />}>
             <Albums />
@@ -103,6 +117,7 @@ export const musicRoutes = [
   },
   {
     path: 'album/:albumId',
+    loader: albumLoader,
     element: (
       <Suspense fallback={<PageSkeleton />}>
         <Albums />

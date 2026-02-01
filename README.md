@@ -8,6 +8,13 @@ A modern music streaming web application that integrates with Spotify API to dis
 [![Spotify API](https://img.shields.io/badge/Spotify_API-v1-1DB954?logo=spotify&logoColor=white)](https://developer.spotify.com/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
+## 📸 Screenshot
+
+<p align="center">
+  <img src="./frontend/assets/musix-preview.png" width="80%" alt="Moviez Preview" />
+</p>
+
+
 ## 📋 Table of Contents
 
 - [Features](#-features)

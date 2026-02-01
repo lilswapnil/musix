@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { deezerService } from '../../../services/deezerServices';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { youtubeService } from '../../../services/youtubeService';
 import { redirectToSpotify } from '../../../services/spotifyAuthService';
@@ -6,6 +7,8 @@ import { useAuth } from '../../../context/useAuth';
 import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {
+  const [albumArts, setAlbumArts] = useState([]);
+  const [albumsLoading, setAlbumsLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setIsAuthenticated, setUserProfile } = useAuth();
@@ -18,7 +21,7 @@ export default function LoginPage() {
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
     }
-    
+
     // Only try to initialize YouTube if it's configured
     if (youtubeService.isConfigured()) {
       youtubeService.initClient().catch((error) => {
@@ -26,6 +29,26 @@ export default function LoginPage() {
         // Don't show error to user - they can still use Spotify
       });
     }
+
+    // Fetch trending albums for background grid
+    const fetchAlbums = async () => {
+      try {
+        setAlbumsLoading(true);
+        const response = await deezerService.getTrendingAlbums(50);
+        if (response && response.data) {
+          setAlbumArts(
+            response.data
+              .map(album => album.cover_big || album.cover_medium)
+              .filter(Boolean)
+          );
+        }
+      } catch (e) {
+        setAlbumArts([]);
+      } finally {
+        setAlbumsLoading(false);
+      }
+    };
+    fetchAlbums();
   }, [searchParams]);
 
   const handleYouTubeLogin = async () => {
@@ -59,14 +82,50 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary to-primary-dark flex flex-col items-center justify-center p-12">
+    <div className="min-h-screen relative flex flex-col items-center justify-center p-12 overflow-hidden">
+      {/* Album art grid background */}
+      <div className="absolute inset-0 z-0 pointer-events-none select-none">
+        <div className="w-full h-full grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 opacity-30 blur-sm">
+          {albumArts.map((art, idx) => (
+            <img
+              key={idx}
+              src={art}
+              alt="Album Art"
+              className="w-full h-full object-contain rounded shadow-md"
+              loading="lazy"
+              draggable="false"
+              style={{ aspectRatio: '1/1' }}
+            />
+          ))}
+        </div>
+        {/* Overlay for darkening and gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/90" />
+      </div>
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+          <div className="w-full h-64 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-0 opacity-60 blur-[2px]">
+            {albumArts.map((art, idx) => (
+              <img
+                key={idx}
+                src={art}
+                alt="Album Art"
+                className="w-full h-full object-contain bg-black rounded shadow-md"
+                loading="lazy"
+                draggable="false"
+                style={{ aspectRatio: '1/1' }}
+              />
+            ))}
+          </div>
+          {/* Overlay for darkening and gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
+        </div>
+
       {/* Logo at the top */}
-      <div className="mb-8 text-center">
+      <div className="mb-8 text-center z-10">
         <img src={logo} alt="Musix" className="h-15 w-auto" />
         <p className="text-muted">Your music companion</p>
       </div>
 
-      <div className="w-full max-w-md rounded-lg glass-card p-8 shadow-2xl">
+      <div className="w-full max-w-md rounded-lg glass-card p-8 shadow-2xl z-10">
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-bold text-white">Unwind Yourself</h1>
           <p className="text-muted">Connect with your music.</p>

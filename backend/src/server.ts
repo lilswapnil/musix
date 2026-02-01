@@ -1,3 +1,4 @@
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -27,6 +28,11 @@ export function createServer() {
   app.use("/api/health", healthRouter);
   app.use("/api/me", meRouter);
   app.use("/api/recommendations", recommendationsRouter);
+  
+    // Root route handler to prevent 404 on GET /
+    app.get("/", (req, res) => {
+      res.status(200).send({ message: "Musix backend is running." });
+    });
 
   return app;
 }
