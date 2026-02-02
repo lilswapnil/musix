@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import { deezerService } from "../../../services/deezerServices";
 import { spotifyService } from "../../../services/spotifyServices";
-import { ensureValidToken } from "../../../utils/refreshToken";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 
-export default function FeaturedPlaylists() {
+export default function FeaturedPlaylists({ useSpotify = false }) {
     const navigate = useNavigate();
     const [playlists, setFeaturedPlaylist] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,27 +14,46 @@ export default function FeaturedPlaylists() {
         const fetchFeaturedPlaylists = async () => {
             try {
                 setLoading(true);
-                const token = await ensureValidToken();
-                if (!token) {
-                    throw new Error('Login required to load Spotify charts');
+
+                if (useSpotify) {
+                    try {
+                        const response = await spotifyService.getFeaturedPlaylists(20);
+                        const items = response?.playlists?.items || [];
+                        if (items.length > 0) {
+                            const formattedPlaylists = items.map((playlist) => ({
+                                id: playlist.id,
+                                title: playlist.name,
+                                coverArt: playlist.images?.[0]?.url || "path/to/default/image.jpg",
+                                link: playlist.external_urls?.spotify,
+                                description: playlist.description,
+                                tracksCount: playlist.tracks?.total || 0,
+                                source: 'spotify'
+                            }));
+                            setFeaturedPlaylist(formattedPlaylists);
+                            setError("");
+                            return;
+                        }
+                    } catch (spotifyError) {
+                        console.warn("Spotify featured playlists failed, falling back to Deezer:", spotifyError);
+                    }
                 }
 
-                const response = await spotifyService.getFeaturedPlaylists(20);
-                const items = response?.playlists?.items || [];
+                const response = await deezerService.getFeaturedPlaylists(20); // Fetch 20 playlists
 
-                if (items.length > 0) {
-                    const formattedPlaylists = items.map((playlist) => ({
+                if (response && response.data) {
+                    const formattedPlaylists = response.data.map((playlist) => ({
                         id: playlist.id,
-                        title: playlist.name,
-                        coverArt: playlist.images?.[0]?.url || "path/to/default/image.jpg",
-                        link: playlist.external_urls?.spotify,
+                        title: playlist.title,
+                        coverArt: playlist.picture_medium || playlist.picture_small || "path/to/default/image.jpg",
+                        link: playlist.link,
                         description: playlist.description,
-                        tracksCount: playlist.tracks?.total || 0,
+                        tracksCount: playlist.nb_tracks || 0,
+                        source: 'deezer'
                     }));
 
                     setFeaturedPlaylist(formattedPlaylists);
                 } else {
-                    throw new Error("No featured playlists available");
+                    throw new Error("Invalid response format");
                 }
             } catch (err) {
                 console.error("Failed to load featured playlists:", err);
@@ -45,7 +64,7 @@ export default function FeaturedPlaylists() {
         };
 
         fetchFeaturedPlaylists();
-    }, []);
+    }, [useSpotify]);
 
     if (loading) {
         return (
@@ -79,7 +98,13 @@ export default function FeaturedPlaylists() {
                     <div
                         key={playlist.id}
                         className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden glass-hover transition-all cursor-pointer group border-muted rounded"
-                        onClick={() => navigate(`/search?query=${encodeURIComponent(playlist.title)}`)}
+                        onClick={() => {
+                            if (playlist.source === 'spotify' && playlist.link) {
+                                window.open(playlist.link, '_blank', 'noopener,noreferrer');
+                            } else {
+                                navigate(`/search?query=${encodeURIComponent(playlist.title)}`);
+                            }
+                        }}
                     >
                         <div className="relative">
                             <img

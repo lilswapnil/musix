@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
+import { deezerService } from "../../../services/deezerServices";
 import { spotifyService } from "../../../services/spotifyServices";
-import { ensureValidToken } from "../../../utils/refreshToken";
+
 import useAudioPlayer from '../../../hooks/useAudioPlayer';
 
-export default function TrendingSongs() {
+export default function TrendingSongs({ useSpotify = false }) {
   const [likedSongs, setLikedSongs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -23,33 +24,61 @@ export default function TrendingSongs() {
     const fetchTrending = async () => {
       try {
         setLoading(true);
-        const token = await ensureValidToken();
-        if (!token) {
-          throw new Error('Login required to load Spotify charts');
+
+        if (useSpotify) {
+          try {
+            const spotifyData = await spotifyService.getTrendingTracks(50);
+            const items = spotifyData?.items || [];
+            if (items.length > 0) {
+              const mappedTracks = items
+                .map((item, index) => {
+                  const track = item?.track;
+                  if (!track) return null;
+                  return {
+                    id: track.id,
+                    name: track.name,
+                    artist: track.artists?.map(a => a.name).join(', '),
+                    album: track.album?.name,
+                    albumArt: track.album?.images?.[0]?.url,
+                    previewUrl: track.preview_url,
+                    externalUrl: track.external_urls?.spotify,
+                    position: index + 1,
+                    source: 'spotify'
+                  };
+                })
+                .filter(Boolean);
+
+              if (mappedTracks.length > 0) {
+                setTrendingSongs(mappedTracks);
+                setError('');
+                return;
+              }
+            }
+          } catch (spotifyError) {
+            console.warn('Spotify trending tracks failed, falling back to Deezer:', spotifyError);
+          }
         }
 
-        const data = await spotifyService.getTrendingTracks(100);
-        const items = data?.items || [];
+        const data = await deezerService.getTrendingTracks(100);
 
-        if (Array.isArray(items) && items.length > 0) {
-          const mappedTracks = items
-            .map((item) => item?.track)
-            .filter(Boolean)
-            .map((track) => ({
-              id: track.id,
-              name: track.name,
-              artist: track.artists?.map((artist) => artist.name).join(', '),
-              album: track.album?.name,
-              albumArt: track.album?.images?.[0]?.url,
-              previewUrl: track.preview_url,
-              externalUrl: track.external_urls?.spotify,
-              position: track.popularity || 0
-            }));
+        if (data && data.data && Array.isArray(data.data)) {
+          // Map Deezer tracks to our format
+          const mappedTracks = data.data.map((track) => ({
+            id: track.id,
+            name: track.title,
+            artist: track.artist.name,
+            album: track.album.title,
+            albumArt: track.album.cover_medium || track.album.cover_small,
+            previewUrl: track.preview,
+            externalUrl: track.link,
+            position: track.position || 0,
+            source: 'deezer'
+          }));
 
           setTrendingSongs(mappedTracks);
           setError('');
         } else {
-          throw new Error('No Spotify chart tracks available');
+          throw new Error('Invalid response format from Deezer API');
         }
       } catch (err) {
         setError(err.message || 'Failed to load trending songs');
@@ -57,7 +86,7 @@ export default function TrendingSongs() {
         setLoading(false);
       }
     };
-    
+
     fetchTrending();
     
     // Load liked songs from localStorage
@@ -69,7 +98,7 @@ export default function TrendingSongs() {
     } catch (error) {
       console.error('Error loading liked songs:', error);
     }
-  }, []);
+  }, [useSpotify]);
 
   // ...existing code...
 
@@ -172,7 +201,13 @@ export default function TrendingSongs() {
                       <div 
                         key={`${song.id}-${index}`} 
                         className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer"
-                        onClick={() => navigate(`/song/${song.id}`)}
+                        onClick={() => {
+                          if (song.source === 'spotify' && song.externalUrl) {
+                            window.open(song.externalUrl, '_blank', 'noopener,noreferrer');
+                          } else {
+                            navigate(`/song/${song.id}`);
+                          }
+                        }}
                       >
                         <div className="w-12 h-12 flex-shrink-0 relative group">
                           <img 

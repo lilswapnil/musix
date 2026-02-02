@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { deezerService } from '../../../services/deezerServices';
 import { spotifyService } from '../../../services/spotifyServices';
-import { ensureValidToken } from '../../../utils/refreshToken';
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
-export default function TopAlbums() {
+export default function TopAlbums({ useSpotify = false }) {
   const navigate = useNavigate();
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,28 +14,58 @@ export default function TopAlbums() {
     const fetchTrendingAlbums = async () => {
       try {
         setLoading(true);
-        const token = await ensureValidToken();
-        if (!token) {
-          throw new Error('Login required to load Spotify charts');
+
+        if (useSpotify) {
+          try {
+            const topTracks = await spotifyService.apiRequest('/me/top/tracks', {
+              params: { limit: 50, time_range: 'short_term' }
+            });
+            const items = topTracks?.items || [];
+            if (items.length > 0) {
+              const albumMap = new Map();
+              items.forEach((track) => {
+                const album = track?.album;
+                if (!album || albumMap.has(album.id)) return;
+                albumMap.set(album.id, {
+                  id: album.id,
+                  title: album.name,
+                  artist: album.artists?.map(a => a.name).join(', '),
+                  coverArt: album.images?.[0]?.url,
+                  releaseDate: album.release_date,
+                  trackCount: album.total_tracks,
+                  link: album.external_urls?.spotify,
+                  source: 'spotify'
+                });
+              });
+              const spotifyAlbums = Array.from(albumMap.values()).slice(0, 20);
+              if (spotifyAlbums.length > 0) {
+                setAlbums(spotifyAlbums);
+                setError('');
+                return;
+              }
+            }
+          } catch (spotifyError) {
+            console.warn('Spotify top albums failed, falling back to Deezer:', spotifyError);
+          }
         }
 
-        const response = await spotifyService.getNewReleases(20);
-        const items = response?.albums?.items || [];
+        const response = await deezerService.getTrendingAlbums(20); // Fetch 12 albums to match NewReleases
 
-        if (items.length > 0) {
-          const formattedAlbums = items.map(album => ({
+        if (response && response.data) {
+          const formattedAlbums = response.data.map(album => ({
             id: album.id,
-            title: album.name,
-            artist: album.artists?.map((artist) => artist.name).join(', '),
-            coverArt: album.images?.[0]?.url,
+            title: album.title,
+            artist: album.artist.name,
+            coverArt: album.cover_big || album.cover_medium,
             releaseDate: album.release_date,
-            trackCount: album.total_tracks,
-            link: album.external_urls?.spotify
+            trackCount: album.nb_tracks,
+            link: album.link,
+            source: 'deezer'
           }));
 
           setAlbums(formattedAlbums);
         } else {
-          throw new Error('No trending albums available');
+          throw new Error('Invalid response format');
         }
       } catch {
         setError('Could not load trending albums');
@@ -43,9 +73,9 @@ export default function TopAlbums() {
         setLoading(false);
       }
     };
-    
+
     fetchTrendingAlbums();
-  }, []);
+  }, [useSpotify]);
 
   if (loading) {
     return (
@@ -79,7 +109,13 @@ export default function TopAlbums() {
           <div 
             key={album.id} 
             className="flex-shrink-0 w-32 sm:w-40 md:w-42 lg:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
-            onClick={() => navigate(`/search?query=${encodeURIComponent(album.title)}`)}
+            onClick={() => {
+              if (album.source === 'spotify' && album.link) {
+                window.open(album.link, '_blank', 'noopener,noreferrer');
+              } else {
+                navigate(`/album/${album.id}`);
+              }
+            }}
           >
             <div className="relative">
               <img 

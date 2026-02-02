@@ -7,7 +7,7 @@ import TopArtists from '../components/TopArtists';
 import NewReleases from '../components/NewReleases';
 import AIRecommendations from '../../library/components/AIRecommendations';
 // import { spotifyService } from '../../../services/spotifyServices';
-import { getAccessToken } from '../../../utils/tokenStorage';
+import { spotifyService } from '../../../services/spotifyServices';
 
 
 export default function HomePage() {
@@ -16,8 +16,7 @@ export default function HomePage() {
   useEffect(() => {
     // Check if user is authenticated with Spotify
     const checkSpotifyAuth = () => {
-      const hasToken = getAccessToken() !== null;
-      setIsSpotifyAuthenticated(hasToken);
+      setIsSpotifyAuthenticated(spotifyService.isLoggedIn());
     };
     
     checkSpotifyAuth();
@@ -37,20 +36,20 @@ export default function HomePage() {
         <AIRecommendations mode="single" />
       )}
 
-      {isSpotifyAuthenticated ? (
+      {/* These components use Deezer API and don't require Spotify auth */}
+      <TrendingSongs useSpotify={isSpotifyAuthenticated} />
+      <TopAlbums useSpotify={isSpotifyAuthenticated} />
+      <TopArtists useSpotify={isSpotifyAuthenticated} />
+
+      {/* Only show Spotify-dependent components when authenticated */}
+      {isSpotifyAuthenticated && (
         <>
-          <TrendingSongs />
-          <TopAlbums />
-          <TopArtists />
           <NewReleases />
           {/* <FeaturedGenres /> */}
-          <FeaturedPlaylists />
         </>
-      ) : (
-        <div className="border-muted border rounded-lg p-6 text-center mb-10">
-          <p className="text-muted">Connect your Spotify account to view charts.</p>
-        </div>
       )}
+
+      <FeaturedPlaylists useSpotify={isSpotifyAuthenticated} />
     </div>
   );
 }

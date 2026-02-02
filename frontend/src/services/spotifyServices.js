@@ -262,20 +262,6 @@ export const spotifyService = {
   },
 
   /**
-   * Get user's top artists
-   */
-  getUserTopArtists: async (limit = 20, timeRange = 'short_term') => {
-    try {
-      return await spotifyService.apiRequest('/me/top/artists', {
-        params: { limit, time_range: timeRange }
-      });
-    } catch (error) {
-      console.error('Error fetching user top artists:', error);
-      throw error;
-    }
-  },
-
-  /**
    * Get user's saved albums
    */
   getSavedAlbums: async function(limit = 20, offset = 0) {
