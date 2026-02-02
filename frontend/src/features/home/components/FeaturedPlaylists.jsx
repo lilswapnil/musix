@@ -33,8 +33,10 @@ export default function FeaturedPlaylists({ useSpotify = false }) {
                             setError("");
                             return;
                         }
+                        throw new Error('No Spotify featured playlists available');
                     } catch (spotifyError) {
-                        console.warn("Spotify featured playlists failed, falling back to Deezer:", spotifyError);
+                        setError(spotifyError.message || "Could not load Spotify featured playlists");
+                        return;
                     }
                 }
 

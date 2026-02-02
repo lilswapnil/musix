@@ -33,13 +33,13 @@ export default function HomePage() {
     <div>
       {/* Only show AI Recommendations when authenticated with Spotify */}
       {isSpotifyAuthenticated && (
-        <AIRecommendations mode="single" />
+        <AIRecommendations mode="single" source="spotify" />
       )}
 
       {/* These components use Deezer API and don't require Spotify auth */}
-      <TrendingSongs useSpotify={isSpotifyAuthenticated} />
-      <TopAlbums useSpotify={isSpotifyAuthenticated} />
-      <TopArtists useSpotify={isSpotifyAuthenticated} />
+      <TrendingSongs />
+      <TopAlbums />
+      <TopArtists />
 
       {/* Only show Spotify-dependent components when authenticated */}
       {isSpotifyAuthenticated && (
@@ -49,7 +49,7 @@ export default function HomePage() {
         </>
       )}
 
-      <FeaturedPlaylists useSpotify={isSpotifyAuthenticated} />
+      <FeaturedPlaylists />
     </div>
   );
 }

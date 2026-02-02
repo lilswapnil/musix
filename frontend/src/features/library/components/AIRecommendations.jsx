@@ -16,28 +16,81 @@ const LoadingSpinner = () => (
   </div>
 );
 
-export default function AIRecommendations({ mode = 'single' }) {
+export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
   const [nextRecommendation, setNextRecommendation] = useState(null);
   const [recommendedTracks, setRecommendedTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [recommendationError, setRecommendationError] = useState('');
+
+  const fetchSpotifyRecommendations = async (limit) => {
+    const current = await spotifyService.getCurrentlyPlaying();
+    const track = current?.item;
+    if (!track || track.type !== 'track' || !track.id) {
+      setRecommendationError('Play a Spotify track to get recommendations');
+      return [];
+    }
+
+    const seedArtists = (track.artists || []).map(artist => artist.id).filter(Boolean);
+    if (!seedArtists.length) {
+      setRecommendationError('Play a Spotify track to get recommendations');
+      return [];
+    }
+
+    try {
+      const topTracks = await spotifyService.getArtistTopTracks(seedArtists[0]);
+      const tracks = topTracks?.tracks || [];
+      const filtered = tracks.filter(item => item?.id && item.id !== track.id);
+      if (filtered.length > 0) return filtered.slice(0, limit);
+    } catch {
+      // Fall through to genre-based fallback
+    }
+
+    try {
+      const genreSeeds = await spotifyService.apiRequest('/recommendations/available-genre-seeds');
+      const genre = genreSeeds?.genres?.[0];
+      if (!genre) {
+        setRecommendationError('No Spotify recommendations available');
+        return [];
+      }
+      const fallback = await spotifyService.getRecommendations({
+        seed_genres: [genre],
+        limit
+      });
+      return fallback?.tracks || [];
+    } catch {
+      setRecommendationError('No Spotify recommendations available');
+      return [];
+    }
+  };
 
   const fetchRecommendations = useCallback(async () => {
     try {
       setIsLoading(true);
+      setRecommendationError('');
       if (mode === 'list') {
-        const tracks = await aiRecommendationService.getRecommendationsList({ limit: 20 });
-        setRecommendedTracks(tracks);
+        if (source === 'spotify') {
+          const tracks = await fetchSpotifyRecommendations(20);
+          setRecommendedTracks(tracks);
+        } else {
+          const tracks = await aiRecommendationService.getRecommendationsList({ limit: 20 });
+          setRecommendedTracks(tracks);
+        }
       } else {
-        const track = await aiRecommendationService.getNextRecommendation();
-        setNextRecommendation(track);
+        if (source === 'spotify') {
+          const tracks = await fetchSpotifyRecommendations(1);
+          setNextRecommendation(tracks[0] || null);
+        } else {
+          const track = await aiRecommendationService.getNextRecommendation();
+          setNextRecommendation(track);
+        }
       }
     } catch {
       // Silently ignore errors; don't log token validation issues
     } finally {
       setIsLoading(false);
     }
-  }, [mode]);
+  }, [mode, source]);
 
   useEffect(() => {
     fetchRecommendations();
@@ -129,7 +182,6 @@ export default function AIRecommendations({ mode = 'single' }) {
                   <div className="flex flex-col sm:flex-row items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <FontAwesomeIcon icon={faBrain} className="text-accent text-lg" />
                         <span className="text-xs font-semibold text-accent uppercase tracking-wide">Next Up</span>
                       </div>
                       <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold text-white mb-2 truncate">{nextRecommendation.name}</h2>
@@ -173,7 +225,7 @@ export default function AIRecommendations({ mode = 'single' }) {
         ) : (
           <div className="text-center p-8 glass-light rounded-lg">
             <p className="text-lg text-muted">No recommendation available</p>
-            <p className="text-sm mt-2">Play music on Spotify to get recommendations</p>
+            <p className="text-sm mt-2">{recommendationError || 'Play music on Spotify to get recommendations'}</p>
           </div>
         )}
       </div>

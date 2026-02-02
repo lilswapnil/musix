@@ -17,13 +17,12 @@ export default function TopAlbums({ useSpotify = false }) {
 
         if (useSpotify) {
           try {
-            const topTracks = await spotifyService.apiRequest('/me/top/tracks', {
-              params: { limit: 50, time_range: 'short_term' }
-            });
-            const items = topTracks?.items || [];
+            const chartTracks = await spotifyService.getTrendingTracks(50);
+            const items = chartTracks?.items || [];
             if (items.length > 0) {
               const albumMap = new Map();
-              items.forEach((track) => {
+              items.forEach((item) => {
+                const track = item?.track || item;
                 const album = track?.album;
                 if (!album || albumMap.has(album.id)) return;
                 albumMap.set(album.id, {
@@ -44,8 +43,10 @@ export default function TopAlbums({ useSpotify = false }) {
                 return;
               }
             }
+            throw new Error('No Spotify top albums available');
           } catch (spotifyError) {
-            console.warn('Spotify top albums failed, falling back to Deezer:', spotifyError);
+            setError(spotifyError.message || 'Could not load Spotify top albums');
+            return;
           }
         }
 

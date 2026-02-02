@@ -17,12 +17,25 @@ export default function TopArtists({ useSpotify = false }) {
 
         if (useSpotify) {
           try {
-            const topArtists = await spotifyService.apiRequest('/me/top/artists', {
-              params: { limit: 20, time_range: 'short_term' }
-            });
-            const items = topArtists?.items || [];
+            const chartTracks = await spotifyService.getTrendingTracks(50);
+            const items = chartTracks?.items || [];
             if (items.length > 0) {
-              const formattedArtists = items.map(artist => ({
+              const artistCounts = new Map();
+              items.forEach((item) => {
+                const track = item?.track || item;
+                track?.artists?.forEach((artist) => {
+                  if (!artist) return;
+                  const count = artistCounts.get(artist.id) || { ...artist, count: 0 };
+                  count.count += 1;
+                  artistCounts.set(artist.id, count);
+                });
+              });
+
+              const sortedArtists = Array.from(artistCounts.values())
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 20);
+
+              const formattedArtists = sortedArtists.map(artist => ({
                 id: artist.id,
                 name: artist.name,
                 picture: artist.images?.[0]?.url,
@@ -32,12 +45,17 @@ export default function TopArtists({ useSpotify = false }) {
                 link: artist.external_urls?.spotify,
                 source: 'spotify'
               }));
-              setArtists(formattedArtists);
-              setError('');
-              return;
+
+              if (formattedArtists.length > 0) {
+                setArtists(formattedArtists);
+                setError('');
+                return;
+              }
             }
+            throw new Error('No Spotify top artists available');
           } catch (spotifyError) {
-            console.warn('Spotify top artists failed, falling back to Deezer:', spotifyError);
+            setError(spotifyError.message || 'Could not load Spotify top artists');
+            return;
           }
         }
 

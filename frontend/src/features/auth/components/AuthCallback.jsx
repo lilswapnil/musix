@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { exchangeCodeForToken } from '../../../services/spotifyAuthService';
 import { getAccessToken, clearAuthData } from '../../../utils/tokenStorage';
@@ -10,10 +10,13 @@ export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('Checking authentication...');
+  const authInFlightRef = useRef(false);
 
   useEffect(() => {
     const handleAuth = async () => {
       try {
+        if (authInFlightRef.current) return;
+        authInFlightRef.current = true;
         // GUARD: Detect infinite ?p= &q= parameter loop and break it
         const hasPQParams = searchParams.has('p') && searchParams.has('q') && !searchParams.get('code');
         if (hasPQParams) {
@@ -64,6 +67,8 @@ export default function AuthCallback() {
         const errorMsg = error.message || 'Authentication failed. Please try again.';
         setError(errorMsg);
         setTimeout(() => navigate('/login', { replace: true }), 3000);
+      } finally {
+        authInFlightRef.current = false;
       }
     };
 

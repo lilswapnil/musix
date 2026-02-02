@@ -195,8 +195,8 @@ export async function enhancedApiRequest(url, options = {}, controls = {}) {
         if (!response.ok) {
           const err = new Error(`API error: ${response.status}`);
           err.status = response.status;
-          // Stop retries for auth-related errors
-          if (err.status === 401 || err.status === 403) {
+          // Stop retries for auth-related errors or not-found
+          if (err.status === 401 || err.status === 403 || err.status === 404) {
             throw err; // Bubble up immediately; handled by callers
           }
           throw err;
@@ -225,10 +225,10 @@ export async function enhancedApiRequest(url, options = {}, controls = {}) {
         
         return data;
       } catch (error) {
-        // Reduce noise for auth errors; no retries for 401/403
-        const isAuthError = (error?.status === 401 || error?.status === 403) ||
+        // Reduce noise for auth errors or 404; no retries for 401/403/404
+        const isAuthError = (error?.status === 401 || error?.status === 403 || error?.status === 404) ||
                             (typeof error?.message === 'string' &&
-                             (error.message.includes('401') || error.message.includes('403')));
+                             (error.message.includes('401') || error.message.includes('403') || error.message.includes('404')));
         if (!isAuthError) {
           console.error(`Attempt ${attempt + 1} failed for ${url}:`, error);
         }

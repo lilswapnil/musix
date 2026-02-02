@@ -37,7 +37,7 @@ export const spotifyService = {
   _throttle: {
     search: throttle(2000)('spotify-search'),
     browse: throttle(1000)('spotify-browse'),
-    track: throttle(500)('spotify-track')
+    track: throttle(500)
   },
 
   // Player configurations
@@ -182,7 +182,7 @@ export const spotifyService = {
         rateLimitConfig = this._rateLimit.browse;
         throttleFn = this._throttle.browse;
       } else if (endpoint.includes('/tracks')) {
-        throttleFn = this._throttle.track;
+        throttleFn = this._throttle.track(`spotify-track-${endpoint}`);
       }
       
       const cacheTime = endpoint.includes('/search') ? 60000 : 300000;
@@ -227,8 +227,10 @@ export const spotifyService = {
         }
       }
       
-      // Reduce noisy logging for 403
-      if (!(error?.status === 403 || String(error?.message || '').includes('403'))) {
+      // Reduce noisy logging for 403/404
+      if (!(error?.status === 403 || error?.status === 404 ||
+            String(error?.message || '').includes('403') ||
+            String(error?.message || '').includes('404'))) {
         console.error(`Error in Spotify API request to ${endpoint}:`, error);
       }
       throw error;
@@ -291,13 +293,34 @@ export const spotifyService = {
    */
   getTrendingTracks: async (limit = 20) => {
     try {
-      const globalTop50Id = '37i9dQZEVXbMDoHDwVN2tF';
-      return await spotifyService.apiRequest(`/playlists/${globalTop50Id}/tracks`, {
-        params: { 
-          limit, 
-          fields: 'items(track(id,name,album,artists,preview_url,external_urls))' 
-        }
+      const market = await spotifyService.getUserMarket().catch(() => 'US');
+      const fetchPlaylistTracks = async (playlistId) =>
+        spotifyService.apiRequest(`/playlists/${playlistId}/tracks`, {
+          params: {
+            limit,
+            fields: 'items(track(id,name,album,artists,preview_url,external_urls))',
+            market
+          }
+        });
+
+      // Global Top 50
+      try {
+        const globalTop50Id = '37i9dQZEVXbMDoHDwVN2tF';
+        return await fetchPlaylistTracks(globalTop50Id);
+      } catch (globalErr) {
+        console.warn('Global Top 50 unavailable, trying toplists:', globalErr);
+      }
+
+      // Fallback: first playlist from toplists category
+      const toplists = await spotifyService.apiRequest('/browse/categories/toplists/playlists', {
+        params: { limit: 1, country: market }
       });
+      const fallbackPlaylist = toplists?.playlists?.items?.[0];
+      if (fallbackPlaylist?.id) {
+        return await fetchPlaylistTracks(fallbackPlaylist.id);
+      }
+
+      throw new Error('No Spotify toplist playlist available');
     } catch (error) {
       console.error('Error fetching trending tracks:', error);
       throw error;
@@ -309,12 +332,33 @@ export const spotifyService = {
    */
   getFeaturedPlaylists: async (limit = 20) => {
     try {
-      return await spotifyService.apiRequest('/browse/featured-playlists', {
-        params: { limit, country: 'US' }
-      });
+      const market = await spotifyService.getUserMarket().catch(() => 'US');
+      try {
+        return await spotifyService.apiRequest('/browse/featured-playlists', {
+          params: { limit, country: market }
+        });
+      } catch (error) {
+        // Fallback to toplists category if featured-playlists is unavailable
+        const toplists = await spotifyService.apiRequest('/browse/categories/toplists/playlists', {
+          params: { limit, country: market }
+        });
+        return toplists;
+      }
     } catch (error) {
       console.error('Error fetching featured playlists:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Get user market (country)
+   */
+  getUserMarket: async () => {
+    try {
+      const profile = await spotifyService.getCurrentUser();
+      return profile?.country || 'US';
+    } catch {
+      return 'US';
     }
   },
   

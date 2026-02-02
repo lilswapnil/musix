@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
@@ -13,6 +13,7 @@ export default function TrendingSongs({ useSpotify = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [trendingSongs, setTrendingSongs] = useState([]);
+  const hasFetchedRef = useRef(false);
   const navigate = useNavigate();
   const {
     // audioRef,
@@ -23,6 +24,8 @@ export default function TrendingSongs({ useSpotify = false }) {
   useEffect(() => {
     const fetchTrending = async () => {
       try {
+        if (hasFetchedRef.current) return;
+        hasFetchedRef.current = true;
         setLoading(true);
 
         if (useSpotify) {
@@ -32,7 +35,7 @@ export default function TrendingSongs({ useSpotify = false }) {
             if (items.length > 0) {
               const mappedTracks = items
                 .map((item, index) => {
-                  const track = item?.track;
+                  const track = item?.track || item;
                   if (!track) return null;
                   return {
                     id: track.id,
@@ -54,8 +57,10 @@ export default function TrendingSongs({ useSpotify = false }) {
                 return;
               }
             }
+            throw new Error('No Spotify trending tracks available');
           } catch (spotifyError) {
-            console.warn('Spotify trending tracks failed, falling back to Deezer:', spotifyError);
+            setError(spotifyError.message || 'Could not load Spotify trending tracks');
+            return;
           }
         }
 
