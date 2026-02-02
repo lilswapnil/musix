@@ -106,9 +106,9 @@ export default function LibraryPage() {
       <>
         <SpotifyPlayer />
         <CurrentlyPlaying token={token} />
-        <PersonalTop />
-         <AIRecommendations mode="list" />
+         {/* <AIRecommendations mode="list" /> */}
         <RecentPlayed token={token} />
+        <PersonalTop />
         <SavedAlbums token={token} />
       </>
     );

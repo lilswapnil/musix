@@ -714,6 +714,9 @@ export const spotifyService = {
   },
 
   pause: async function() {
+    if (!this._isPlayerReady || !this._deviceId) {
+      await this.ensurePlayerReady();
+    }
     if (!this._isPlayerReady) throw new Error('Spotify player not ready');
     
     try {
@@ -725,6 +728,9 @@ export const spotifyService = {
   },
 
   resume: async function() {
+    if (!this._isPlayerReady || !this._deviceId) {
+      await this.ensurePlayerReady();
+    }
     if (!this._isPlayerReady) throw new Error('Spotify player not ready');
     
     try {
@@ -736,6 +742,9 @@ export const spotifyService = {
   },
 
   togglePlayPause: async function() {
+    if (!this._player) {
+      await this.ensurePlayerReady();
+    }
     if (!this._player) throw new Error('Spotify player not initialized');
     
     try {
@@ -747,6 +756,9 @@ export const spotifyService = {
   },
 
   seekToPosition: async function(positionMs) {
+    if (!this._isPlayerReady || !this._deviceId) {
+      await this.ensurePlayerReady();
+    }
     if (!this._isPlayerReady) throw new Error('Spotify player not ready');
     
     try {
@@ -787,6 +799,9 @@ export const spotifyService = {
    */
   setVolume: async function(volumePercent, deviceId = null) {
     try {
+      if (!this._isPlayerReady || !this._deviceId) {
+        await this.ensurePlayerReady();
+      }
       const params = { volume_percent: Math.max(0, Math.min(100, Math.round(volumePercent))) };
       if (deviceId || this._deviceId) {
         params.device_id = deviceId || this._deviceId;
@@ -947,6 +962,9 @@ export const spotifyService = {
    */
   skipToNext: async function(deviceId = null) {
     try {
+      if (!this._isPlayerReady || !this._deviceId) {
+        await this.ensurePlayerReady();
+      }
       const params = {};
       const resolvedDeviceId = deviceId || this._deviceId;
       if (resolvedDeviceId) {
@@ -970,6 +988,9 @@ export const spotifyService = {
    */
   skipToPrevious: async function(deviceId = null) {
     try {
+      if (!this._isPlayerReady || !this._deviceId) {
+        await this.ensurePlayerReady();
+      }
       const params = {};
       const resolvedDeviceId = deviceId || this._deviceId;
       if (resolvedDeviceId) {

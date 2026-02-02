@@ -95,24 +95,38 @@ export default function PersonalTop() {
             {topArtists.map((artist) => (
               <div
                 key={artist.id}
-                className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden glass-hover transition-all cursor-pointer group border-muted rounded"
+                className="flex-shrink-0 w-32 sm:w-40 md:w-42 lg:w-48 overflow-hidden cursor-pointer group relative border-muted glass-hover transition-all"
                 onClick={() => window.open(artist.external_urls?.spotify, '_blank', 'noopener,noreferrer')}
+                style={{ aspectRatio: '1.6/1.7' }}
               >
-                <div className="relative">
-                  <img
-                    src={artist.images?.[0]?.url}
-                    alt={artist.name}
-                    className="w-full h-32 sm:h-40 md:h-48 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                {/* Blurred background image */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
+                    style={{ backgroundImage: `url(${artist.images?.[0]?.url})` }}
+                  ></div>
+                  <div className="absolute inset-0 bg-black bg-opacity-40"></div>
                 </div>
-                <div className="p-2 sm:p-3 md:p-4 text-center">
-                  <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{artist.name}</h3>
-                  {artist.followers?.total > 0 && (
-                    <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">
-                      {artist.followers.total.toLocaleString()} followers
-                    </p>
-                  )}
+                
+                {/* Card content with circular image */}
+                <div className="relative h-full flex flex-col items-center justify-center p-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 relative mb-3 border-2 border-white overflow-hidden rounded-full">
+                    <img 
+                      src={artist.images?.[0]?.url}
+                      alt={artist.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  
+                  <div className="text-center mt-1 z-10">
+                    <h3 className="font-bold text-white text-sm sm:text-base md:text-lg truncate drop-shadow">{artist.name}</h3>
+                    {artist.followers?.total > 0 && (
+                      <p className="text-[10px] sm:text-xs text-white mt-0.5 drop-shadow-lg">
+                        {artist.followers.total.toLocaleString()} fans
+                      </p>
+                    )}
+                    
+                  </div>
                 </div>
               </div>
             ))}

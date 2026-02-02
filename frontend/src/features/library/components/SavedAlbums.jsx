@@ -132,88 +132,54 @@ export default function SavedAlbums() {
     );
   }
 
-  // Group albums by when they were added
-  const groupedAlbums = savedAlbums.reduce((groups, album) => {
-    const date = new Date(album.addedAt);
-    let groupName;
-
-    // Only use two categories: This Month and Earlier
-    if (today - date < 30 * 86400000) {
-      groupName = 'This Month';
-    } else {
-      groupName = 'Earlier';
-    }
-
-    if (!groups[groupName]) {
-      groups[groupName] = [];
-    }
-    groups[groupName].push(album);
-    return groups;
-  }, {});
-
-  // Define the order of groups
-  const groupOrder = ['This Month', 'Earlier'];
-
-  // Sort the groups according to our defined order
-  const sortedGroups = Object.entries(groupedAlbums)
-    .sort((a, b) => {
-      return groupOrder.indexOf(a[0]) - groupOrder.indexOf(b[0]);
-    });
-
-  // Display albums in groups with the proper order
   return (
     <div className="mb-10">
       <h2 className="text-3xl font-bold mb-4 text-start">Saved Albums</h2>
       
-      {sortedGroups.map(([groupName, albums]) => (
-        <ScrollableSection 
-          key={groupName} 
-          title={<h3 className="text-xl font-semibold text-start">{groupName}</h3>}
-        >
-          <div className="flex space-x-2 pb-1">
-            {albums.map((album) => (
-              <div 
-                key={album.id} 
-                className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
-                onClick={() => handleAlbumClick(album.id)}
-              >
-                <div className="relative">
-                  <img 
-                    src={album.coverArt}
-                    alt={album.title}
-                    className="w-full h-32 sm:h-40 md:h-48 object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
-                      <FontAwesomeIcon 
-                        icon={faExternalLinkAlt} 
-                        className="text-white text-sm sm:text-base md:text-xl"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="p-2 sm:p-3 md:p-4">
-                  {/* Album metadata display */}
-                  <div className="text-center">
-                    <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{album.title}</h3>
-                    <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist}</p>
-                    {/* Only show year from full release date */}
-                    {album.releaseDate && (
-                      <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
-                        {album.releaseDate.substring(0, 4)}
-                      </p>
-                    )}
+      <ScrollableSection>
+        <div className="flex space-x-2 pb-1">
+          {savedAlbums.map((album) => (
+            <div 
+              key={album.id} 
+              className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
+              onClick={() => handleAlbumClick(album.id)}
+            >
+              <div className="relative">
+                <img 
+                  src={album.coverArt}
+                  alt={album.title}
+                  className="w-full h-32 sm:h-40 md:h-48 object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
+                  }}
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center">
+                    <FontAwesomeIcon 
+                      icon={faExternalLinkAlt} 
+                      className="text-white text-sm sm:text-base md:text-xl"
+                    />
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </ScrollableSection>
-      ))}
+              <div className="p-2 sm:p-3 md:p-4">
+                {/* Album metadata display */}
+                <div className="text-center">
+                  <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{album.title}</h3>
+                  <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist}</p>
+                  {/* Only show year from full release date */}
+                  {album.releaseDate && (
+                    <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
+                      {album.releaseDate.substring(0, 4)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollableSection>
     </div>
   );
 }
