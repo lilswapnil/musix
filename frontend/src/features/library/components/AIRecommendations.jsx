@@ -47,9 +47,13 @@ export default function AIRecommendations({ mode = 'single' }) {
 
   const handlePlayTrack = async (trackUri) => {
     try {
-      await spotifyService.addToQueue(trackUri);
+      await spotifyService.play(trackUri);
     } catch {
-      // Silently ignore errors
+      try {
+        await spotifyService.addToQueue(trackUri);
+      } catch {
+        // Silently ignore errors
+      }
     }
   };
 

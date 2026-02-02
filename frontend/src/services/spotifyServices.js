@@ -495,6 +495,10 @@ export const spotifyService = {
    * Only works for Premium users - non-premium users should skip this
    */
   initializePlayer: async function(onPlayerStateChanged = null) {
+    if (this._player && this._isPlayerReady && this._deviceId) {
+      this._onPlayerStateChanged = onPlayerStateChanged;
+      return true;
+    }
     // Check premium status first to avoid unnecessary SDK errors
     const hasPremium = await this.isPremiumAccount();
     if (!hasPremium) {
@@ -519,11 +523,16 @@ export const spotifyService = {
     this._onPlayerStateChanged = onPlayerStateChanged;
 
     try {
-      const token = await this.getAccessToken();
-
       this._player = new window.Spotify.Player({
         name: 'Musix Web Player',
-        getOAuthToken: cb => { cb(token); },
+        getOAuthToken: async cb => {
+          try {
+            const freshToken = await this.getAccessToken();
+            cb(freshToken);
+          } catch (tokenError) {
+            console.error('Error fetching Spotify access token:', tokenError);
+          }
+        },
         volume: 0.5
       });
 
@@ -620,8 +629,20 @@ export const spotifyService = {
     });
   },
 
+  /**
+   * Ensure the web player is ready before issuing playback commands
+   */
+  ensurePlayerReady: async function() {
+    if (this._isPlayerReady && this._deviceId) return true;
+    await this.initializePlayer(this._onPlayerStateChanged);
+    return this._isPlayerReady && !!this._deviceId;
+  },
+
   // Playback control methods
   play: async function(uri, options = {}) {
+    if (!this._isPlayerReady || !this._deviceId) {
+      await this.ensurePlayerReady();
+    }
     if (!this._isPlayerReady || !this._deviceId) {
       throw new Error('Spotify player not ready');
     }
@@ -860,8 +881,9 @@ export const spotifyService = {
   addToQueue: async function(trackUri, deviceId = null) {
     try {
       const params = { uri: trackUri };
-      if (deviceId) {
-        params.device_id = deviceId;
+      const resolvedDeviceId = deviceId || this._deviceId;
+      if (resolvedDeviceId) {
+        params.device_id = resolvedDeviceId;
       }
 
       await this.apiRequest('/me/player/queue', {
@@ -882,8 +904,9 @@ export const spotifyService = {
   skipToNext: async function(deviceId = null) {
     try {
       const params = {};
-      if (deviceId) {
-        params.device_id = deviceId;
+      const resolvedDeviceId = deviceId || this._deviceId;
+      if (resolvedDeviceId) {
+        params.device_id = resolvedDeviceId;
       }
 
       await this.apiRequest('/me/player/next', {
@@ -904,8 +927,9 @@ export const spotifyService = {
   skipToPrevious: async function(deviceId = null) {
     try {
       const params = {};
-      if (deviceId) {
-        params.device_id = deviceId;
+      const resolvedDeviceId = deviceId || this._deviceId;
+      if (resolvedDeviceId) {
+        params.device_id = resolvedDeviceId;
       }
 
       await this.apiRequest('/me/player/previous', {
