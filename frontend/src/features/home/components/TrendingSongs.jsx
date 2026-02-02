@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
-import { deezerService } from "../../../services/deezerServices";
-
+import { spotifyService } from "../../../services/spotifyServices";
+import { ensureValidToken } from "../../../utils/refreshToken";
 import useAudioPlayer from '../../../hooks/useAudioPlayer';
 
 export default function TrendingSongs() {
@@ -23,26 +23,33 @@ export default function TrendingSongs() {
     const fetchTrending = async () => {
       try {
         setLoading(true);
-        
-        const data = await deezerService.getTrendingTracks(100);
-        
-        if (data && data.data && Array.isArray(data.data)) {
-          // Map Deezer tracks to our format
-          const mappedTracks = data.data.map((track) => ({
-            id: track.id,
-            name: track.title,
-            artist: track.artist.name,
-            album: track.album.title,
-            albumArt: track.album.cover_medium || track.album.cover_small,
-            previewUrl: track.preview,
-            externalUrl: track.link,
-            position: track.position || 0
-          }));
-          
+        const token = await ensureValidToken();
+        if (!token) {
+          throw new Error('Login required to load Spotify charts');
+        }
+
+        const data = await spotifyService.getTrendingTracks(100);
+        const items = data?.items || [];
+
+        if (Array.isArray(items) && items.length > 0) {
+          const mappedTracks = items
+            .map((item) => item?.track)
+            .filter(Boolean)
+            .map((track) => ({
+              id: track.id,
+              name: track.name,
+              artist: track.artists?.map((artist) => artist.name).join(', '),
+              album: track.album?.name,
+              albumArt: track.album?.images?.[0]?.url,
+              previewUrl: track.preview_url,
+              externalUrl: track.external_urls?.spotify,
+              position: track.popularity || 0
+            }));
+
           setTrendingSongs(mappedTracks);
           setError('');
         } else {
-          throw new Error('Invalid response format from Deezer API');
+          throw new Error('No Spotify chart tracks available');
         }
       } catch (err) {
         setError(err.message || 'Failed to load trending songs');

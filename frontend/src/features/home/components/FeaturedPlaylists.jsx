@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { deezerService } from "../../../services/deezerServices";
+import { spotifyService } from "../../../services/spotifyServices";
+import { ensureValidToken } from "../../../utils/refreshToken";
 import ScrollableSection from "../../../components/common/ui/ScrollableSection";
 
 export default function FeaturedPlaylists() {
@@ -13,21 +14,27 @@ export default function FeaturedPlaylists() {
         const fetchFeaturedPlaylists = async () => {
             try {
                 setLoading(true);
-                const response = await deezerService.getFeaturedPlaylists(20); // Fetch 20 playlists
+                const token = await ensureValidToken();
+                if (!token) {
+                    throw new Error('Login required to load Spotify charts');
+                }
 
-                if (response && response.data) {
-                    const formattedPlaylists = response.data.map((playlist) => ({
+                const response = await spotifyService.getFeaturedPlaylists(20);
+                const items = response?.playlists?.items || [];
+
+                if (items.length > 0) {
+                    const formattedPlaylists = items.map((playlist) => ({
                         id: playlist.id,
-                        title: playlist.title,
-                        coverArt: playlist.picture_medium || playlist.picture_small || "path/to/default/image.jpg",
-                        link: playlist.link,
+                        title: playlist.name,
+                        coverArt: playlist.images?.[0]?.url || "path/to/default/image.jpg",
+                        link: playlist.external_urls?.spotify,
                         description: playlist.description,
-                        tracksCount: playlist.nb_tracks || 0,
+                        tracksCount: playlist.tracks?.total || 0,
                     }));
 
                     setFeaturedPlaylist(formattedPlaylists);
                 } else {
-                    throw new Error("Invalid response format");
+                    throw new Error("No featured playlists available");
                 }
             } catch (err) {
                 console.error("Failed to load featured playlists:", err);

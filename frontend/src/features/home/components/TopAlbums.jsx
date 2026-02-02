@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deezerService } from '../../../services/deezerServices';
+import { spotifyService } from '../../../services/spotifyServices';
+import { ensureValidToken } from '../../../utils/refreshToken';
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
 export default function TopAlbums() {
@@ -13,22 +14,28 @@ export default function TopAlbums() {
     const fetchTrendingAlbums = async () => {
       try {
         setLoading(true);
-        const response = await deezerService.getTrendingAlbums(20); // Fetch 12 albums to match NewReleases
-        
-        if (response && response.data) {
-          const formattedAlbums = response.data.map(album => ({
+        const token = await ensureValidToken();
+        if (!token) {
+          throw new Error('Login required to load Spotify charts');
+        }
+
+        const response = await spotifyService.getNewReleases(20);
+        const items = response?.albums?.items || [];
+
+        if (items.length > 0) {
+          const formattedAlbums = items.map(album => ({
             id: album.id,
-            title: album.title,
-            artist: album.artist.name,
-            coverArt: album.cover_big || album.cover_medium,
+            title: album.name,
+            artist: album.artists?.map((artist) => artist.name).join(', '),
+            coverArt: album.images?.[0]?.url,
             releaseDate: album.release_date,
-            trackCount: album.nb_tracks,
-            link: album.link
+            trackCount: album.total_tracks,
+            link: album.external_urls?.spotify
           }));
-          
+
           setAlbums(formattedAlbums);
         } else {
-          throw new Error('Invalid response format');
+          throw new Error('No trending albums available');
         }
       } catch {
         setError('Could not load trending albums');
@@ -72,7 +79,7 @@ export default function TopAlbums() {
           <div 
             key={album.id} 
             className="flex-shrink-0 w-32 sm:w-40 md:w-42 lg:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted rounded"
-            onClick={() => navigate(`/album/${album.id}`)}
+            onClick={() => navigate(`/search?query=${encodeURIComponent(album.title)}`)}
           >
             <div className="relative">
               <img 

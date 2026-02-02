@@ -37,20 +37,20 @@ export default function HomePage() {
         <AIRecommendations mode="single" />
       )}
 
-      {/* These components use Deezer API and don't require Spotify auth */}
-      <TrendingSongs />
-      <TopAlbums />
-      <TopArtists />
-
-      {/* Only show Spotify-dependent components when authenticated */}
-      {isSpotifyAuthenticated && (
+      {isSpotifyAuthenticated ? (
         <>
+          <TrendingSongs />
+          <TopAlbums />
+          <TopArtists />
           <NewReleases />
           {/* <FeaturedGenres /> */}
+          <FeaturedPlaylists />
         </>
+      ) : (
+        <div className="border-muted border rounded-lg p-6 text-center mb-10">
+          <p className="text-muted">Connect your Spotify account to view charts.</p>
+        </div>
       )}
-
-      <FeaturedPlaylists />
     </div>
   );
 }

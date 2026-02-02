@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deezerService } from '../../../services/deezerServices';
+import { spotifyService } from '../../../services/spotifyServices';
+import { ensureValidToken } from '../../../utils/refreshToken';
 import ScrollableSection from '../../../components/common/ui/ScrollableSection';
 
 export default function TopArtists() {
@@ -13,22 +14,28 @@ export default function TopArtists() {
     const fetchTrendingArtists = async () => {
       try {
         setLoading(true);
-        const response = await deezerService.getTrendingArtists(20); 
-        
-        if (response && response.data) {
-          const formattedArtists = response.data.map(artist => ({
+        const token = await ensureValidToken();
+        if (!token) {
+          throw new Error('Login required to load Spotify charts');
+        }
+
+        const response = await spotifyService.getUserTopArtists(20);
+        const items = response?.items || [];
+
+        if (items.length > 0) {
+          const formattedArtists = items.map(artist => ({
             id: artist.id,
             name: artist.name,
-            picture: artist.picture_big || artist.picture_medium || artist.picture,
-            fans: artist.nb_fan || 0,
-            albums: artist.nb_album || 0,
-            position: artist.position || 0,
-            link: artist.link
+            picture: artist.images?.[0]?.url,
+            fans: artist.followers?.total || 0,
+            albums: 0,
+            position: artist.popularity || 0,
+            link: artist.external_urls?.spotify
           }));
-          
+
           setArtists(formattedArtists);
         } else {
-          throw new Error('Invalid response format');
+          throw new Error('No trending artists available');
         }
       } catch (err) {
         console.error('Failed to load trending artists:', err);
@@ -73,7 +80,7 @@ export default function TopArtists() {
           <div 
             key={artist.id} 
             className="flex-shrink-0 w-32 sm:w-40 md:w-42 lg:w-48 overflow-hidden cursor-pointer group relative border-muted glass-hover transition-all"
-            onClick={() => navigate(`/artist/${artist.id}`)}
+            onClick={() => navigate(`/search?query=${encodeURIComponent(artist.name)}`)}
             style={{ aspectRatio: '1.6/1.7' }}
           >
             {/* Blurred background image */}
