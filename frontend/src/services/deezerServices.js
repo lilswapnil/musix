@@ -5,10 +5,41 @@ import { cachedFetch, enhancedApiRequest, throttle } from '../utils/requestUtils
  * Provides methods to interact with the Deezer API through our CORS proxy
  */
 export const deezerService = {
+  // CORS proxy fallbacks (ordered)
+  _corsProxies: [
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+    'https://thingproxy.freeboard.io/fetch/'
+  ],
+
   // Throttle configurations
   _throttle: {
     search: throttle(2000)('deezer-search'),
     chart: throttle(5000)('deezer-chart')
+  },
+
+  _buildProxyUrl: (proxyBase, targetUrl) => {
+    const needsEncoding = proxyBase.includes('?');
+    return `${proxyBase}${needsEncoding ? encodeURIComponent(targetUrl) : targetUrl}`;
+  },
+
+  _fetchWithProxy: async (deezerUrl, options = {}, controls = {}) => {
+    let lastError;
+    for (const proxyBase of deezerService._corsProxies) {
+      const fullUrl = deezerService._buildProxyUrl(proxyBase, deezerUrl);
+      try {
+        return await enhancedApiRequest(fullUrl, options, {
+          domain: 'api.deezer.com',
+          rateLimit: 50,
+          timeWindow: 60000,
+          cacheTime: 300000,
+          ...controls
+        });
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('All Deezer CORS proxies failed');
   },
   
   /**
@@ -18,16 +49,11 @@ export const deezerService = {
    */
   getTrendingTracks: async (limit = 20) => {
     try {
-      const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/tracks?limit=${limit}`;
-      const fullUrl = `${corsProxy}${encodeURIComponent(deezerUrl)}`;
       
       // Apply chart-specific throttling
       const throttledRequest = deezerService._throttle.chart(() => 
-        enhancedApiRequest(fullUrl, {}, {
-          domain: 'api.deezer.com',
-          rateLimit: 50,
-          timeWindow: 60000,
+        deezerService._fetchWithProxy(deezerUrl, {}, {
           cacheTime: 300000 // 5 minutes cache
         })
       );
@@ -41,17 +67,10 @@ export const deezerService = {
 
   getFeaturedPlaylists: async (limit = 20) => {
     try {
-      // Use a public CORS proxy instead of our own backend
-      const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/playlists?limit=${limit}`;
-      
-      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      
-      if (!response.ok) {
-        throw new Error(`Deezer API error: ${response.status}`);
-      }
-      
-      return await response.json();
+      return await deezerService._fetchWithProxy(deezerUrl, {}, {
+        cacheTime: 300000
+      });
     } catch (error) {
       console.error('Error fetching featured playlists:', error);
       throw error;
@@ -65,17 +84,10 @@ export const deezerService = {
    */
   getTrendingAlbums: async (limit = 20) => {
     try {
-      // Use a public CORS proxy instead of our own backend
-      const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/albums?limit=${limit}`;
-      
-      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      
-      if (!response.ok) {
-        throw new Error(`Deezer API error: ${response.status}`);
-      }
-      
-      return await response.json();
+      return await deezerService._fetchWithProxy(deezerUrl, {}, {
+        cacheTime: 300000
+      });
     } catch (error) {
       console.error('Error fetching trending albums:', error);
       throw error;
@@ -89,16 +101,10 @@ export const deezerService = {
    */
   getTrendingArtists: async (limit = 10) => {
     try {
-      const corsProxy = 'https://corsproxy.io/?';
       const deezerUrl = `https://api.deezer.com/chart/0/artists?limit=${limit}`;
-      
-      const response = await fetch(`${corsProxy}${encodeURIComponent(deezerUrl)}`);
-      
-      if (!response.ok) {
-        throw new Error(`Deezer API error: ${response.status}`);
-      }
-      
-      return await response.json();
+      return await deezerService._fetchWithProxy(deezerUrl, {}, {
+        cacheTime: 300000
+      });
     } catch (error) {
       console.error('Error fetching trending artists:', error);
       throw error;
