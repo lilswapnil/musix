@@ -15,6 +15,8 @@ import {
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
 import { Skeleton, SkeletonText, TrackRowSkeleton } from "../../../components/common/ui/Skeleton";
 
+const isDeezerId = (value) => /^\d+$/.test(String(value || ""));
+
 // Vinyl record presentation for the album header
 const VinylRecord = ({ albumImage, artistImage, albumTitle, artistName }) => {
   return (
@@ -235,72 +237,180 @@ export default function Albums() {
       
       try {
         setLoading(true);
-        // Get album details
-        const albumData = await deezerService.getAlbum(albumId);
-        setAlbum(albumData);
-        setLayoutReady(false);
-        console.log("Album data:", albumData);
-        // Fetch artist image if artist info is available
-        if (albumData.artist && albumData.artist.id) {
-          try {
-            const artistData = await deezerService.getArtist(albumData.artist.id);
-            if (artistData) {
-              setArtistData(artistData); // Store the complete artist data
-              setArtistImage(
-                artistData.picture_xl || 
-                artistData.picture_big || 
-                artistData.picture_medium || 
-                artistData.picture
-              );
+        const useDeezer = isDeezerId(albumId);
+        let albumData = null;
+        let artistImages = [];
+
+        if (useDeezer) {
+          // Get album details
+          albumData = await deezerService.getAlbum(albumId);
+          setAlbum(albumData);
+          setLayoutReady(false);
+          console.log("Album data:", albumData);
+          // Fetch artist image if artist info is available
+          if (albumData.artist && albumData.artist.id) {
+            try {
+              const artistData = await deezerService.getArtist(albumData.artist.id);
+              if (artistData) {
+                setArtistData(artistData); // Store the complete artist data
+                setArtistImage(
+                  artistData.picture_xl || 
+                  artistData.picture_big || 
+                  artistData.picture_medium || 
+                  artistData.picture
+                );
+              }
+            } catch (artistErr) {
+              console.warn("Could not load artist image:", artistErr);
+              // No need to set error - we'll fall back to album image
             }
-          } catch (artistErr) {
-            console.warn("Could not load artist image:", artistErr);
-            // No need to set error - we'll fall back to album image
+
+            // Fetch Spotify artist data for additional info
+            try {
+              const spotifyData = await spotifyService.searchArtists(albumData.artist.name, 1);
+              if (spotifyData?.artists?.items?.length > 0) {
+                const spotifyArtist = spotifyData.artists.items[0];
+                setSpotifyArtistData(spotifyArtist);
+                console.log("Spotify artist data:", spotifyArtist);
+              }
+            } catch (spotifyErr) {
+              console.warn("Could not load Spotify artist data:", spotifyErr);
+            }
+          }
+          
+          if (albumData.tracks && albumData.tracks.data) {
+            // Map tracks to consistent format
+            const processedTracks = albumData.tracks.data.map((track, index) => ({
+              id: track.id,
+              name: track.title,
+              artist: track.artist ? track.artist.name : albumData.artist ? albumData.artist.name : "Unknown Artist",
+              duration: track.duration,
+              trackNumber: index + 1,
+              previewUrl: track.preview,
+              externalUrl: track.link || `https://www.deezer.com/track/${track.id}`,
+              // Add albumArt from the main album
+              albumArt: albumData.cover_medium || albumData.cover || "https://via.placeholder.com/300x300?text=No+Cover"
+            }));
+            
+            setTracks(processedTracks);
+          }
+        } else {
+          const spotifyAlbum = await spotifyService.getAlbum(albumId);
+          if (!spotifyAlbum) {
+            setError("Album not found");
+            return;
           }
 
-          // Fetch Spotify artist data for additional info
-          try {
-            const spotifyData = await spotifyService.searchArtists(albumData.artist.name, 1);
-            if (spotifyData?.artists?.items?.length > 0) {
-              const spotifyArtist = spotifyData.artists.items[0];
-              setSpotifyArtistData(spotifyArtist);
-              console.log("Spotify artist data:", spotifyArtist);
+          const images = spotifyAlbum.images || [];
+          const primaryArtist = spotifyAlbum.artists?.[0];
+
+          albumData = {
+            id: spotifyAlbum.id,
+            title: spotifyAlbum.name,
+            name: spotifyAlbum.name,
+            cover_xl: images[0]?.url,
+            cover_big: images[1]?.url || images[0]?.url,
+            cover_medium: images[2]?.url || images[1]?.url || images[0]?.url,
+            cover: images[images.length - 1]?.url || images[0]?.url,
+            release_date: spotifyAlbum.release_date,
+            artist: primaryArtist
+              ? {
+                  id: primaryArtist.id,
+                  name: primaryArtist.name,
+                  picture_xl: null,
+                  picture_big: null,
+                  picture_medium: null,
+                  picture: null,
+                  link: primaryArtist.external_urls?.spotify,
+                  nb_fan: 0,
+                  nb_album: 0
+                }
+              : null,
+            tracks: {
+              data: (spotifyAlbum.tracks?.items || []).map((track, index) => ({
+                id: track.id,
+                title: track.name,
+                artist: track.artists?.[0]?.name || primaryArtist?.name || "Unknown Artist",
+                duration: Math.round((track.duration_ms || 0) / 1000),
+                trackNumber: index + 1,
+                preview: track.preview_url,
+                link: track.external_urls?.spotify
+              }))
             }
-          } catch (spotifyErr) {
-            console.warn("Could not load Spotify artist data:", spotifyErr);
+          };
+
+          setAlbum(albumData);
+          setLayoutReady(false);
+
+          if (primaryArtist?.id) {
+            try {
+              const spotifyArtist = await spotifyService.getArtist(primaryArtist.id);
+              if (spotifyArtist) {
+                setSpotifyArtistData(spotifyArtist);
+                setArtistData({
+                  id: spotifyArtist.id,
+                  name: spotifyArtist.name,
+                  nb_fan: spotifyArtist.followers?.total || 0,
+                  nb_album: 0,
+                  link: spotifyArtist.external_urls?.spotify
+                });
+
+                const artistImg =
+                  spotifyArtist.images?.[0]?.url ||
+                  spotifyArtist.images?.[1]?.url ||
+                  spotifyArtist.images?.[2]?.url;
+                if (artistImg) {
+                  setArtistImage(artistImg);
+                  setAlbum((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          artist: {
+                            ...prev.artist,
+                            picture_xl: artistImg,
+                            picture_big: artistImg,
+                            picture_medium: artistImg,
+                            picture: artistImg,
+                            nb_fan: spotifyArtist.followers?.total || 0
+                          }
+                        }
+                      : prev
+                  );
+                }
+              }
+            } catch (artistErr) {
+              console.warn("Could not load Spotify artist data:", artistErr);
+            }
           }
-        }
-        
-        if (albumData.tracks && albumData.tracks.data) {
-          // Map tracks to consistent format
-          const processedTracks = albumData.tracks.data.map((track, index) => ({
-            id: track.id,
-            name: track.title,
-            artist: track.artist ? track.artist.name : albumData.artist ? albumData.artist.name : "Unknown Artist",
-            duration: track.duration,
-            trackNumber: index + 1,
-            previewUrl: track.preview,
-            externalUrl: track.link || `https://www.deezer.com/track/${track.id}`,
-            // Add albumArt from the main album
-            albumArt: albumData.cover_medium || albumData.cover || "https://via.placeholder.com/300x300?text=No+Cover"
-          }));
-          
-          setTracks(processedTracks);
+
+          if (albumData.tracks && albumData.tracks.data) {
+            const processedTracks = albumData.tracks.data.map((track, index) => ({
+              id: track.id,
+              name: track.title,
+              artist: track.artist,
+              duration: track.duration,
+              trackNumber: index + 1,
+              previewUrl: track.preview,
+              externalUrl: track.link,
+              albumArt: albumData.cover_medium || albumData.cover || "https://via.placeholder.com/300x300?text=No+Cover"
+            }));
+            setTracks(processedTracks);
+          }
         }
         
         // Track image loading for layout readiness
         const albumImages = [
-          albumData.cover_xl,
-          albumData.cover_big,
-          albumData.cover_medium,
-          albumData.cover
+          albumData?.cover_xl,
+          albumData?.cover_big,
+          albumData?.cover_medium,
+          albumData?.cover
         ].filter(Boolean);
-        const artistImages = [
+        artistImages = [
           artistImage,
-          albumData.artist?.picture_xl,
-          albumData.artist?.picture_big,
-          albumData.artist?.picture_medium,
-          albumData.artist?.picture
+          albumData?.artist?.picture_xl,
+          albumData?.artist?.picture_big,
+          albumData?.artist?.picture_medium,
+          albumData?.artist?.picture
         ].filter(Boolean);
         const uniqueImages = Array.from(new Set([...albumImages, ...artistImages]));
         setPendingImages(uniqueImages.length);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import useAudioPlayer from '../../../hooks/useAudioPlayer';
 import { useParams, useNavigate } from "react-router-dom";
 import { deezerService } from "../../../services/deezerServices";
+import { spotifyService } from "../../../services/spotifyServices";
 import { geniusService } from "../../../services/geniusService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
@@ -14,6 +15,8 @@ import {
   faFileAlt
 } from "@fortawesome/free-solid-svg-icons";
 import LoadingSpinner from "../../../components/common/ui/LoadingSpinner";
+
+const isDeezerId = (value) => /^\d+$/.test(String(value || ""));
 
 export default function Songs() {
   const { songId } = useParams();
@@ -42,48 +45,78 @@ export default function Songs() {
       try {
         setLoading(true);
         
-        // Get song details
-        const songData = await deezerService.getTrack(songId);
+        const useDeezer = isDeezerId(songId);
+        let processedSong = null;
 
-        if (!songData) {
-          setError("Song not found");
-          return;
+        if (useDeezer) {
+          const songData = await deezerService.getTrack(songId);
+
+          if (!songData) {
+            setError("Song not found");
+            return;
+          }
+
+          processedSong = {
+            id: songData.id,
+            name: songData.title,
+            artist: songData.artist?.name,
+            artistId: songData.artist?.id,
+            album: songData.album?.title,
+            albumId: songData.album?.id,
+            albumArt: songData.album?.cover_xl || songData.album?.cover_big || songData.album?.cover_medium,
+            duration: songData.duration,
+            previewUrl: songData.preview,
+            releaseDate: songData.release_date,
+            link: songData.link,
+            rank: songData.rank
+          };
+
+          // Get artist details if available (Deezer only)
+          if (songData.artist && songData.artist.id) {
+            try {
+              await deezerService.getArtist(songData.artist.id);
+              // setArtist removed (artist state not used)
+            } catch (artistErr) {
+              console.warn('Could not fetch artist details:', artistErr);
+            }
+          }
+        } else {
+          const spotifyTrack = await spotifyService.getTrack(songId);
+
+          if (!spotifyTrack) {
+            setError("Song not found");
+            return;
+          }
+
+          const albumImages = spotifyTrack.album?.images || [];
+          const albumImage =
+            albumImages[0]?.url || albumImages[1]?.url || albumImages[2]?.url;
+          const primaryArtist = spotifyTrack.artists?.[0];
+
+          processedSong = {
+            id: spotifyTrack.id,
+            name: spotifyTrack.name,
+            artist: primaryArtist?.name,
+            artistId: primaryArtist?.id,
+            album: spotifyTrack.album?.name,
+            albumId: spotifyTrack.album?.id,
+            albumArt: albumImage,
+            duration: Math.round((spotifyTrack.duration_ms || 0) / 1000),
+            previewUrl: spotifyTrack.preview_url,
+            releaseDate: spotifyTrack.album?.release_date,
+            link: spotifyTrack.external_urls?.spotify,
+            rank: null
+          };
         }
-
-        // Process song data
-        const processedSong = {
-          id: songData.id,
-          name: songData.title,
-          artist: songData.artist?.name,
-          artistId: songData.artist?.id,
-          album: songData.album?.title,
-          albumId: songData.album?.id,
-          albumArt: songData.album?.cover_xl || songData.album?.cover_big || songData.album?.cover_medium,
-          duration: songData.duration,
-          previewUrl: songData.preview,
-          releaseDate: songData.release_date,
-          link: songData.link,
-          rank: songData.rank
-        };
         
         setSong(processedSong);
-        
-        // Get artist details if available
-        if (songData.artist && songData.artist.id) {
-          try {
-            await deezerService.getArtist(songData.artist.id);
-            // setArtist removed (artist state not used)
-          } catch (artistErr) {
-            console.warn('Could not fetch artist details:', artistErr);
-          }
-        }
-        
+
         // Try to find song on Genius for lyrics link
         if (geniusService.isConfigured()) {
           try {
             const geniusResult = await geniusService.findSong(
-              songData.title, 
-              songData.artist?.name
+              processedSong.name, 
+              processedSong.artist
             );
             if (geniusResult) {
               setGeniusSong(geniusResult);
