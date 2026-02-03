@@ -24,6 +24,21 @@ export const deezerService = {
 
   _fetchWithProxy: async (deezerUrl, options = {}, controls = {}) => {
     let lastError;
+    if (import.meta.env.PROD) {
+      try {
+        const proxyUrl = `/api/deezer?url=${encodeURIComponent(deezerUrl)}`;
+        return await enhancedApiRequest(proxyUrl, options, {
+          domain: 'musix-deezer-proxy',
+          rateLimit: 200,
+          timeWindow: 60000,
+          cacheTime: 300000,
+          retries: 0,
+          ...controls
+        });
+      } catch (error) {
+        lastError = error;
+      }
+    }
     for (const proxyBase of deezerService._corsProxies) {
       const fullUrl = deezerService._buildProxyUrl(proxyBase, deezerUrl);
       try {
