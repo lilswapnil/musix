@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import RecentPlayed from '../components/RecentPlayed';
 import CurrentlyPlaying from '../components/CurrentlyPlaying';
-import SavedAlbums from '../components/SavedAlbums';
 import AIRecommendations from '../components/AIRecommendations';
 import PersonalTop from '../components/PersonalTop';
 // import { useAuth } from '../../../context/AuthContext';
@@ -109,7 +108,6 @@ export default function LibraryPage() {
          {/* <AIRecommendations mode="list" /> */}
         <RecentPlayed token={token} />
         <PersonalTop />
-        <SavedAlbums token={token} />
       </>
     );
   }

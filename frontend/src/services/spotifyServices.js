@@ -577,7 +577,9 @@ export const spotifyService = {
             console.error('Error fetching Spotify access token:', tokenError);
           }
         },
-        volume: 0.5
+      volume: 0.5,
+      // Reduce playback errors by ensuring proper content protection config
+      robustness: 'SW_SECURE_CRYPTO'
       });
 
       // Setup player event listeners
@@ -594,6 +596,8 @@ export const spotifyService = {
       });
 
       this._player.addListener('playback_error', e => {
+        const message = e?.message || '';
+        if (message.includes('no list was loaded')) return;
         console.error('Playback error', e);
       });
 
@@ -604,17 +608,11 @@ export const spotifyService = {
         }
       });
 
-      // Wait for player to be ready and transfer playback
+      // Wait for player to be ready
       const readyPromise = new Promise((resolve, reject) => {
         this._player.addListener('ready', async ({ device_id: devId }) => {
           this._deviceId = devId;
           this._isPlayerReady = true;
-          // Attempt to transfer playback to this device for reliable playback
-          try {
-            await this.transferPlayback(devId, false);
-          } catch (err) {
-            console.warn('Could not transfer playback:', err);
-          }
           resolve(true);
         });
         this._player.addListener('not_ready', () => {
@@ -682,6 +680,22 @@ export const spotifyService = {
     return this._isPlayerReady && !!this._deviceId;
   },
 
+  /**
+   * Attempt to activate the web player device for playback
+   */
+  ensureActiveDevice: async function() {
+    if (!this._deviceId) return false;
+    try {
+      await this.transferPlayback(this._deviceId, true);
+      return true;
+    } catch (error) {
+      if (error?.status !== 404) {
+        console.warn('Could not activate web player device:', error);
+      }
+      return false;
+    }
+  },
+
   // Playback control methods
   play: async function(uri, options = {}) {
     if (!this._isPlayerReady || !this._deviceId) {
@@ -692,6 +706,10 @@ export const spotifyService = {
     }
     
     try {
+      const hasActiveDevice = await this.ensureActiveDevice();
+      if (!hasActiveDevice) {
+        throw new Error('No active Spotify device. Open Spotify and start playback.');
+      }
       const playData = {};
       
       if (uri) {
@@ -788,7 +806,9 @@ export const spotifyService = {
         }
       });
     } catch (error) {
-      console.error('Error transferring playback:', error);
+      if (error?.status !== 404) {
+        console.error('Error transferring playback:', error);
+      }
       throw error;
     }
   },
@@ -939,12 +959,18 @@ export const spotifyService = {
    */
   addToQueue: async function(trackUri, deviceId = null) {
     try {
+      if (!deviceId && (!this._isPlayerReady || !this._deviceId)) {
+        await this.ensurePlayerReady();
+      }
+      const hasActiveDevice = await this.ensureActiveDevice();
+      if (!hasActiveDevice) {
+        throw new Error('No active Spotify device. Open Spotify and start playback.');
+      }
       const params = { uri: trackUri };
       const resolvedDeviceId = deviceId || this._deviceId;
       if (resolvedDeviceId) {
         params.device_id = resolvedDeviceId;
       }
-
       await this.apiRequest('/me/player/queue', {
         method: 'POST',
         params

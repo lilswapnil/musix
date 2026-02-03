@@ -110,6 +110,14 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
     }
   };
 
+  const handleQueueTrack = async (trackUri) => {
+    try {
+      await spotifyService.addToQueue(trackUri);
+    } catch {
+      // Silently ignore errors
+    }
+  };
+
   const scroll = (direction) => {
     const container = document.getElementById('ai-tracks-scroll');
     if (container) {
@@ -188,22 +196,22 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
                       <p className="text-lg sm:text-lg text-white/80 mb-1">{nextRecommendation.artists?.map(a => a.name).join(', ')}</p>
                       <p className="text-white sm:block hidden text-sm">{nextRecommendation.album?.name}</p>
                     </div>
-                    
-                    <button 
-                      onClick={() => handlePlayTrack(nextRecommendation.uri)}
-                      className="p-2 sm:p-3 rounded-full hover:bg-accent/20 transition-colors mx-auto sm:mx-0 mt-2 sm:mt-0"
-                    >
-                      <FontAwesomeIcon 
-                        icon={faPlay} 
-                        className="text-2xl sm:text-3xl text-accent hover:text-accent/80 transition"
-                      />
-                    </button>
                   </div>
                 </div>
                 
                 <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start gap-3">
-                  <button
+                  <button 
                     onClick={() => handlePlayTrack(nextRecommendation.uri)}
+                    className="flex items-center bg-accent hover:bg-accent/80 text-primary py-2 px-4 rounded-full transition-colors font-semibold"
+                  >
+                    <FontAwesomeIcon 
+                      icon={faPlay} 
+                      className="mr-2"
+                    />
+                    Play Now
+                  </button>
+                  <button
+                    onClick={() => handleQueueTrack(nextRecommendation.uri)}
                     className="flex items-center bg-accent hover:bg-accent/80 text-primary py-2 px-4 rounded-full transition-colors font-semibold"
                   >
                     <FontAwesomeIcon icon={faPlay} className="mr-2" />
@@ -272,7 +280,7 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
                 <div
                   key={track.id}
                   className="flex-shrink-0 w-48 group cursor-pointer"
-                  onClick={() => handlePlayTrack(track.uri)}
+                    onClick={() => handleQueueTrack(track.uri)}
                 >
                   <div className="relative mb-4 overflow-hidden rounded-lg">
                     {track.album?.images?.[0]?.url ? (
@@ -288,9 +296,17 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <div className="p-3 bg-accent rounded-full text-primary">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handlePlayTrack(track.uri);
+                        }}
+                        className="p-3 bg-accent rounded-full text-primary hover:bg-accent/80 transition"
+                        aria-label="Play now"
+                      >
                         <FontAwesomeIcon icon={faPlay} className="text-2xl" />
-                      </div>
+                      </button>
                     </div>
                   </div>
                   

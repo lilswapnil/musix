@@ -213,6 +213,8 @@ export default function Albums() {
   const [tracks, setTracks] = useState([]);
   const [artistImage, setArtistImage] = useState(null); // Add state for artist image
   const [loading, setLoading] = useState(true);
+  const [layoutReady, setLayoutReady] = useState(false);
+  const [pendingImages, setPendingImages] = useState(0);
   const [error, setError] = useState("");
   const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
   const [likedSongs, setLikedSongs] = useState({});
@@ -236,6 +238,7 @@ export default function Albums() {
         // Get album details
         const albumData = await deezerService.getAlbum(albumId);
         setAlbum(albumData);
+        setLayoutReady(false);
         console.log("Album data:", albumData);
         // Fetch artist image if artist info is available
         if (albumData.artist && albumData.artist.id) {
@@ -283,6 +286,33 @@ export default function Albums() {
           }));
           
           setTracks(processedTracks);
+        }
+        
+        // Track image loading for layout readiness
+        const albumImages = [
+          albumData.cover_xl,
+          albumData.cover_big,
+          albumData.cover_medium,
+          albumData.cover
+        ].filter(Boolean);
+        const artistImages = [
+          artistImage,
+          albumData.artist?.picture_xl,
+          albumData.artist?.picture_big,
+          albumData.artist?.picture_medium,
+          albumData.artist?.picture
+        ].filter(Boolean);
+        const uniqueImages = Array.from(new Set([...albumImages, ...artistImages]));
+        setPendingImages(uniqueImages.length);
+        if (uniqueImages.length === 0) {
+          setLayoutReady(true);
+        } else {
+          uniqueImages.forEach((src) => {
+            const img = new Image();
+            img.onload = () => setPendingImages(prev => Math.max(0, prev - 1));
+            img.onerror = () => setPendingImages(prev => Math.max(0, prev - 1));
+            img.src = src;
+          });
         }
       } catch (err) {
         console.error("Error fetching album:", err);
@@ -382,33 +412,15 @@ export default function Albums() {
     navigate(`/song/${trackId}`);
   }
   
-  // If still loading, show spinner
-  if (loading) {
-    return (
-      <div className="my-6">
-        <div className="mb-8">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="flex items-center" style={{ maxWidth: "1200px", width: "100%" }}>
-              <div className="relative" style={{ width: 470, height: 470, transform: "translateX(70px)" }}>
-                <Skeleton className="w-full h-full rounded-full" />
-              </div>
-              <div className="relative ml-[-80px]" style={{ width: 480, height: 480 }}>
-                <Skeleton className="w-full h-full rounded-none" />
-              </div>
-            </div>
-          </div>
-        </div>
+  useEffect(() => {
+    if (!loading && pendingImages === 0) {
+      setLayoutReady(true);
+    }
+  }, [loading, pendingImages]);
 
-        <div className="mb-8">
-          <h3 className="text-3xl font-semibold mb-4 text-start">Tracks</h3>
-          <div className="space-y-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <TrackRowSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  // If still loading (data or images), show spinner
+  if (loading || !layoutReady) {
+    return <LoadingSpinner message="Loading album..." />;
   }
   
   // If there was an error, show error message

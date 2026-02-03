@@ -191,9 +191,9 @@ export default function UserDetails() {
         </div>
       </div>
       
-      <div className="mb-8">
+      {/* <div className="mb-8">
               <ListeningHistoryChart />
-      </div>
+      </div> */}
 
       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
         <a
