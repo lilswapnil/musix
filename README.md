@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 <p align="center">
-  <img src="./frontend/assets/musix-preview.png" width="80%" alt="Moviez Preview" />
+  <img src="./frontend/assets/musix.mp4" width="80%" alt="Musix Preview" />
 </p>
 
 
