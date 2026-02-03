@@ -1,6 +1,7 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { deezerService } from '../../../services/deezerServices';
 import { removeAccessToken } from '../../../utils/tokenStorage';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
@@ -13,6 +14,30 @@ export default function RecentPlayed({ token }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const isDeezerId = (value) => {
+    if (!value) return false;
+    return typeof value === 'number' || /^\d+$/.test(String(value));
+  };
+
+  const goToSong = async (track) => {
+    if (isDeezerId(track?.id)) {
+      navigate(`/song/${track.id}`);
+      return;
+    }
+    const artistNames = track?.artists?.map(a => a.name).join(' ') || '';
+    const query = `${track?.name || ''} ${artistNames}`.trim();
+    if (!query) return;
+    try {
+      const result = await deezerService.searchTracks(query, 1);
+      const match = result?.data?.[0];
+      if (match?.id) {
+        navigate(`/song/${match.id}`);
+      }
+    } catch (err) {
+      console.warn('Could not resolve song to Deezer id:', err);
+    }
+  };
 
   // Load liked songs from localStorage on component mount
   useEffect(() => {
@@ -186,7 +211,7 @@ export default function RecentPlayed({ token }) {
                       <div 
                         key={`${item.track.id}-${index}`} 
                         className="flex items-center mb-2 last:mb-0 border-muted border p-2 rounded hover:bg-opacity-90 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/song/${item.track.id}`)}
+                        onClick={() => { void goToSong(item.track); }}
                       >
                         <div className="w-12 h-12 flex-shrink-0">
                           <img 
