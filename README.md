@@ -1,12 +1,10 @@
 # 🎵 Musix
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Open-00C853?logo=vercel&logoColor=white)](https://musix-now.vercel.app/)
 [![React](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Spotify API](https://img.shields.io/badge/Spotify_API-v1-1DB954?logo=spotify&logoColor=white)](https://developer.spotify.com/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Open-00C853?logo=vercel&logoColor=white)](https://musix-now.vercel.app/)
-
-[Live](https://musix-now.vercel.app/)
 
 <p align="center">
   <img src="./frontend/assets/musix-preview.png" width="80%" alt="Moviez Preview" />
