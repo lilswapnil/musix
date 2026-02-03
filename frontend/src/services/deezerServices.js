@@ -8,7 +8,6 @@ export const deezerService = {
   // CORS proxy fallbacks (ordered)
   _corsProxies: [
     'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url=',
     'https://thingproxy.freeboard.io/fetch/'
   ],
 
@@ -33,9 +32,16 @@ export const deezerService = {
           rateLimit: 50,
           timeWindow: 60000,
           cacheTime: 300000,
+          retries: 0,
           ...controls
         });
       } catch (error) {
+        const message = String(error?.message || '');
+        const isTimeout = error?.status === 408 || message.includes('408') || message.toLowerCase().includes('timeout');
+        if (isTimeout) {
+          lastError = error;
+          continue;
+        }
         lastError = error;
       }
     }
