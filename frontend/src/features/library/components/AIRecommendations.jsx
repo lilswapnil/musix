@@ -217,15 +217,6 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
                     <FontAwesomeIcon icon={faPlay} className="mr-2" />
                     Add to Queue
                   </button>
-                  <a 
-                    href={nextRecommendation.external_urls?.spotify} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center bg-accent/20 hover:bg-accent/30 text-accent py-2 px-4 rounded-full transition-colors"
-                  >
-                    <FontAwesomeIcon icon={faExternalLinkAlt} className="mr-2" />
-                    Open
-                  </a>
                 </div>
               </div>
             </div>

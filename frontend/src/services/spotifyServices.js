@@ -732,6 +732,14 @@ export const spotifyService = {
   },
 
   pause: async function() {
+    if (this._player && this._isPlayerReady) {
+      try {
+        await this._player.pause();
+        return;
+      } catch (error) {
+        console.warn('SDK pause failed, falling back to API:', error);
+      }
+    }
     if (!this._isPlayerReady || !this._deviceId) {
       await this.ensurePlayerReady();
     }
@@ -746,6 +754,14 @@ export const spotifyService = {
   },
 
   resume: async function() {
+    if (this._player && this._isPlayerReady) {
+      try {
+        await this._player.resume();
+        return;
+      } catch (error) {
+        console.warn('SDK resume failed, falling back to API:', error);
+      }
+    }
     if (!this._isPlayerReady || !this._deviceId) {
       await this.ensurePlayerReady();
     }
@@ -774,6 +790,14 @@ export const spotifyService = {
   },
 
   seekToPosition: async function(positionMs) {
+    if (this._player && this._isPlayerReady) {
+      try {
+        await this._player.seek(positionMs);
+        return;
+      } catch (error) {
+        console.warn('SDK seek failed, falling back to API:', error);
+      }
+    }
     if (!this._isPlayerReady || !this._deviceId) {
       await this.ensurePlayerReady();
     }
@@ -819,6 +843,14 @@ export const spotifyService = {
    */
   setVolume: async function(volumePercent, deviceId = null) {
     try {
+      if (this._player && this._isPlayerReady) {
+        try {
+          await this._player.setVolume(Math.max(0, Math.min(100, volumePercent)) / 100);
+          return;
+        } catch (error) {
+          console.warn('SDK setVolume failed, falling back to API:', error);
+        }
+      }
       if (!this._isPlayerReady || !this._deviceId) {
         await this.ensurePlayerReady();
       }
@@ -988,6 +1020,14 @@ export const spotifyService = {
    */
   skipToNext: async function(deviceId = null) {
     try {
+      if (this._player && this._isPlayerReady) {
+        try {
+          await this._player.nextTrack();
+          return;
+        } catch (error) {
+          console.warn('SDK nextTrack failed, falling back to API:', error);
+        }
+      }
       if (!this._isPlayerReady || !this._deviceId) {
         await this.ensurePlayerReady();
       }
@@ -1014,6 +1054,14 @@ export const spotifyService = {
    */
   skipToPrevious: async function(deviceId = null) {
     try {
+      if (this._player && this._isPlayerReady) {
+        try {
+          await this._player.previousTrack();
+          return;
+        } catch (error) {
+          console.warn('SDK previousTrack failed, falling back to API:', error);
+        }
+      }
       if (!this._isPlayerReady || !this._deviceId) {
         await this.ensurePlayerReady();
       }
