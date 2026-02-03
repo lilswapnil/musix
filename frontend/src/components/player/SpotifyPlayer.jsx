@@ -51,7 +51,7 @@ export default function SpotifyPlayer() {
               </div>
             </>
           ) : (
-            <span className="text-sm text-muted">Not playing</span>
+            <span className="text-sm text-white">Not playing</span>
           )}
         </div>
         
@@ -68,7 +68,7 @@ export default function SpotifyPlayer() {
             className="bg-primary-dark hover:bg-primary/80 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-md"
             onClick={togglePlay}
           >
-            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="text-white" />
           </button>
           
           <button 
@@ -92,7 +92,7 @@ export default function SpotifyPlayer() {
           />
         </div>
       </div>
-      {playerError && <div className="text-center text-xs text-error mt-1">{playerError}</div>}
+      {playerError && console.error(playerError)}
     </div>
   );
 }
