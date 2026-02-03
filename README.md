@@ -15,11 +15,12 @@ A modern music streaming web application that integrates with Spotify API to dis
 
 ## 📸 Screenshot
 <p align="center">
-  <img src="./frontend/assets/screenshot1.png" width="80%" alt="Moviez Screenshot" />
+  <img src="./frontend/assets/screenshot1.png" width="49%" alt="Moviez Screenshot" />
+   <img src="./frontend/assets/screenshot2.png" width="49%" alt="Moviez Screenshot" />
 </p>
 
 <p align="center">
-  <img src="./frontend/assets/screenshot2.png" width="80%" alt="Moviez Screenshot" />
+ 
 </p>
 
 ## 📋 Table of Contents
