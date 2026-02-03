@@ -1,10 +1,12 @@
-import { cachedFetch, enhancedApiRequest, throttle } from '../utils/requestUtils';
+import { cachedFetch, throttle } from '../utils/requestUtils';
+import { createApiClient, normalizeApiError } from './apiClient';
 
 /**
  * Deezer API Services
  * Provides methods to interact with the Deezer API through our CORS proxy
  */
 export const deezerService = {
+  _apiClient: createApiClient(),
   // CORS proxy fallbacks (ordered)
   _corsProxies: [
     'https://corsproxy.io/?',
@@ -27,13 +29,15 @@ export const deezerService = {
     if (import.meta.env.PROD) {
       try {
         const proxyUrl = `/api/deezer?url=${encodeURIComponent(deezerUrl)}`;
-        return await enhancedApiRequest(proxyUrl, options, {
+        return await deezerService._apiClient.request(proxyUrl, options, {
+          enhancedControls: {
           domain: 'musix-deezer-proxy',
           rateLimit: 200,
           timeWindow: 60000,
           cacheTime: 300000,
           retries: 0,
-          ...controls
+            ...controls
+          }
         });
       } catch (error) {
         lastError = error;
@@ -42,13 +46,15 @@ export const deezerService = {
     for (const proxyBase of deezerService._corsProxies) {
       const fullUrl = deezerService._buildProxyUrl(proxyBase, deezerUrl);
       try {
-        return await enhancedApiRequest(fullUrl, options, {
-          domain: 'api.deezer.com',
-          rateLimit: 50,
-          timeWindow: 60000,
-          cacheTime: 300000,
-          retries: 0,
-          ...controls
+        return await deezerService._apiClient.request(fullUrl, options, {
+          enhancedControls: {
+            domain: 'api.deezer.com',
+            rateLimit: 50,
+            timeWindow: 60000,
+            cacheTime: 300000,
+            retries: 0,
+            ...controls
+          }
         });
       } catch (error) {
         const message = String(error?.message || '');
@@ -60,7 +66,10 @@ export const deezerService = {
         lastError = error;
       }
     }
-    throw lastError || new Error('All Deezer CORS proxies failed');
+    if (lastError) {
+      throw normalizeApiError(lastError, 'deezer:proxy');
+    }
+    throw normalizeApiError(new Error('All Deezer CORS proxies failed'), 'deezer:proxy');
   },
   
   /**
@@ -81,8 +90,9 @@ export const deezerService = {
       
       return await throttledRequest();
     } catch (error) {
-      console.error('Error fetching trending tracks:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:chart/tracks');
+      console.error('Error fetching trending tracks:', normalized);
+      throw normalized;
     }
   },
 
@@ -93,8 +103,9 @@ export const deezerService = {
         cacheTime: 300000
       });
     } catch (error) {
-      console.error('Error fetching featured playlists:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:chart/playlists');
+      console.error('Error fetching featured playlists:', normalized);
+      throw normalized;
     }
   },
   
@@ -110,8 +121,27 @@ export const deezerService = {
         cacheTime: 300000
       });
     } catch (error) {
-      console.error('Error fetching trending albums:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:chart/albums');
+      console.error('Error fetching trending albums:', normalized);
+      throw normalized;
+    }
+  },
+
+  /**
+   * Get new releases from Deezer editorial endpoint
+   * @param {number} limit - Maximum number of albums to return
+   * @returns {Promise} - Promise containing release data
+   */
+  getNewReleases: async (limit = 20) => {
+    try {
+      const deezerUrl = `https://api.deezer.com/editorial/0/releases?limit=${limit}`;
+      return await deezerService._fetchWithProxy(deezerUrl, {}, {
+        cacheTime: 300000
+      });
+    } catch (error) {
+      const normalized = normalizeApiError(error, 'deezer:editorial/releases');
+      console.error('Error fetching new releases:', normalized);
+      throw normalized;
     }
   },
   
@@ -127,8 +157,9 @@ export const deezerService = {
         cacheTime: 300000
       });
     } catch (error) {
-      console.error('Error fetching trending artists:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:chart/artists');
+      console.error('Error fetching trending artists:', normalized);
+      throw normalized;
     }
   },
   
@@ -152,8 +183,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error('Error fetching track details:', error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:track/${trackId}`);
+      console.error('Error fetching track details:', normalized);
+      throw normalized;
     }
   },
   
@@ -197,8 +229,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error(`Error fetching artist ${artistId}:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:artist/${artistId}`);
+      console.error(`Error fetching artist ${artistId}:`, normalized);
+      throw normalized;
     }
   },
 
@@ -237,8 +270,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error(`Error fetching top tracks for artist ${artistId}:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:artist/${artistId}/top`);
+      console.error(`Error fetching top tracks for artist ${artistId}:`, normalized);
+      throw normalized;
     }
   },
 
@@ -277,8 +311,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error(`Error fetching albums for artist ${artistId}:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:artist/${artistId}/albums`);
+      console.error(`Error fetching albums for artist ${artistId}:`, normalized);
+      throw normalized;
     }
   },
   
@@ -307,8 +342,9 @@ export const deezerService = {
       
       return await throttledRequest();
     } catch (error) {
-      console.error(`Error searching ${type}:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:search/${type}`);
+      console.error(`Error searching ${type}:`, normalized);
+      throw normalized;
     }
   },
   
@@ -333,8 +369,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error('Error searching tracks:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:search/track');
+      console.error('Error searching tracks:', normalized);
+      throw normalized;
     }
   },
 
@@ -377,8 +414,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error(`Error fetching album ${albumId}:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:album/${albumId}`);
+      console.error(`Error fetching album ${albumId}:`, normalized);
+      throw normalized;
     }
   },
 
@@ -403,8 +441,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error('Error fetching playlist details:', error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:playlist/${playlistId}`);
+      console.error('Error fetching playlist details:', normalized);
+      throw normalized;
     }
   },
 
@@ -427,8 +466,9 @@ export const deezerService = {
       
       return await response.json();
     } catch (error) {
-      console.error('Error fetching genres:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:genre');
+      console.error('Error fetching genres:', normalized);
+      throw normalized;
     }
   },
 
@@ -449,8 +489,9 @@ export const deezerService = {
       
       return await response.json();
     } catch (error) {
-      console.error('Error fetching music categories:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:editorial');
+      console.error('Error fetching music categories:', normalized);
+      throw normalized;
     }
   },
 
@@ -544,8 +585,9 @@ export const deezerService = {
       
       return result;
     } catch (error) {
-      console.error(`Error searching all types:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, 'deezer:search/all');
+      console.error(`Error searching all types:`, normalized);
+      throw normalized;
     }
   },
 
@@ -595,8 +637,9 @@ export const deezerService = {
       
       return data;
     } catch (error) {
-      console.error(`Error fetching artist tracks:`, error);
-      throw error;
+      const normalized = normalizeApiError(error, `deezer:artist/${artistId}/top`);
+      console.error(`Error fetching artist tracks:`, normalized);
+      throw normalized;
     }
   },
 };

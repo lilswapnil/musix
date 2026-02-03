@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
-import FeaturedPlaylists from '../components/FeaturedPlaylists';
-import FeaturedGenres from '../components/FeaturedGenres';
-import TopAlbums from '../components/TopAlbums';
-import TrendingSongs from '../components/TrendingSongs';
-import TopArtists from '../components/TopArtists';
-import NewReleases from '../components/NewReleases';
-import AIRecommendations from '../../library/components/AIRecommendations';
+import HomeRecommendationsSection from '../components/home/HomeRecommendationsSection';
+import HomeChartsSection from '../components/home/HomeChartsSection';
+import HomeSpotifySection from '../components/home/HomeSpotifySection';
+import HomeFeaturedPlaylistsSection from '../components/home/HomeFeaturedPlaylistsSection';
 // import { spotifyService } from '../../../services/spotifyServices';
 import { spotifyService } from '../../../services/spotifyServices';
 
@@ -31,25 +28,10 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* Only show AI Recommendations when authenticated with Spotify */}
-      {isSpotifyAuthenticated && (
-        <AIRecommendations mode="single" source="spotify" />
-      )}
-
-      {/* These components use Deezer API and don't require Spotify auth */}
-      <TrendingSongs />
-      <TopAlbums />
-      <TopArtists />
-
-      {/* Only show Spotify-dependent components when authenticated */}
-      {isSpotifyAuthenticated && (
-        <>
-          <NewReleases />
-          {/* <FeaturedGenres /> */}
-        </>
-      )}
-
-      <FeaturedPlaylists />
+      <HomeRecommendationsSection isSpotifyAuthenticated={isSpotifyAuthenticated} />
+      <HomeChartsSection />
+      <HomeSpotifySection isSpotifyAuthenticated={isSpotifyAuthenticated} />
+      <HomeFeaturedPlaylistsSection />
     </div>
   );
 }

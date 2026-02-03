@@ -1,9 +1,10 @@
 import React, { lazy, Suspense } from 'react';
 import PageSkeleton from '../components/common/ui/PageSkeleton';
+import RouteErrorBoundary from '../components/common/ui/RouteErrorBoundary';
 
 import { deezerService } from '../services/deezerServices';
 import { spotifyService } from '../services/spotifyServices';
-const Albums = lazy(() => import('../features/search/components/Albums'));
+const Albums = lazy(() => import('../features/search/pages/Albums'));
 
 // Loader for preloading album data before rendering Albums page
 export async function albumLoader({ params }) {
@@ -17,23 +18,25 @@ export async function albumLoader({ params }) {
 
     const spotifyAlbum = await spotifyService.getAlbum(params.albumId);
     return { albumData: spotifyAlbum || null };
-  } catch (err) {
+  } catch {
     // Avoid blocking navigation; the component handles fetch/errors.
     return { albumData: null };
   }
 }
-const Artists = lazy(() => import('../features/search/components/Artists'));
-const Songs = lazy(() => import('../features/search/components/Songs'));
-const Genres = lazy(() => import('../features/search/components/Genres'));
+const Artists = lazy(() => import('../features/search/pages/Artists'));
+const Songs = lazy(() => import('../features/search/pages/Songs'));
+const Genres = lazy(() => import('../features/search/pages/Genres'));
 const SearchPage = lazy(() => import('../features/search/pages/SearchPage'));
 
 export const musicRoutes = [
   {
     path: 'search',
     element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <SearchPage />
-      </Suspense>
+      <RouteErrorBoundary>
+        <Suspense fallback={<PageSkeleton />}>
+          <SearchPage />
+        </Suspense>
+      </RouteErrorBoundary>
     ),
     children: [
       {
@@ -42,26 +45,32 @@ export const musicRoutes = [
           {
             path: '',
             element: (
-              <Suspense fallback={<PageSkeleton />}>
-                <Artists />
-              </Suspense>
+              <RouteErrorBoundary>
+                <Suspense fallback={<PageSkeleton />}>
+                  <Artists />
+                </Suspense>
+              </RouteErrorBoundary>
             ),
           },
           {
             path: 'album/:albumId',
             loader: albumLoader,
             element: (
-              <Suspense fallback={<PageSkeleton />}>
-                <Albums />
-              </Suspense>
+              <RouteErrorBoundary>
+                <Suspense fallback={<PageSkeleton />}>
+                  <Albums />
+                </Suspense>
+              </RouteErrorBoundary>
             ),
           },
           {
             path: 'song/:songId',
             element: (
-              <Suspense fallback={<PageSkeleton />}>
-                <Songs />
-              </Suspense>
+              <RouteErrorBoundary>
+                <Suspense fallback={<PageSkeleton />}>
+                  <Songs />
+                </Suspense>
+              </RouteErrorBoundary>
             ),
           },
         ],
@@ -70,25 +79,31 @@ export const musicRoutes = [
         path: 'album/:albumId',
         loader: albumLoader,
         element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Albums />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Albums />
+            </Suspense>
+          </RouteErrorBoundary>
         ),
       },
       {
         path: 'song/:songId',
         element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Songs />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Songs />
+            </Suspense>
+          </RouteErrorBoundary>
         ),
       },
       {
         path: 'genre/:genreName',
         element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Genres />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Genres />
+            </Suspense>
+          </RouteErrorBoundary>
         ),
       },
     ],
@@ -100,25 +115,31 @@ export const musicRoutes = [
       {
         path: '',
         element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Artists />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Artists />
+            </Suspense>
+          </RouteErrorBoundary>
         ),
       },
       {
         path: 'album/:albumId',
         element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Albums />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Albums />
+            </Suspense>
+          </RouteErrorBoundary>
         ),
       },
       {
         path: 'song/:songId',
         element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <Songs />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Songs />
+            </Suspense>
+          </RouteErrorBoundary>
         ),
       },
     ],
@@ -127,25 +148,31 @@ export const musicRoutes = [
     path: 'album/:albumId',
     loader: albumLoader,
     element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <Albums />
-      </Suspense>
+      <RouteErrorBoundary>
+        <Suspense fallback={<PageSkeleton />}>
+          <Albums />
+        </Suspense>
+      </RouteErrorBoundary>
     ),
   },
   {
     path: 'song/:songId',
     element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <Songs />
-      </Suspense>
+      <RouteErrorBoundary>
+        <Suspense fallback={<PageSkeleton />}>
+          <Songs />
+        </Suspense>
+      </RouteErrorBoundary>
     ),
   },
   {
     path: 'genre/:genreName',
     element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <Genres />
-      </Suspense>
+      <RouteErrorBoundary>
+        <Suspense fallback={<PageSkeleton />}>
+          <Genres />
+        </Suspense>
+      </RouteErrorBoundary>
     ),
   },
 ];

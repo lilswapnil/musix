@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import UserDetails from "../components/UserDetails";
+import UserDetails from "../components/details/UserDetails";
 
 import { getAccessToken } from '../../../utils/tokenStorage';
 import { useNavigate } from 'react-router-dom';

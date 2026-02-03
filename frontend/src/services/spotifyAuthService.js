@@ -1,6 +1,7 @@
 import { generatePKCEChallenge, storeCodeVerifier, getCodeVerifier, clearCodeVerifier } from '../utils/pkceUtils';
 import { setAccessToken, setRefreshToken, setUserProfile, getRefreshToken } from '../utils/tokenStorage';
-import { fetchWithHandling } from './requestUtils';
+import { fetchWithHandling } from '../utils/requestUtils';
+import { normalizeApiError } from './apiClient';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
@@ -102,7 +103,7 @@ export const exchangeCodeForToken = async (code) => {
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     clearCodeVerifier();
-    throw error;
+    throw normalizeApiError(error, 'https://accounts.spotify.com/api/token');
   }
 };
 
@@ -141,6 +142,6 @@ export const refreshAccessToken = async () => {
     return data.access_token;
   } catch (error) {
     console.error('Error refreshing access token:', error);
-    throw error;
+    throw normalizeApiError(error, 'https://accounts.spotify.com/api/token');
   }
 };

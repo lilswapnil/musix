@@ -6,6 +6,22 @@
  * @param {number} wait - The delay in milliseconds before executing
  * @returns {Function} - Wrapper function that handles the debouncing
  */
+export async function fetchWithHandling(url, options = {}) {
+  const response = await fetch(url, options);
+  const contentType = response.headers.get('content-type');
+  let data;
+  if (contentType && contentType.includes('application/json')) {
+    data = await response.json();
+  } else {
+    data = await response.text();
+  }
+  if (!response.ok) {
+    const errorMsg = data?.error_description || data?.error || response.statusText || 'Request failed';
+    throw new Error(errorMsg);
+  }
+  return data;
+}
+
 export function debounce(func, wait = 300) {
   let timeout;
   return function executedFunction(...args) {

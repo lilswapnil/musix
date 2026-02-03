@@ -1,6 +1,7 @@
-import { enhancedApiRequest, throttle } from '../utils/requestUtils';
+import { throttle } from '../utils/requestUtils';
 import { getAccessToken as getStoredAccessToken, getRefreshToken, getTokenExpiry } from '../utils/tokenStorage';
 import { refreshAccessToken as refreshToken } from './spotifyAuthService';
+import { createApiClient } from './apiClient';
 
 /**
  * Spotify API Services with debouncing and throttling
@@ -25,6 +26,7 @@ export const spotifyService = {
   _apiBase: 'https://api.spotify.com/v1',
   _authBase: 'https://accounts.spotify.com/api',
   _tokenKey: 'spotify_auth_data',
+  _apiClient: null,
 
   // API rate limits
   _rateLimit: {
@@ -146,31 +148,15 @@ export const spotifyService = {
         throw new Error('Authentication required for this request');
       }
       
-      // Try to get a token - only use user token, not client credentials
-      const token = await this.getUserToken().catch(e => {
-        console.error('Failed to get user token:', e);
-        throw new Error('Authentication required');
-      });
-      
-      const url = `${this._apiBase}${endpoint}`;
-      
-      const urlWithParams = options.params
-        ? `${url}?${new URLSearchParams(options.params)}`
-        : url;
-      
-      const requestOptions = {
-        method: options.method || 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-      };
-      
-      if (options.body) {
-        requestOptions.body = JSON.stringify(options.body);
+      if (!this._apiClient) {
+        this._apiClient = createApiClient({
+          baseUrl: this._apiBase,
+          getToken: () => this.getUserToken(),
+          refreshToken: () => this.refreshAccessToken(),
+          onAuthFailure: () => this.logout()
+        });
       }
-      
+
       // Rest of the method remains the same...
       let rateLimitConfig = this._rateLimit.default;
       let throttleFn = null;
@@ -187,18 +173,31 @@ export const spotifyService = {
       
       const cacheTime = endpoint.includes('/search') ? 60000 : 300000;
       
+      const enhancedControls = {
+        domain: 'api.spotify.com',
+        rateLimit: rateLimitConfig.max,
+        timeWindow: rateLimitConfig.window,
+        cacheTime
+      };
+
       const requestFn = throttleFn
-        ? throttleFn(() => enhancedApiRequest(urlWithParams, requestOptions, {
-            domain: 'api.spotify.com',
-            rateLimit: rateLimitConfig.max,
-            timeWindow: rateLimitConfig.window,
-            cacheTime
+        ? throttleFn(() => this._apiClient.request(endpoint, {
+            method: options.method || 'GET',
+            headers: options.headers,
+            body: options.body
+          }, {
+            params: options.params,
+            auth: true,
+            enhancedControls
           }))
-        : () => enhancedApiRequest(urlWithParams, requestOptions, {
-            domain: 'api.spotify.com',
-            rateLimit: rateLimitConfig.max,
-            timeWindow: rateLimitConfig.window,
-            cacheTime
+        : () => this._apiClient.request(endpoint, {
+            method: options.method || 'GET',
+            headers: options.headers,
+            body: options.body
+          }, {
+            params: options.params,
+            auth: true,
+            enhancedControls
           });
       
       try {
@@ -216,17 +215,6 @@ export const spotifyService = {
         throw err;
       }
     } catch (error) {
-      // Handle 401 unauthorized errors
-      if (error.message?.includes('401')) {
-        try {
-          await this.refreshAccessToken();
-          return this.apiRequest(endpoint, options); // Retry with new token
-        } catch (refreshError) {
-          console.error('Error refreshing token:', refreshError);
-          throw new Error(`Authentication failed: ${refreshError.message || 'Token refresh failed'}`);
-        }
-      }
-      
       // Reduce noisy logging for 403/404
       if (!(error?.status === 403 || error?.status === 404 ||
             String(error?.message || '').includes('403') ||
@@ -337,7 +325,7 @@ export const spotifyService = {
         return await spotifyService.apiRequest('/browse/featured-playlists', {
           params: { limit, country: market }
         });
-      } catch (error) {
+      } catch {
         // Fallback to toplists category if featured-playlists is unavailable
         const toplists = await spotifyService.apiRequest('/browse/categories/toplists/playlists', {
           params: { limit, country: market }
@@ -365,14 +353,16 @@ export const spotifyService = {
   /**
    * Get new releases (albums) from Spotify
    */
-  getNewReleases: async (limit = 20) => {
+  getNewReleases: async (limit = 20, offset = 0) => {
     try {
       // Check if user is logged in before attempting to use user token
       if (spotifyService.isLoggedIn()) {
+        const market = await spotifyService.getUserMarket().catch(() => 'US');
         return await spotifyService.apiRequest('/browse/new-releases', {
           params: { 
             limit,
-            country: 'US'
+            offset,
+            country: market
           }
         });
       } else {
@@ -557,7 +547,7 @@ export const spotifyService = {
       if (!window.Spotify) {
         await this._loadSpotifyScript();
       }
-    } catch (sdkErr) {
+    } catch {
       this._player = null;
       this._deviceId = null;
       this._isPlayerReady = false;

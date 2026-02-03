@@ -1,6 +1,6 @@
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
-import logo from '../../assets/logo-light.svg';
+import logo from '../../../public/logo-light.svg';
 import { debounce } from '../../utils/requestUtils';
 
 export default function NavBar() {

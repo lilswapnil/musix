@@ -8,7 +8,6 @@ import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {
   const [albumArts, setAlbumArts] = useState([]);
-  const [albumsLoading, setAlbumsLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setIsAuthenticated, setUserProfile } = useAuth();
@@ -33,7 +32,6 @@ export default function LoginPage() {
     // Fetch trending albums for background grid
     const fetchAlbums = async () => {
       try {
-        setAlbumsLoading(true);
         const response = await deezerService.getTrendingAlbums(50);
         if (response && response.data) {
           setAlbumArts(
@@ -42,10 +40,8 @@ export default function LoginPage() {
               .filter(Boolean)
           );
         }
-      } catch (e) {
+      } catch {
         setAlbumArts([]);
-      } finally {
-        setAlbumsLoading(false);
       }
     };
     fetchAlbums();
