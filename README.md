@@ -136,8 +136,8 @@ frontend/  # React app (Spotify, Deezer, UI)
 ## Screenshots
 
 <p align="center">
-  <img src="./frontend/assets/screenshot1.png" width="49%" alt="Musix Screenshot" />
-  <img src="./frontend/assets/screenshot2.png" width="49%" alt="Musix Screenshot" />
+  <img src="./frontend/assets/screenshot1.png" width="90%" alt="Musix Screenshot" />
+  <img src="./frontend/assets/screenshot2.png" width="90%" alt="Musix Screenshot" />
 </p>
 
 ## 🤝 Contributing
