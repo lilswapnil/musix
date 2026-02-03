@@ -2,16 +2,24 @@ import React, { lazy, Suspense } from 'react';
 import PageSkeleton from '../components/common/ui/PageSkeleton';
 
 import { deezerService } from '../services/deezerServices';
+import { spotifyService } from '../services/spotifyServices';
 const Albums = lazy(() => import('../features/search/components/Albums'));
 
 // Loader for preloading album data before rendering Albums page
 export async function albumLoader({ params }) {
   if (!params.albumId) throw new Response('Album ID required', { status: 400 });
   try {
-    const albumData = await deezerService.getAlbum(params.albumId);
-    return { albumData };
+    const isDeezerId = /^\d+$/.test(String(params.albumId || ''));
+    if (isDeezerId) {
+      const albumData = await deezerService.getAlbum(params.albumId);
+      return { albumData };
+    }
+
+    const spotifyAlbum = await spotifyService.getAlbum(params.albumId);
+    return { albumData: spotifyAlbum || null };
   } catch (err) {
-    throw new Response('Album not found', { status: 404 });
+    // Avoid blocking navigation; the component handles fetch/errors.
+    return { albumData: null };
   }
 }
 const Artists = lazy(() => import('../features/search/components/Artists'));

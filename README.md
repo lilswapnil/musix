@@ -13,7 +13,7 @@
 
 ### Features
 - Spotify login with PKCE and Premium-aware web player
-- Spotify-based recommendations from the currently playing track
+- AI Recommendations from the currently playing track
 - Library: top tracks/artists, saved albums, and recently played
 - Deezer charts for trending songs, artists, albums, and playlists
 - Search, artist, album, and song detail pages
