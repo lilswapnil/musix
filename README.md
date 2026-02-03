@@ -5,11 +5,10 @@
 [![Spotify API](https://img.shields.io/badge/Spotify_API-v1-1DB954?logo=spotify&logoColor=white)](https://developer.spotify.com/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-A modern music discovery web app that blends Spotify playback with Deezer-powered charts and a personalized library. Includes Spotify OAuth (PKCE), a web playback player for Premium users, and a small backend for recommendations.
-
 <p align="center">
-  <img src="./frontend/assets/musix.svg" width="90%" alt="Musix Preview" />
+  <img src="./frontend/assets/musix-preview.png" width="80%" alt="Moviez Preview" />
 </p>
+
 
 ### Features
 - Spotify login with PKCE and Premium-aware web player
