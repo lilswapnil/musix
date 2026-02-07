@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getAccessToken, removeAccessToken } from '../../../../utils/tokenStorage';
+import { removeAccessToken } from '../../../../utils/tokenStorage';
 import { useNavigate } from 'react-router-dom';
 import { spotifyService } from '../../../../services/spotifyServices';
 import { deezerService } from '../../../../services/deezerServices';
@@ -127,34 +127,11 @@ export default function PersonalTop() {
     const fetchUserAlbums = async () => {
       try {
         setAlbumLoading(true);
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-          setAlbumError('You need to log in to see your albums');
-          setAlbumLoading(false);
-          return;
-        }
+        const data = await spotifyService.apiRequest('/me/albums', {
+          params: { limit: 50, market: 'from_token' }
+        });
 
-        const response = await fetch(
-          'https://api.spotify.com/v1/me/albums?limit=50&market=from_token',
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            }
-          }
-        );
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            removeAccessToken();
-            throw new Error('Session expired. Please log in again.');
-          }
-          throw new Error(`Error ${response.status}: Failed to fetch saved albums`);
-        }
-
-        const data = await response.json();
-        const formattedAlbums = data.items.map(item => ({
+        const formattedAlbums = (data?.items || []).map(item => ({
           id: item.album.id,
           title: item.album.name,
           artist: item.album.artists.map(artist => artist.name).join(', '),
@@ -166,6 +143,9 @@ export default function PersonalTop() {
         setSavedAlbums(formattedAlbums);
         setAlbumError('');
       } catch (err) {
+        if (String(err?.message || '').includes('401')) {
+          removeAccessToken();
+        }
         console.error('Error fetching saved albums:', err);
         setAlbumError('Failed to load your albums');
       } finally {

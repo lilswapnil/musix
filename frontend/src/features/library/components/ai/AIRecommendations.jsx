@@ -91,7 +91,29 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
     return () => clearInterval(refreshInterval);
   }, [fetchRecommendations]);
 
-  const handlePlayTrack = async (trackUri) => {
+  const resolveTrackUri = async (track) => {
+    if (!track) return null;
+    if (track.uri) return track.uri;
+    if (track.id) {
+      return track.id.startsWith('spotify:track:')
+        ? track.id
+        : `spotify:track:${track.id}`;
+    }
+    if (!track.name) return null;
+
+    try {
+      const artistNames = (track.artists || []).map(a => a.name).filter(Boolean).join(' ');
+      const query = [track.name, artistNames].filter(Boolean).join(' ');
+      const result = await spotifyService.search(query, 'track', 1);
+      return result?.tracks?.items?.[0]?.uri ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const handlePlayTrack = async (track) => {
+    const trackUri = await resolveTrackUri(track);
+    if (!trackUri) return;
     try {
       await spotifyService.play(trackUri);
     } catch {
@@ -103,7 +125,9 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
     }
   };
 
-  const handleQueueTrack = async (trackUri) => {
+  const handleQueueTrack = async (track) => {
+    const trackUri = await resolveTrackUri(track);
+    if (!trackUri) return;
     try {
       await spotifyService.addToQueue(trackUri);
     } catch {
@@ -187,7 +211,7 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
                 <div
                   key={track.id}
                   className="flex-shrink-0 w-48 group cursor-pointer"
-                    onClick={() => handleQueueTrack(track.uri)}
+                  onClick={() => handleQueueTrack(track)}
                 >
                   <div className="relative mb-4 overflow-hidden rounded-lg">
                     {track.album?.images?.[0]?.url ? (
@@ -207,7 +231,7 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handlePlayTrack(track.uri);
+                          handlePlayTrack(track);
                         }}
                         className="p-3 bg-accent rounded-full text-primary hover:bg-accent/80 transition"
                         aria-label="Play now"

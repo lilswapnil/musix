@@ -4,7 +4,7 @@ import { fetchWithHandling } from '../utils/requestUtils';
 import { normalizeApiError } from './apiClient';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 const persistRefreshTokenInAzure = async (refreshToken) => {
   if (!refreshToken || !BACKEND_BASE_URL) return;
@@ -83,16 +83,14 @@ export const exchangeCodeForToken = async (code) => {
   const redirectUri = getRedirectUri();
 
   try {
-    const data = await fetchWithHandling('https://accounts.spotify.com/api/token', {
+    const data = await fetchWithHandling(`${BACKEND_BASE_URL}/api/spotify/auth/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         code,
-        redirect_uri: redirectUri,
-        client_id: CLIENT_ID,
-        code_verifier: codeVerifier,
-      }).toString(),
+        codeVerifier,
+        redirectUri
+      })
     });
     setAccessToken(data.access_token, data.expires_in);
     setRefreshToken(data.refresh_token);
@@ -103,14 +101,14 @@ export const exchangeCodeForToken = async (code) => {
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     clearCodeVerifier();
-    throw normalizeApiError(error, 'https://accounts.spotify.com/api/token');
+    throw normalizeApiError(error, `${BACKEND_BASE_URL}/api/spotify/auth/token`);
   }
 };
 
 // Add new function to fetch user profile
 export const fetchAndStoreUserProfile = async (accessToken) => {
   try {
-    const userProfile = await fetchWithHandling('https://api.spotify.com/v1/me', {
+    const userProfile = await fetchWithHandling(`${BACKEND_BASE_URL}/api/spotify/me`, {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
@@ -128,20 +126,16 @@ export const refreshAccessToken = async () => {
   if (!refreshToken) throw new Error('Refresh token is missing.');
 
   try {
-    const data = await fetchWithHandling('https://accounts.spotify.com/api/token', {
+    const data = await fetchWithHandling(`${BACKEND_BASE_URL}/api/spotify/auth/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: CLIENT_ID,
-      }).toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
     });
     setAccessToken(data.access_token, data.expires_in);
     if (data.refresh_token) setRefreshToken(data.refresh_token);
     return data.access_token;
   } catch (error) {
     console.error('Error refreshing access token:', error);
-    throw normalizeApiError(error, 'https://accounts.spotify.com/api/token');
+    throw normalizeApiError(error, `${BACKEND_BASE_URL}/api/spotify/auth/refresh`);
   }
 };

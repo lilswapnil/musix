@@ -62,14 +62,14 @@ export default function AISingleRecommendationCard({
 
           <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start gap-3">
             <button
-              onClick={() => onPlayNow(recommendation.uri)}
+              onClick={() => onPlayNow(recommendation)}
               className="flex items-center bg-accent hover:bg-accent/80 text-primary py-2 px-4 rounded-full transition-colors font-semibold"
             >
               <FontAwesomeIcon icon={faPlay} className="mr-2" />
               Play Now
             </button>
             <button
-              onClick={() => onAddToQueue(recommendation.uri)}
+              onClick={() => onAddToQueue(recommendation)}
               className="flex items-center bg-accent hover:bg-accent/80 text-primary py-2 px-4 rounded-full transition-colors font-semibold"
             >
               <FontAwesomeIcon icon={faPlay} className="mr-2" />

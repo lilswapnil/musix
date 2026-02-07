@@ -5,6 +5,8 @@ import NowPlayingError from './NowPlayingError';
 import NowPlayingEmpty from './NowPlayingEmpty';
 import NowPlayingCard from './NowPlayingCard';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 // Update the function signature to accept token prop
 export default function CurrentlyPlaying({ token }) {
   const [currentTrack, setCurrentTrack] = useState(null);
@@ -20,7 +22,7 @@ export default function CurrentlyPlaying({ token }) {
         // No need to check token here, it's already checked in LibraryPage
         if (!token) return;
 
-        const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/spotify/me/player/currently-playing`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -51,7 +53,7 @@ export default function CurrentlyPlaying({ token }) {
           // Fetch artist image
           if (data.item && data.item.artists && data.item.artists[0]) {
             try {
-              const artistResponse = await fetch(`https://api.spotify.com/v1/artists/${data.item.artists[0].id}`, {
+              const artistResponse = await fetch(`${BACKEND_BASE_URL}/api/spotify/artists/${data.item.artists[0].id}`, {
                 headers: {
                   'Authorization': `Bearer ${token}`,
                 },

@@ -19,7 +19,6 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@tailwindcss/vite": "^4.0.14",
     "@tanstack/react-query": "^5.62.0",
-    "axios": "^1.8.4",
     "gapi-script": "^1.2.0",
     "helmet": "^7.2.0",
     "morgan": "^1.10.0",

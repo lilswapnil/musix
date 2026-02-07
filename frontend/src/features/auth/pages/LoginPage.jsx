@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { youtubeService } from '../../../services/youtubeService';
 import { redirectToSpotify } from '../../../services/spotifyAuthService';
 import { useAuth } from '../../../context/useAuth';
-import logo from '../../../assets/logo-light.svg';
 
 export default function LoginPage() {
   const [albumArts, setAlbumArts] = useState([]);
@@ -117,14 +116,14 @@ export default function LoginPage() {
 
       {/* Logo at the top */}
       <div className="mb-8 text-center z-10">
-        <img src={logo} alt="Musix" className="h-15 w-auto" />
+        <img src="/logo-light.svg" alt="Musix" className="h-15 w-auto" />
         <p className="text-muted">Your music companion</p>
       </div>
 
       <div className="w-full max-w-md rounded-lg glass-card p-8 shadow-2xl z-10">
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-bold text-white">Unwind Yourself</h1>
-          <p className="text-muted">Connect with your music.</p>
+          <p className="text-white">Connect with your music.</p>
         </div>
 
         {error && (

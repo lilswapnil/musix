@@ -1,25 +1,47 @@
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { healthRouter } from "./routes/health";
 import { meRouter } from "./routes/me";
 import { recommendationsRouter } from "./routes/recommendations";
+import { spotifyRouter } from "./routes/spotify";
+import { spotifyTokenRouter } from "./routes/spotifyToken";
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 export function createServer() {
   const app = express();
 
-  const origin = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
+  // Support single origin or comma-separated list
+  const defaultOrigins = [
+    "http://127.0.0.1:5174",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173"
+  ];
+  const envOrigins = (process.env.FRONTEND_ORIGIN ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
   app.use(
     cors({
-      origin,
+      origin: (origin, cb) => {
+        // Allow non-browser clients (curl/postman) with no Origin header
+        if (!origin) return cb(null, true);
+
+        if (allowedOrigins.includes(origin)) return cb(null, true);
+
+        return cb(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true,
-      methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     })
   );
 
@@ -28,11 +50,13 @@ export function createServer() {
   app.use("/api/health", healthRouter);
   app.use("/api/me", meRouter);
   app.use("/api/recommendations", recommendationsRouter);
-  
-    // Root route handler to prevent 404 on GET /
-    app.get("/", (req, res) => {
-      res.status(200).send({ message: "Musix backend is running." });
-    });
+  app.use("/api/spotify", spotifyRouter);
+  app.use("/api/spotify", spotifyTokenRouter);
+
+  // Root route handler to prevent 404 on GET /
+  app.get("/", (req, res) => {
+    res.status(200).send({ message: "Musix backend is running." });
+  });
 
   return app;
 }

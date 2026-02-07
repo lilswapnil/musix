@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from 'axios';
-import { ensureValidToken } from '../../../utils/refreshToken';
+import { spotifyService } from "../../../services/spotifyServices";
 import { deezerService } from "../../../services/deezerServices";
 import SearchHeader from "../components/search/SearchHeader";
 import SearchError from "../components/search/SearchError";
@@ -132,28 +131,15 @@ export default function SearchPage() {
       // Fallback to Spotify if Deezer fails or no results
       if (preferSpotify || (!deezerResults || (!deezerResults.tracks && !deezerResults.albums && !deezerResults.artists))) {
         try {
-          const token = await ensureValidToken();
+          spotifyResults = await spotifyService.search(searchQuery, 'album,artist,track', 50);
 
-          if (token) {
-            spotifyResults = await axios.get('https://api.spotify.com/v1/search', {
-              params: {
-                q: searchQuery,
-                type: 'album,artist,track',
-                limit: 50,
-                market: 'US'
-              },
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            if (spotifyResults.data) {
+          if (spotifyResults) {
               setSource('spotify');
 
               // Process Spotify tracks
               let spotifyTracks = [];
-              if (spotifyResults.data.tracks && spotifyResults.data.tracks.items) {
-                spotifyTracks = spotifyResults.data.tracks.items.map(track => ({
+              if (spotifyResults.tracks && spotifyResults.tracks.items) {
+                spotifyTracks = spotifyResults.tracks.items.map(track => ({
                   id: track.id,
                   name: track.name,
                   artist: track.artists[0]?.name || "Unknown Artist",
@@ -168,8 +154,8 @@ export default function SearchPage() {
 
               // Process Spotify albums
               let spotifyAlbums = [];
-              if (spotifyResults.data.albums && spotifyResults.data.albums.items) {
-                spotifyAlbums = spotifyResults.data.albums.items.map(album => ({
+              if (spotifyResults.albums && spotifyResults.albums.items) {
+                spotifyAlbums = spotifyResults.albums.items.map(album => ({
                   id: album.id,
                   name: album.name,
                   artist: album.artists[0]?.name || "Unknown Artist",
@@ -183,8 +169,8 @@ export default function SearchPage() {
 
               // Process Spotify artists
               let spotifyArtists = [];
-              if (spotifyResults.data.artists && spotifyResults.data.artists.items) {
-                spotifyArtists = spotifyResults.data.artists.items.map(artist => ({
+              if (spotifyResults.artists && spotifyResults.artists.items) {
+                spotifyArtists = spotifyResults.artists.items.map(artist => ({
                   id: artist.id,
                   name: artist.name,
                   picture: artist.images[1]?.url || artist.images[0]?.url,
@@ -196,7 +182,6 @@ export default function SearchPage() {
               setSongs(spotifyTracks.sort((a, b) => b.popularity - a.popularity));
               setAlbums(spotifyAlbums);
               setArtists(spotifyArtists);
-            }
           }
         } catch (spotifyErr) {
           console.warn('Failed to search with Spotify API:', spotifyErr);

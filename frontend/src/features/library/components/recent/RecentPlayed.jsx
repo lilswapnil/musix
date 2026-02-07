@@ -8,6 +8,8 @@ import RecentPlayedError from './RecentPlayedError';
 import RecentPlayedEmpty from './RecentPlayedEmpty';
 import RecentPlayedGroupSection from './RecentPlayedGroupSection';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 // Update the function signature to accept token prop
 export default function RecentPlayed({ token }) {
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
@@ -85,7 +87,7 @@ export default function RecentPlayed({ token }) {
       };
 
       const response = await fetch(
-        'https://api.spotify.com/v1/me/player/recently-played?limit=50', 
+        `${BACKEND_BASE_URL}/api/spotify/me/player/recently-played?limit=50`,
         searchParameters
       );
       
@@ -103,8 +105,13 @@ export default function RecentPlayed({ token }) {
         throw new Error(`Error ${response.status}: Failed to fetch recently played tracks`);
       }
       
+      if (response.status === 204) {
+        setRecentlyPlayed([]);
+        return;
+      }
+
       const data = await response.json();
-      setRecentlyPlayed(data.items);
+      setRecentlyPlayed(data?.items || []);
       
     } catch (err) {
       setError(err.message || 'Something went wrong.');

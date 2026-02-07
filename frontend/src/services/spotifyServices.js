@@ -3,6 +3,8 @@ import { getAccessToken as getStoredAccessToken, getRefreshToken, getTokenExpiry
 import { refreshAccessToken as refreshToken } from './spotifyAuthService';
 import { createApiClient } from './apiClient';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 /**
  * Spotify API Services with debouncing and throttling
  */
@@ -23,7 +25,7 @@ export const spotifyService = {
     'user-read-currently-playing',
     'user-read-recently-played'
   ],
-  _apiBase: 'https://api.spotify.com/v1',
+  _apiBase: `${BACKEND_BASE_URL}/api/spotify`,
   _authBase: 'https://accounts.spotify.com/api',
   _tokenKey: 'spotify_auth_data',
   _apiClient: null,
@@ -200,9 +202,18 @@ export const spotifyService = {
             enhancedControls
           });
       
+      const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
       try {
         return await requestFn();
       } catch (err) {
+        const isRateLimited = err?.status === 429 ||
+          String(err?.message || '').includes('Rate limit exceeded');
+        if (isRateLimited) {
+          const retrySeconds = Number(err?.retryAfter || 1);
+          await sleep(Math.max(1, retrySeconds) * 1000);
+          return await requestFn();
+        }
         // Gracefully handle 403 Forbidden for missing scopes on specific endpoints
         const isForbidden = (err?.status === 403) || (String(err?.message || '').includes('403'));
         if (isForbidden) {
@@ -216,9 +227,10 @@ export const spotifyService = {
       }
     } catch (error) {
       // Reduce noisy logging for 403/404
-      if (!(error?.status === 403 || error?.status === 404 ||
+      if (!(error?.status === 403 || error?.status === 404 || error?.status === 429 ||
             String(error?.message || '').includes('403') ||
-            String(error?.message || '').includes('404'))) {
+            String(error?.message || '').includes('404') ||
+            String(error?.message || '').includes('Rate limit exceeded'))) {
         console.error(`Error in Spotify API request to ${endpoint}:`, error);
       }
       throw error;
