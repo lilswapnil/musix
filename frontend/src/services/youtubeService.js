@@ -1,3 +1,5 @@
+import { normalizeApiError } from './apiClient';
+
 const CLIENT_ID = import.meta.env.VITE_YOUTUBE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const SCOPES = [
@@ -82,14 +84,17 @@ const ensureTokenClient = async () => {
 };
 
 async function fetchUserProfile(accessToken) {
-  const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+  const requestUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+  const response = await fetch(requestUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`
     }
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch YouTube user profile');
+    const error = new Error('Failed to fetch YouTube user profile');
+    error.status = response.status;
+    throw normalizeApiError(error, requestUrl);
   }
 
   const profile = await response.json();
@@ -119,14 +124,17 @@ async function fetchYouTube(endpoint, params = {}) {
     url.searchParams.set('key', API_KEY);
   }
 
-  const response = await fetch(url.toString(), {
+  const requestUrl = url.toString();
+  const response = await fetch(requestUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`
     }
   });
 
   if (!response.ok) {
-    throw new Error(`YouTube API error: ${response.status}`);
+    const error = new Error(`YouTube API error: ${response.status}`);
+    error.status = response.status;
+    throw normalizeApiError(error, requestUrl);
   }
 
   return response.json();

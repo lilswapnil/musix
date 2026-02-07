@@ -1,4 +1,5 @@
 import { spotifyService } from './spotifyServices';
+import { normalizeApiError } from './apiClient';
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 const ENABLED = String(import.meta.env.VITE_ENABLE_AZURE_ML_RECS || '').toLowerCase() === 'true';
@@ -122,13 +123,15 @@ const fetchJson = async (url, options = {}) => {
   const response = await fetch(url, options);
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(text || `Request failed with status ${response.status}`);
+    const error = new Error(text || `Request failed with status ${response.status}`);
+    error.status = response.status;
+    throw normalizeApiError(error, url);
   }
   try {
     return text ? JSON.parse(text) : {};
   } catch (error) {
     console.error('Azure ML response parse failure:', error);
-    throw new Error('Failed to parse Azure ML response');
+    throw normalizeApiError(new Error('Failed to parse Azure ML response'), url);
   }
 };
 

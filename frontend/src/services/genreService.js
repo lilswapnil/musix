@@ -1,4 +1,5 @@
 import { spotifyService } from './spotifyServices';
+import { normalizeApiError } from './apiClient';
 
 // Default genres to display while loading
 const DEFAULT_GENRES = [
@@ -246,7 +247,7 @@ const genreService = {
       return genresWithImages;
     } catch (error) {
       console.error('Error matching genres with images:', error);
-      throw error;
+      throw normalizeApiError(error, 'spotify:categories');
     }
   }
 };

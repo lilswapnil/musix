@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from 'axios';
-import { ensureValidToken } from '../../../utils/refreshToken';
+import { spotifyService } from "../../../services/spotifyServices";
 import { deezerService } from "../../../services/deezerServices";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
-import { TrackRowSkeleton, CardSkeleton, SongRowSkeleton } from "../../../components/common/ui/Skeleton";
-import ScrollableSection from "../../../components/common/ui/ScrollableSection";
+import SearchHeader from "../components/search/SearchHeader";
+import SearchError from "../components/search/SearchError";
+import SearchLoading from "../components/search/SearchLoading";
+import SearchSongsSection from "../components/search/SearchSongsSection";
+import SearchAlbumsSection from "../components/search/SearchAlbumsSection";
+import SearchArtistsSection from "../components/search/SearchArtistsSection";
+import SearchEmptyState from "../components/search/SearchEmptyState";
 // Removed unused debounce import
 
 export default function SearchPage() {
@@ -129,28 +131,15 @@ export default function SearchPage() {
       // Fallback to Spotify if Deezer fails or no results
       if (preferSpotify || (!deezerResults || (!deezerResults.tracks && !deezerResults.albums && !deezerResults.artists))) {
         try {
-          const token = await ensureValidToken();
+          spotifyResults = await spotifyService.search(searchQuery, 'album,artist,track', 50);
 
-          if (token) {
-            spotifyResults = await axios.get('https://api.spotify.com/v1/search', {
-              params: {
-                q: searchQuery,
-                type: 'album,artist,track',
-                limit: 50,
-                market: 'US'
-              },
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            if (spotifyResults.data) {
+          if (spotifyResults) {
               setSource('spotify');
 
               // Process Spotify tracks
               let spotifyTracks = [];
-              if (spotifyResults.data.tracks && spotifyResults.data.tracks.items) {
-                spotifyTracks = spotifyResults.data.tracks.items.map(track => ({
+              if (spotifyResults.tracks && spotifyResults.tracks.items) {
+                spotifyTracks = spotifyResults.tracks.items.map(track => ({
                   id: track.id,
                   name: track.name,
                   artist: track.artists[0]?.name || "Unknown Artist",
@@ -165,8 +154,8 @@ export default function SearchPage() {
 
               // Process Spotify albums
               let spotifyAlbums = [];
-              if (spotifyResults.data.albums && spotifyResults.data.albums.items) {
-                spotifyAlbums = spotifyResults.data.albums.items.map(album => ({
+              if (spotifyResults.albums && spotifyResults.albums.items) {
+                spotifyAlbums = spotifyResults.albums.items.map(album => ({
                   id: album.id,
                   name: album.name,
                   artist: album.artists[0]?.name || "Unknown Artist",
@@ -180,8 +169,8 @@ export default function SearchPage() {
 
               // Process Spotify artists
               let spotifyArtists = [];
-              if (spotifyResults.data.artists && spotifyResults.data.artists.items) {
-                spotifyArtists = spotifyResults.data.artists.items.map(artist => ({
+              if (spotifyResults.artists && spotifyResults.artists.items) {
+                spotifyArtists = spotifyResults.artists.items.map(artist => ({
                   id: artist.id,
                   name: artist.name,
                   picture: artist.images[1]?.url || artist.images[0]?.url,
@@ -193,7 +182,6 @@ export default function SearchPage() {
               setSongs(spotifyTracks.sort((a, b) => b.popularity - a.popularity));
               setAlbums(spotifyAlbums);
               setArtists(spotifyArtists);
-            }
           }
         } catch (spotifyErr) {
           console.warn('Failed to search with Spotify API:', spotifyErr);
@@ -293,219 +281,40 @@ export default function SearchPage() {
     return groups;
   }, {});
 
+  const hasResults = songs.length > 0 || albums.length > 0 || artists.length > 0;
+
   return (
     <div className="my-4">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-start">
-          {query ? `Search Results for "${query}"` : "Search for music"}
-        </h2>
-        {(songs.length > 0 || albums.length > 0 || artists.length > 0) && 
-          <span className="text-xs text-muted">via {source === 'spotify' ? 'Spotify' : 'Deezer'}</span>
-        }
-      </div>
-
-      {error && (
-        <div className="bg-primary-light/50 p-4 mb-6 rounded-lg text-center">
-          <p className="text-amber-500 mb-2">{error}</p>
-          {error.includes("quickly") && (
-            <p className="text-xs text-muted">Our API has rate limits to prevent overuse</p>
-          )}
-        </div>
-      )}
+      <SearchHeader query={query} hasResults={hasResults} source={source} />
+      <SearchError error={error} />
 
       {loading ? (
-        <>
-          <div className="mb-8">
-            <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">Songs</h3>}>
-              <div className="flex space-x-2 scrollbar-hide">
-                {Array.from({ length: 3 }).map((_, idx) => (
-                  <div key={idx} className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]">
-                    {Array.from({ length: 4 }).map((__, i) => (
-                      <SongRowSkeleton key={i} />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </ScrollableSection>
-          </div>
-
-          <ScrollableSection title="Albums">
-            <div className="flex space-x-2 pb-1 scrollbar-hide">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <CardSkeleton key={i} />
-              ))}
-            </div>
-          </ScrollableSection>
-        </>
+        <SearchLoading />
       ) : (
         <>
-          {songs.length > 0 && Object.entries(groupedSongs).map(([groupName, groupSongs]) => (
-            <div key={groupName} className="mb-8">
-              <ScrollableSection title={<h3 className="text-2xl font-semibold text-start">{groupName}</h3>}>
-                <div className="flex space-x-2">
-                  {Array.from({ length: Math.ceil(groupSongs.length / 4) }).map((_, groupIndex) => {
-                    const groupTracks = groupSongs.slice(groupIndex * 4, groupIndex * 4 + 4);
-                    return (
-                      <div 
-                        key={groupIndex} 
-                        className="flex-shrink-0 rounded-lg p-2 w-[320px] md:w-[360px] lg:w-[390px]"
-                      >
-                        {groupTracks.map((song) => (
-                          <div 
-                            key={song.id} 
-                            className="flex items-center mb-3 last:mb-0 border-muted border p-2 rounded glass-hover transition-all cursor-pointer"
-                            onClick={() => navigate(`/song/${song.id}`)}
-                          >
-                            <div className="w-12 h-12 flex-shrink-0 relative group">
-                              <img 
-                                src={song.albumArt} 
-                                alt={song.name}
-                                className="w-full h-full object-cover rounded"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
-                                }}
-                              />
-                              {song.previewUrl && (
-                                <button
-                                  onClick={(e) => handlePlayPause(song.id, song.previewUrl, e)}
-                                  className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded"
-                                >
-                                  <FontAwesomeIcon 
-                                    icon={currentlyPlaying === song.id ? faPause : faPlay} 
-                                    className="text-white"
-                                  />
-                                </button>
-                              )}
-                            </div>
-                            
-                            <div className="ml-3 flex-grow min-w-0 text-start">
-                              <div className="font-semibold text-white truncate">{song.name}</div>
-                              <div className="flex justify-between">
-                                <div className="text-xs text-muted truncate">{song.artist}</div>
-                              </div>
-                            </div>
-                            
-                            <button 
-                              className="ml-2 p-2 rounded-full hover:bg-muted/20 transition-colors"
-                              onClick={(e) => handleLike(song.id, e)}
-                              aria-label={likedSongs[song.id] ? "Unlike" : "Like"}
-                            >
-                              <FontAwesomeIcon 
-                                icon={faHeart} 
-                                className={`${likedSongs[song.id] ? "text-red-500" : "text-muted"}`}
-                              />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollableSection>
-            </div>
-          ))}
-
-          {albums.length > 0 && (
-            <ScrollableSection title="Albums">
-              <div className="flex space-x-2 pb-1 scrollbar-hide">
-                {albums.map((album) => (
-                  <div 
-                    key={album.id} 
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden hover:bg-opacity-80 transition-colors cursor-pointer group border-muted"
-                    onClick={() => navigate(`/album/${album.id}`)}
-                  >
-                    <div className="relative">
-                      <img 
-                        src={album.coverArt}
-                        alt={album.name}
-                        className="w-full h-32 sm:h-40 md:h-48 object-cover"
-                        loading="lazy" decoding="async"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "https://via.placeholder.com/300x300?text=No+Image";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    </div>
-                    <div className="p-2 sm:p-3 md:p-4">
-                      <div className="text-center">
-                        <h3 className="font-semibold text-white text-xs sm:text-sm truncate">{album.name}</h3>
-                        <p className="text-[10px] sm:text-xs text-white mt-0.5 sm:mt-1 truncate">{album.artist}</p>
-                        {album.releaseDate && (
-                          <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">
-                            {album.releaseDate.substring(0, 4)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollableSection>
+          {songs.length > 0 && (
+            <SearchSongsSection
+              groupedSongs={groupedSongs}
+              currentlyPlaying={currentlyPlaying}
+              likedSongs={likedSongs}
+              onPlayPause={handlePlayPause}
+              onLike={handleLike}
+              onSongClick={(songId) => navigate(`/song/${songId}`)}
+            />
           )}
 
-          {artists.length > 0 && (
-            <ScrollableSection title="Artists">
-              <div className="flex space-x-2 pb-1 scrollbar-hide">
-                {artists.map((artist) => (
-                  <div 
-                    key={artist.id} 
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-48 overflow-hidden cursor-pointer group relative border-muted glass-hover transition-all"
-                    onClick={() => navigate(`/artist/${artist.id}`)}
-                    style={{ aspectRatio: '1.6/1.7' }}
-                  >
-                    <div className="absolute inset-0 overflow-hidden">
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-60"
-                        style={{ backgroundImage: `url(${artist.picture})` }}
-                      ></div>
-                      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-                    </div>
-                    
-                    <div className="relative h-full flex flex-col items-center justify-center p-4">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 relative mb-3 border-2 border-white overflow-hidden rounded-full">
-                        <img 
-                          src={artist.picture}
-                          alt={artist.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy" decoding="async"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "https://via.placeholder.com/300x300?text=No+Artist+Image";
-                          }}
-                        />
-                        {/* Removed hover icon overlay for cleaner hover */}
-                      </div>
-                      
-                      <div className="text-center mt-1 z-10">
-                        <h3 className="font-bold text-white text-xs sm:text-sm truncate drop-shadow">{artist.name}</h3>
-                        {artist.nb_fan > 0 && (
-                          <p className="text-[10px] sm:text-xs text-white mt-0.5 drop-shadow-lg">
-                            {formatFanCount(artist.nb_fan)} fans
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollableSection>
-          )}
+          <SearchAlbumsSection
+            albums={albums}
+            onAlbumClick={(albumId) => navigate(`/album/${albumId}`)}
+          />
 
-          {!loading && songs.length === 0 && albums.length === 0 && query && (
-            <div className="text-center p-8 glass-light rounded-lg shadow-lg">
-              <p className="text-lg text-muted">No results found for "{query}"</p>
-              <p className="text-sm mt-2">Try a different search term</p>
-            </div>
-          )}
-          
-          {!loading && songs.length === 0 && albums.length === 0 && !query && (
-            <div className="text-center p-8 glass-light rounded-lg shadow-lg">
-              <p className="text-lg text-muted">Enter a search query to find music</p>
-              <p className="text-sm mt-2">Search for your favorite artists, songs, or albums</p>
-            </div>
-          )}
+          <SearchArtistsSection
+            artists={artists}
+            onArtistClick={(artistId) => navigate(`/artist/${artistId}`)}
+            formatFanCount={formatFanCount}
+          />
+
+          <SearchEmptyState query={query} hasResults={hasResults} />
         </>
       )}
     </div>

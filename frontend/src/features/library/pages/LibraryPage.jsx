@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import RecentPlayed from '../components/RecentPlayed';
-import CurrentlyPlaying from '../components/CurrentlyPlaying';
-import AIRecommendations from '../components/AIRecommendations';
-import PersonalTop from '../components/PersonalTop';
+import LibraryLoading from './LibraryLoading';
+import LibraryError from './LibraryError';
+import LibraryContent from './LibraryContent';
 // import { useAuth } from '../../../context/AuthContext';
 import { ensureValidToken } from '../../../utils/refreshToken';
 import { useNavigate } from 'react-router-dom';
-import SpotifyPlayer from '../../../components/player/SpotifyPlayer';
 import { getAccessToken } from '../../../utils/tokenStorage';
 
 /**
@@ -74,42 +72,17 @@ export default function LibraryPage() {
   
   // Show loading state
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-accent">Loading your library...</p>
-        </div>
-      </div>
-    );
+    return <LibraryLoading />;
   }
   
   // Show error if there's an authentication issue
   if (error) {
-    return (
-      <div className="p-6 bg-error/10 border border-error/20 rounded-lg text-center my-8">
-        <p className="text-error mb-2">{error}</p>
-        <button 
-          className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
-          onClick={() => navigate('/login')}
-        >
-          Log In
-        </button>
-      </div>
-    );
+    return <LibraryError message={error} onLogin={() => navigate('/login')} />;
   }
   
   // If we have a valid token, show library content
   if (token) {
-    return (
-      <>
-        <SpotifyPlayer />
-        <CurrentlyPlaying token={token} />
-         {/* <AIRecommendations mode="list" /> */}
-        <RecentPlayed token={token} />
-        <PersonalTop />
-      </>
-    );
+    return <LibraryContent token={token} />;
   }
   
   // Fallback - should rarely be seen

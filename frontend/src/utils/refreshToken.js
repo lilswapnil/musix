@@ -1,6 +1,8 @@
 import { getAccessToken, removeAccessToken } from './tokenStorage';
 import { refreshAccessToken as refreshSpotifyToken } from '../services/spotifyAuthService';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 export const ensureValidToken = async () => {
   try {
     // First check if we have a token at all
@@ -11,7 +13,7 @@ export const ensureValidToken = async () => {
 
     // Validate token by making a test request
     try {
-      const response = await fetch('https://api.spotify.com/v1/me', {
+      const response = await fetch(`${BACKEND_BASE_URL}/api/spotify/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

@@ -9,6 +9,8 @@
  * 4. Add it to your .env file as VITE_GENIUS_ACCESS_TOKEN
  */
 
+import { normalizeApiError } from './apiClient';
+
 const ACCESS_TOKEN = import.meta.env.VITE_GENIUS_ACCESS_TOKEN;
 const CORS_PROXY = 'https://corsproxy.io/?';
 const GENIUS_API_BASE = 'https://api.genius.com';
@@ -23,6 +25,7 @@ const IS_CONFIGURED = Boolean(
 /**
  * Make an authenticated request to Genius API
  */
+
 async function geniusRequest(endpoint, params = {}) {
   if (!IS_CONFIGURED) {
     throw new Error('Genius API is not configured. Please add VITE_GENIUS_ACCESS_TOKEN to your environment.');
@@ -35,8 +38,10 @@ async function geniusRequest(endpoint, params = {}) {
     }
   });
 
+  const requestUrl = `${CORS_PROXY}${encodeURIComponent(url.toString())}`;
+
   try {
-    const response = await fetch(`${CORS_PROXY}${encodeURIComponent(url.toString())}`, {
+    const response = await fetch(requestUrl, {
       headers: {
         'Authorization': `Bearer ${ACCESS_TOKEN}`,
         'Accept': 'application/json'
@@ -44,14 +49,16 @@ async function geniusRequest(endpoint, params = {}) {
     });
 
     if (!response.ok) {
-      throw new Error(`Genius API error: ${response.status}`);
+      const error = new Error(`Genius API error: ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
 
     const data = await response.json();
     return data.response;
   } catch (error) {
     console.error('Genius API request failed:', error);
-    throw error;
+    throw normalizeApiError(error, requestUrl);
   }
 }
 

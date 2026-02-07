@@ -3,6 +3,8 @@ import { getAccessToken, getUserProfile, getRefreshToken, removeAccessToken } fr
 import { ensureValidToken } from '../utils/refreshToken';
 import { AuthContext } from './useAuth';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -31,7 +33,7 @@ export const AuthProvider = ({ children }) => {
           if (token && profile) {
             try {
               // Validate token is actually working
-              const validateRes = await fetch('https://api.spotify.com/v1/me', {
+              const validateRes = await fetch(`${BACKEND_BASE_URL}/api/spotify/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
               

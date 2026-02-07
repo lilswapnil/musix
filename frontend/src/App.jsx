@@ -3,10 +3,11 @@ import './App.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PageSkeleton from './components/common/ui/PageSkeleton';
+import RouteErrorBoundary from './components/common/ui/RouteErrorBoundary';
 import { musicRoutes } from './routes/musicRoutes';
 
 // Lazy-loaded routes for faster initial load
-const AuthCallback = lazy(() => import('./features/auth/components/AuthCallback'));
+const AuthCallback = lazy(() => import('./features/auth/components/callback/AuthCallback'));
 const Layout = lazy(() => import('./components/layout/Layout'));
 const ProtectedRoute = lazy(() => import('./components/routes/ProtectedRoute'));
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'));
@@ -15,74 +16,50 @@ const LibraryPage = lazy(() => import('./features/library/pages/LibraryPage'));
 const Account = lazy(() => import('./features/account/pages/AccountPage'));
 const SearchPage = lazy(() => import('./features/search/pages/SearchPage'));
 
+const withRouteBoundary = (element) => (
+  <RouteErrorBoundary>
+    <Suspense fallback={<PageSkeleton />}>
+      {element}
+    </Suspense>
+  </RouteErrorBoundary>
+);
+
 const routes = [
   // Auth pages without navbar/layout
   {
     index: true,
-    element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <LoginPage />
-      </Suspense>
-    )
+    element: withRouteBoundary(<LoginPage />)
   },
   {
     path: '/login',
-    element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <LoginPage />
-      </Suspense>
-    )
+    element: withRouteBoundary(<LoginPage />)
   },
   // Single callback route
   {
     path: '/callback',
-    element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <AuthCallback />
-      </Suspense>
-    )
+    element: withRouteBoundary(<AuthCallback />)
   },
   
   // Main app with layout
   {
     path: "/",
-    element: (
-      <Suspense fallback={<PageSkeleton />}>
-        <Layout />
-      </Suspense>
-    ),
+    element: withRouteBoundary(<Layout />),
     children: [
       {
         path: 'home',
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <HomePage />
-          </Suspense>
-        )
+        element: withRouteBoundary(<HomePage />)
       },
       {
         path: "my-library",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute><LibraryPage /></ProtectedRoute>
-          </Suspense>
-        )
+        element: withRouteBoundary(<ProtectedRoute><LibraryPage /></ProtectedRoute>)
       },
       {
         path: "account",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute><Account /></ProtectedRoute>
-          </Suspense>
-        )
+        element: withRouteBoundary(<ProtectedRoute><Account /></ProtectedRoute>)
       },
       {
         path: "search",
-        element: (
-          <Suspense fallback={<PageSkeleton />}>
-            <SearchPage />
-          </Suspense>
-        )
+        element: withRouteBoundary(<SearchPage />)
       },
       // ...existing code...
       ...musicRoutes

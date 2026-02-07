@@ -1,5 +1,6 @@
 import { spotifyService } from './spotifyServices';
 import { azureMlService } from './azureMlService';
+import { normalizeApiError } from './apiClient';
 
 class AIRecommendationService {
   constructor() {
@@ -163,8 +164,9 @@ class AIRecommendationService {
 
       await this._queueAIRecommendation(track);
     } catch (error) {
-      console.error('Error checking recommendations:', error);
-      this._notifyListeners({ type: 'error', error: error.message });
+      const normalized = normalizeApiError(error, 'spotify:player');
+      console.error('Error checking recommendations:', normalized);
+      this._notifyListeners({ type: 'error', error: normalized.message });
     }
   }
 
@@ -229,9 +231,10 @@ class AIRecommendationService {
         }
       });
     } catch (error) {
-      console.error('Error queueing recommendation:', error);
-      this._notifyListeners({ type: 'queue_error', error: error.message });
-      throw error;
+      const normalized = normalizeApiError(error, 'spotify:recommendations');
+      console.error('Error queueing recommendation:', normalized);
+      this._notifyListeners({ type: 'queue_error', error: normalized.message });
+      throw normalized;
     }
   }
 
@@ -283,8 +286,9 @@ class AIRecommendationService {
 
       return recommendations.tracks.map(track => this._mapTrackSummary(track));
     } catch (error) {
-      console.error('Error getting recommendations list:', error);
-      throw error;
+      const normalized = normalizeApiError(error, 'spotify:recommendations');
+      console.error('Error getting recommendations list:', normalized);
+      throw normalized;
     }
   }
 

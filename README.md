@@ -27,7 +27,7 @@
 ```
 cd frontend
 npm install
-npm run dev
+npm run dev || npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
 Frontend dev server: `http://127.0.0.1:5174` (or 5173 if available).
@@ -135,7 +135,7 @@ frontend/  # React app (Spotify, Deezer, UI)
 
 ## Screenshots
 
-<p align="center" style="margin: 10px">
+<p align="center">
   <img src="./frontend/assets/screenshot1.png" width="90%" alt="Musix Screenshot" />
   <img src="./frontend/assets/screenshot2.png" width="90%" alt="Musix Screenshot" />
 </p>
