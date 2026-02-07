@@ -1,11 +1,12 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPlus, faCheck } from "@fortawesome/free-solid-svg-icons";
 
 export default function AISingleRecommendationCard({
   recommendation,
   onPlayNow,
-  onAddToQueue
+  onAddToQueue,
+  isQueued = false
 }) {
   return (
     <div className="relative h-auto sm:h-80 rounded-xl overflow-hidden shadow-lg group">
@@ -72,8 +73,11 @@ export default function AISingleRecommendationCard({
               onClick={() => onAddToQueue(recommendation)}
               className="flex items-center bg-accent hover:bg-accent/80 text-primary py-2 px-4 rounded-full transition-colors font-semibold"
             >
-              <FontAwesomeIcon icon={faPlay} className="mr-2" />
-              Add to Queue
+              <FontAwesomeIcon
+                icon={isQueued ? faCheck : faPlus}
+                className={`mr-2 transition-transform duration-200 ${isQueued ? 'scale-110' : 'scale-100'}`}
+              />
+              {isQueued ? 'Added to Queue' : 'Add to Queue'}
             </button>
           </div>
         </div>

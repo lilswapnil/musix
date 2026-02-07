@@ -686,13 +686,27 @@ export const spotifyService = {
    * Attempt to activate the web player device for playback
    */
   ensureActiveDevice: async function() {
-    if (!this._deviceId) return false;
     try {
-      await this.transferPlayback(this._deviceId, true);
+      const devices = await this.getDevices();
+      const activeDevice = devices.find((device) => device.is_active);
+      if (activeDevice) {
+        this._deviceId = activeDevice.id || this._deviceId;
+        return true;
+      }
+
+      const preferredDeviceId =
+        this._deviceId ||
+        devices.find((device) => device.name?.toLowerCase().includes('web player'))?.id ||
+        devices[0]?.id;
+
+      if (!preferredDeviceId) return false;
+
+      await this.transferPlayback(preferredDeviceId, true);
+      this._deviceId = preferredDeviceId;
       return true;
     } catch (error) {
       if (error?.status !== 404) {
-        console.warn('Could not activate web player device:', error);
+        console.warn('Could not activate Spotify device:', error);
       }
       return false;
     }
@@ -700,15 +714,12 @@ export const spotifyService = {
 
   // Playback control methods
   play: async function(uri, options = {}) {
-    if (!this._isPlayerReady || !this._deviceId) {
-      await this.ensurePlayerReady();
-    }
-    if (!this._isPlayerReady || !this._deviceId) {
-      throw new Error('Spotify player not ready');
-    }
-    
     try {
-      const hasActiveDevice = await this.ensureActiveDevice();
+      let hasActiveDevice = await this.ensureActiveDevice();
+      if (!hasActiveDevice) {
+        await this.ensurePlayerReady();
+        hasActiveDevice = await this.ensureActiveDevice();
+      }
       if (!hasActiveDevice) {
         throw new Error('No active Spotify device. Open Spotify and start playback.');
       }
@@ -723,9 +734,10 @@ export const spotifyService = {
         playData.position_ms = options.position_ms;
       }
       
-      await this.apiRequest(`/me/player/play?device_id=${this._deviceId}`, {
+      await this.apiRequest('/me/player/play', {
         method: 'PUT',
-        body: playData
+        body: playData,
+        params: this._deviceId ? { device_id: this._deviceId } : undefined
       });
     } catch (error) {
       console.error('Error playing track:', error);
@@ -835,6 +847,19 @@ export const spotifyService = {
       if (error?.status !== 404) {
         console.error('Error transferring playback:', error);
       }
+      throw error;
+    }
+  },
+
+  /**
+   * Get available Spotify devices
+   */
+  getDevices: async function() {
+    try {
+      const response = await this.apiRequest('/me/player/devices');
+      return response?.devices || [];
+    } catch (error) {
+      console.error('Error fetching Spotify devices:', error);
       throw error;
     }
   },
@@ -986,6 +1011,42 @@ export const spotifyService = {
   },
 
   /**
+   * Get recommendations from backend (/api/recommendations)
+   */
+  getBackendRecommendations: async function(options = {}) {
+    if (!BACKEND_BASE_URL) {
+      throw new Error('Backend URL is not configured');
+    }
+
+    if (!this._apiClient) {
+      this._apiClient = createApiClient({
+        baseUrl: this._apiBase,
+        getToken: () => this.getUserToken(),
+        refreshToken: () => this.refreshAccessToken(),
+        onAuthFailure: () => this.logout()
+      });
+    }
+
+    const params = {};
+    if (options.limit) params.limit = String(options.limit);
+    if (options.time_range) params.time_range = options.time_range;
+    if (options.track_id) params.track_id = options.track_id;
+    if (options.use_current !== undefined) {
+      params.use_current = options.use_current ? 'true' : 'false';
+    }
+
+    return await this._apiClient.request(`${BACKEND_BASE_URL}/api/recommendations`, {
+      method: 'GET'
+    }, {
+      params,
+      auth: true,
+      enhancedControls: {
+        domain: new URL(BACKEND_BASE_URL).hostname
+      }
+    });
+  },
+
+  /**
    * Add a track to the user's playback queue
    * @param {string} trackUri - Spotify URI of the track to add (e.g., 'spotify:track:xxxxx')
    * @param {string} deviceId - Optional device ID (uses active device if not specified)
@@ -993,10 +1054,11 @@ export const spotifyService = {
    */
   addToQueue: async function(trackUri, deviceId = null) {
     try {
-      if (!deviceId && (!this._isPlayerReady || !this._deviceId)) {
+      let hasActiveDevice = await this.ensureActiveDevice();
+      if (!hasActiveDevice) {
         await this.ensurePlayerReady();
+        hasActiveDevice = await this.ensureActiveDevice();
       }
-      const hasActiveDevice = await this.ensureActiveDevice();
       if (!hasActiveDevice) {
         throw new Error('No active Spotify device. Open Spotify and start playback.');
       }

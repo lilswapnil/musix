@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faMusic, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { aiRecommendationService } from '../../../../services/aiRecommendationService';
@@ -15,67 +15,96 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
   const [isLoading, setIsLoading] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [recommendationError, setRecommendationError] = useState('');
+  const [queuedTrackId, setQueuedTrackId] = useState(null);
+  const [recommendationQueue, setRecommendationQueue] = useState([]);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const queuedResetRef = useRef(null);
+
+  const normalizeBackendTracks = (tracks = []) => tracks.map((track) => {
+    const artistsArray = Array.isArray(track.artists)
+      ? track.artists
+      : String(track.artists || '')
+          .split(',')
+          .map((name) => name.trim())
+          .filter(Boolean)
+          .map((name) => ({ name }));
+
+    return {
+      id: track.id,
+      name: track.name,
+      artists: artistsArray,
+      album: {
+        name: track.album?.name || '',
+        images: track.cover ? [{ url: track.cover }] : []
+      },
+      preview_url: track.preview_url ?? null,
+      external_urls: track.spotify_url ? { spotify: track.spotify_url } : undefined,
+      uri: track.id ? `spotify:track:${track.id}` : undefined
+    };
+  });
 
   const fetchSpotifyRecommendations = async (limit) => {
-    const current = await spotifyService.getCurrentlyPlaying();
-    const track = current?.item;
-    if (!track || track.type !== 'track' || !track.id) {
-      setRecommendationError('Play a Spotify track to get recommendations');
-      return [];
-    }
-
-    const seedArtists = (track.artists || []).map(artist => artist.id).filter(Boolean);
-    if (!seedArtists.length) {
-      setRecommendationError('Play a Spotify track to get recommendations');
-      return [];
-    }
-
     try {
-      const topTracks = await spotifyService.getArtistTopTracks(seedArtists[0]);
-      const tracks = topTracks?.tracks || [];
-      const filtered = tracks.filter(item => item?.id && item.id !== track.id);
-      if (filtered.length > 0) return filtered.slice(0, limit);
-    } catch {
-      // Fall through to genre-based fallback
-    }
-
-    try {
-      const genreSeeds = await spotifyService.apiRequest('/recommendations/available-genre-seeds');
-      const genre = genreSeeds?.genres?.[0];
-      if (!genre) {
-        setRecommendationError('No Spotify recommendations available');
-        return [];
-      }
-      const fallback = await spotifyService.getRecommendations({
-        seed_genres: [genre],
-        limit
+      const response = await spotifyService.getBackendRecommendations({
+        limit,
+        use_current: true
       });
-      return fallback?.tracks || [];
+      const tracks = normalizeBackendTracks(response?.tracks || response?.recommendations || []);
+      if (tracks.length > 0) return tracks.slice(0, limit);
+    } catch {
+      // Fall through to non-current fallback
+    }
+
+    try {
+      const response = await spotifyService.getBackendRecommendations({
+        limit,
+        use_current: false
+      });
+      const tracks = normalizeBackendTracks(response?.tracks || response?.recommendations || []);
+      if (tracks.length > 0) return tracks.slice(0, limit);
+      setRecommendationError('No Spotify recommendations available');
+      return [];
     } catch {
       setRecommendationError('No Spotify recommendations available');
       return [];
     }
   };
 
-  const fetchRecommendations = useCallback(async () => {
+  const fetchRecommendations = useCallback(async (excludeTrackId = null) => {
     try {
       setIsLoading(true);
       setRecommendationError('');
       if (mode === 'list') {
         if (source === 'spotify') {
-          const tracks = await fetchSpotifyRecommendations(20);
+          let tracks = await fetchSpotifyRecommendations(20);
+          if (excludeTrackId) {
+            tracks = tracks.filter((track) => track?.id !== excludeTrackId);
+          }
           setRecommendedTracks(tracks);
         } else {
-          const tracks = await aiRecommendationService.getRecommendationsList({ limit: 20 });
+          let tracks = await aiRecommendationService.getRecommendationsList({ limit: 20 });
+          if (excludeTrackId) {
+            tracks = tracks.filter((track) => track?.id !== excludeTrackId);
+          }
           setRecommendedTracks(tracks);
         }
       } else {
         if (source === 'spotify') {
-          const tracks = await fetchSpotifyRecommendations(1);
+          let tracks = await fetchSpotifyRecommendations(25);
+          if (excludeTrackId) {
+            tracks = tracks.filter((track) => track?.id !== excludeTrackId);
+          }
+          setRecommendationQueue(tracks);
+          setQueueIndex(0);
           setNextRecommendation(tracks[0] || null);
         } else {
-          const track = await aiRecommendationService.getNextRecommendation();
-          setNextRecommendation(track);
+          let tracks = await aiRecommendationService.getRecommendationsList({ limit: 25 });
+          if (excludeTrackId) {
+            tracks = tracks.filter((track) => track?.id !== excludeTrackId);
+          }
+          setRecommendationQueue(tracks);
+          setQueueIndex(0);
+          setNextRecommendation(tracks[0] || null);
         }
       }
     } catch {
@@ -116,9 +145,23 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
     if (!trackUri) return;
     try {
       await spotifyService.play(trackUri);
+      const nextIndex = queueIndex + 1;
+      if (recommendationQueue[nextIndex]) {
+        setQueueIndex(nextIndex);
+        setNextRecommendation(recommendationQueue[nextIndex]);
+      } else {
+        fetchRecommendations(track?.id || null);
+      }
     } catch {
       try {
         await spotifyService.addToQueue(trackUri);
+        const nextIndex = queueIndex + 1;
+        if (recommendationQueue[nextIndex]) {
+          setQueueIndex(nextIndex);
+          setNextRecommendation(recommendationQueue[nextIndex]);
+        } else {
+          fetchRecommendations(track?.id || null);
+        }
       } catch {
         // Silently ignore errors
       }
@@ -130,6 +173,20 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
     if (!trackUri) return;
     try {
       await spotifyService.addToQueue(trackUri);
+      if (track?.id) {
+        setQueuedTrackId(track.id);
+        if (queuedResetRef.current) clearTimeout(queuedResetRef.current);
+        queuedResetRef.current = setTimeout(() => {
+          setQueuedTrackId(null);
+        }, 2000);
+      }
+      const nextIndex = queueIndex + 1;
+      if (recommendationQueue[nextIndex]) {
+        setQueueIndex(nextIndex);
+        setNextRecommendation(recommendationQueue[nextIndex]);
+      } else {
+        fetchRecommendations(track?.id || null);
+      }
     } catch {
       // Silently ignore errors
     }
@@ -159,6 +216,7 @@ export default function AIRecommendations({ mode = 'single', source = 'ai' }) {
             recommendation={nextRecommendation}
             onPlayNow={handlePlayTrack}
             onAddToQueue={handleQueueTrack}
+            isQueued={queuedTrackId === nextRecommendation?.id}
           />
         ) : (
           <AISingleRecommendationEmpty

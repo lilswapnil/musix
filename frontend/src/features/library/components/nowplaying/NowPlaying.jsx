@@ -17,6 +17,7 @@ export default function CurrentlyPlaying({ token }) {
   const [liked, setLiked] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const pollRef = useRef(null);
+  const lastTrackIdRef = useRef(null);
   
 
   const fetchCurrentTrack = useCallback(async () => {
@@ -53,6 +54,12 @@ export default function CurrentlyPlaying({ token }) {
         const data = await response.json();
         setCurrentTrack(data.item);
         setIsPlaying(Boolean(data.is_playing));
+        if (data.item?.id && data.item.id !== lastTrackIdRef.current) {
+          lastTrackIdRef.current = data.item.id;
+          window.dispatchEvent(new CustomEvent('musix:now-playing-changed', {
+            detail: { trackId: data.item.id }
+          }));
+        }
         
         // Fetch artist image
         if (data.item && data.item.artists && data.item.artists[0]) {

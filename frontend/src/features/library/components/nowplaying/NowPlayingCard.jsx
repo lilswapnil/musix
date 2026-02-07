@@ -1,12 +1,22 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faPlay, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  faHeart,
+  faPlay,
+  faPause,
+  faBackwardStep,
+  faForwardStep
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function NowPlayingCard({
   currentTrack,
   artistImage,
   liked,
-  onLike
+  onLike,
+  isPlaying,
+  onPlayPause,
+  onNext,
+  onPrevious
 }) {
   return (
     <div className="mb-12">
@@ -52,28 +62,45 @@ export default function NowPlayingCard({
                   <p className="text-white sm:block hidden">{currentTrack.album.name}</p>
                 </div>
 
-                <button
-                  onClick={onLike}
-                  className="p-2 sm:p-3 rounded-full hover:bg-text/20 transition-colors mx-auto sm:mx-0 mt-2 sm:mt-0"
-                >
-                  <FontAwesomeIcon
-                    icon={faHeart}
-                    className={`text-xl sm:text-2xl ${liked ? "text-red-500" : "text-white"}`}
-                  />
-                </button>
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start">
-              <a
-                href={currentTrack.external_urls.spotify}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center bg-spotify hover:bg-spotify/80 text-white py-2 px-4 rounded-full transition-colors"
+            <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start gap-3">
+              <button
+                type="button"
+                onClick={onPrevious}
+                className="h-12 w-12 rounded-full bg-primary/20 hover:bg-primary/30 text-white transition-colors flex items-center justify-center"
+                aria-label="Previous track"
               >
-                <span className="mr-2">Open in Spotify</span>
-                <FontAwesomeIcon icon={faExternalLinkAlt} />
-              </a>
+                <FontAwesomeIcon icon={faBackwardStep} />
+              </button>
+              <button
+                type="button"
+                onClick={onPlayPause}
+                className="h-12 w-12 rounded-full bg-accent hover:bg-accent/80 text-primary transition-colors flex items-center justify-center"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                className="h-12 w-12 rounded-full bg-primary/20 hover:bg-primary/30 text-white transition-colors flex items-center justify-center"
+                aria-label="Next track"
+              >
+                <FontAwesomeIcon icon={faForwardStep} />
+              </button>
+              <button
+                type="button"
+                onClick={onLike}
+                className="h-12 w-12 rounded-full hover:bg-text/20 text-white transition-colors flex items-center justify-center"
+                aria-label={liked ? "Unlike" : "Like"}
+              >
+                <FontAwesomeIcon
+                  icon={faHeart}
+                  className={`text-xl ${liked ? "text-red-500" : "text-white"}`}
+                />
+              </button>
             </div>
           </div>
         </div>
