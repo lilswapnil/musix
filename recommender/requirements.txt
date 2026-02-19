@@ -1,1 +1,11 @@
-kagglehub
+# requirements.txt additions
+torch>=2.0.0
+scikit-learn>=1.3.0
+lightfm>=1.17
+faiss-cpu>=1.7.4
+
+# or faiss-gpu if you have GPU
+essentia==2.1.0
+librosa>=0.10.0
+numpy>=1.24.0
+pandas>=2.0.0

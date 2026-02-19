@@ -49,15 +49,31 @@ coverage/
 
 # Python
 __pycache__/
+*.pyc
+*.pyo
 *.py[cod]
 *$py.class
 .Python
+.venv/
 venv/
 env/
+.env
 
 # Temporary files
 *.tmp
 *.bak
 .temp/
+
+# ML Data & Models
+recommender/data/*.csv
+recommender/data/processed/
+recommender/models/*.pkl
+recommender/models/*.pt
+recommender/models/*.bin
+recommender/models/*.joblib
+*.pkl
+*.pt
+*.bin
+.ipynb_checkpoints/
 
 
