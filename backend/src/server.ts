@@ -4,11 +4,12 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { healthRouter } from "./routes/health";
-import { meRouter } from "./routes/me";
-import { recommendationsRouter } from "./routes/recommendations";
-import { spotifyRouter } from "./routes/spotify";
-import { spotifyTokenRouter } from "./routes/spotifyToken";
+import { healthRouter } from "./routes/health.js";
+import { meRouter } from "./routes/me.js";
+import { recommendationsRouter } from "./routes/recommendations.js";
+import { spotifyRouter } from "./routes/spotify.js";
+import { spotifyTokenRouter } from "./routes/spotifyToken.js";
+import { deezerRouter } from "./routes/deezer.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
@@ -52,6 +53,7 @@ export function createServer() {
   app.use("/api/recommendations", recommendationsRouter);
   app.use("/api/spotify", spotifyRouter);
   app.use("/api/spotify", spotifyTokenRouter);
+  app.use("/api/deezer", deezerRouter);
 
   // Root route handler to prevent 404 on GET /
   app.get("/", (req, res) => {
